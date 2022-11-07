@@ -9,11 +9,10 @@ Cache can be fully configured how to keep objects:
 - out-of-memory - large object would be disposed first, small would be disposed the last
 - LRU-based - last recently used would not be disposed
 - usage-factor-based - usage factor over time is calculated for each object
-- keep with replace - 
+- keep with replace - replace will be only if new object is in cache, always there must be at least one object
 
-Cache is distrubited and can be deployed as many instances with additional configuration.
+Cache is distributed and can be deployed as many instances with additional configuration.
 - there is agent-based system to keep cache-instances connected
-
 
 Cache can be connected to different storages to keep cache items and communicate between cache-agents:
 - Redis
@@ -21,3 +20,9 @@ Cache can be connected to different storages to keep cache items and communicate
 - Kafka
 - JDBC-compliant database(s) (with DDL option)
 - custom HTTP storage
+
+Cache could be used as:
+- library to be linked and used inside application
+- standalone application having public API to be used and REST API
+- code to be included "as it is"
+-
