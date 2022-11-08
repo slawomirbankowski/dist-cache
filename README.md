@@ -26,3 +26,20 @@ Cache could be used as:
 - standalone application having public API to be used and REST API
 - code to be included "as it is"
 -
+To be added: 
+- hit ration of cache usage
+- cache re-set while working
+- callback structures for events
+- last usage date
+- timer for maintenance
+- timer for exchange data with other agents 
+- timer run sequence
+- publish events to compliant storages
+- cache blacklist
+- cache object group and mode, acquire time, refresh time, methods to get next value for model
+- refresh all caches with refresh mode
+- get cache size per storage
+- ge total cache size
+- get list of current cache list
+- cache key for secrets
+- removing ttl old caches
