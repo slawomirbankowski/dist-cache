@@ -12,9 +12,11 @@ public class KafkaStorage extends CacheStorageBase {
     public KafkaStorage(StorageInitializeParameter p) {
 
     }
+    /** Kafka is external storage */
+    public  boolean isInternal() { return false; }
     /** TODO: get item from Kafka */
     public CacheObject getItem(String key) {
-        return new CacheObject();
+        return null;
     }
     public void setItem(CacheObject o) {
         return ;

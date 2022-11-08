@@ -1,7 +1,6 @@
 package com.cache.storage;
 
 import com.cache.api.CacheObject;
-import com.cache.api.CacheableMethod;
 import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
 
@@ -14,9 +13,12 @@ public class ElasticsearchCacheStorage extends CacheStorageBase {
     public ElasticsearchCacheStorage(StorageInitializeParameter p) {
 
     }
+    /** Elasticsearch is external storage */
+    public  boolean isInternal() { return false; }
     /** TODO: get item from Elasticsearch */
     public CacheObject getItem(String key) {
-        return new CacheObject();
+
+        return null;
     }
     public void setItem(CacheObject o) {
         return ;

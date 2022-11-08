@@ -7,5 +7,4 @@ public interface CacheableObject {
     int getPriority();
     /** get mode of kept for this object in cache */
     int getMode();
-
 }

@@ -12,12 +12,13 @@ public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
 
     /** */
     private WeakHashMap<String, CacheObject> localCache = new WeakHashMap<>();
-
+    /** WeakHashMap is internal storage */
+    public  boolean isInternal() { return true; }
     public InternalWeakHashMapCacheStorage(StorageInitializeParameter p) {
     }
     /** */
     public CacheObject getItem(String key) {
-        return new CacheObject();
+        return null;
     }
     /** put object to cache */
     public void setItem(CacheObject o) {
