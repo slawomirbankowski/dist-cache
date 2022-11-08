@@ -5,21 +5,21 @@ import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
 
 import java.util.HashMap;
+import java.util.WeakHashMap;
 
-/** cache with internal HashMap */
-public class InternalHashMapCacheStorage extends CacheStorageBase {
+/** cache with internal WeakHashMap */
+public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
 
     /** */
-    private java.util.HashMap<String, CacheObject> localCache = new HashMap<>();
+    private WeakHashMap<String, CacheObject> localCache = new WeakHashMap<>();
 
-    public InternalHashMapCacheStorage(StorageInitializeParameter p) {
+    public InternalWeakHashMapCacheStorage(StorageInitializeParameter p) {
     }
-
-    /** get item from cache */
+    /** */
     public CacheObject getItem(String key) {
         return new CacheObject();
     }
-    /** add item into cache  */
+    /** put object to cache */
     public void setItem(CacheObject o) {
         return ;
     }
