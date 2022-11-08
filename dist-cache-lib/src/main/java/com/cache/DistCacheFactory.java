@@ -29,14 +29,19 @@ public class DistCacheFactory {
         // TODO: should we create new cache or use existing one like Singleton???
         return new CacheManager(cfg.getProperties());
     }
+
     public static void main(String[] args) {
         System.out.println("START");
         CacheConfig cfg= CacheConfig.buildEmptyConfig()
-                .withName("")
-                .withServers("");
+                .withName("GlobalCacheTest")
+                .withPort(9999)
+                .withServers("localhost:9095")
+                .withMaxObjectAndItems(100, 20000);
 
         CacheManager cache = DistCacheFactory.getInstance(cfg);
+        //cache.withCache("", );
 
+        //cache.withCache()
         System.out.println("STOP");
     }
 

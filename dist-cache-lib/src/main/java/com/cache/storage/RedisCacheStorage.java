@@ -12,9 +12,11 @@ public class RedisCacheStorage extends CacheStorageBase {
     /** initialize Redis storage */
     public RedisCacheStorage(StorageInitializeParameter p) {
     }
+    /** Redis is external storage */
+    public  boolean isInternal() { return false; }
     /** TODO: implement redis */
     public CacheObject getItem(String key) {
-        return new CacheObject();
+        return null;
     }
     public void setItem(CacheObject o) {
         return ;

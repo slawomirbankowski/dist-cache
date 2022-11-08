@@ -10,5 +10,7 @@ public class CacheMode {
     /** mode when object is kept till object is still used for last X milliseconds, when object is
      * not used for much time */
     public static int MODE_USED = 3;
+    /** refresh mode when item could be refreshed every N seconds through refreshing handler */
+    public static int MODE_REFRESH = 4;
 
 }

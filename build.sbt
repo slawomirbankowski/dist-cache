@@ -20,7 +20,14 @@ lazy val `dist-cache-lib` = project
 /** standalone application with HTTP interface for cache read/write */
 lazy val `dist-cache-app` = project
   .settings(
-    description := "Standalone application "
+    description := "Standalone application to access cache items on external storages or  "
   )
   .dependsOn(`dist-cache-api`)
   .dependsOn(`dist-cache-lib`)
+
+/** client for HTTP/Socket connection to Cache Manager or Cache Application */
+lazy val `dist-cache-client` = project
+  .settings(
+    description := "client for HTTP/Socket connection to Cache Manager or Cache Application"
+  )
+  .dependsOn(`dist-cache-api`)

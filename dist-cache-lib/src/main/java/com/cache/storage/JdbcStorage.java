@@ -4,17 +4,19 @@ import com.cache.api.CacheObject;
 import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
 
-/** cache with Kafka topic - key would be key for object
+/** cache with JDBC connection to any compliant database
+ * it would create special table with cache items and index to fast access
  * */
-public class LocalDiskStorage extends CacheStorageBase {
+public class JdbcStorage extends CacheStorageBase {
 
-    /** TODO: init local disk storage */
-    public LocalDiskStorage(StorageInitializeParameter p) {
+    /** TODO: init JDBC storage */
+    public JdbcStorage(StorageInitializeParameter p) {
 
     }
-    /** Local Disk is external storage */
+
+    /** Kafka is external storage */
     public  boolean isInternal() { return false; }
-    /** TODO: get item from local disk */
+    /** TODO: get item from JDBC */
     public CacheObject getItem(String key) {
         return null;
     }
