@@ -35,6 +35,7 @@ public class DistCacheFactory {
         CacheConfig cfg= CacheConfig.buildEmptyConfig()
                 .withName("GlobalCacheTest")
                 .withPort(9999)
+                .withCacheApp("https://localhost:9999/")
                 .withServers("localhost:9095")
                 .withMaxObjectAndItems(100, 20000);
 

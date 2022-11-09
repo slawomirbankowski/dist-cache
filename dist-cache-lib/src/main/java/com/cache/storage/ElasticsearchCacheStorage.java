@@ -17,6 +17,10 @@ public class ElasticsearchCacheStorage extends CacheStorageBase {
     }
     /** Elasticsearch is external storage */
     public  boolean isInternal() { return false; }
+    /** check if object has given key, optional with specific type */
+    public boolean contains(String key) {
+        return false;
+    }
     /** TODO: get item from Elasticsearch */
     public Optional<CacheObject> getItem(String key) {
 
