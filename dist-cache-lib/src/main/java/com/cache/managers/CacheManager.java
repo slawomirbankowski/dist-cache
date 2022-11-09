@@ -2,7 +2,7 @@ package com.cache.managers;
 
 import com.cache.agent.AgentObject;
 import com.cache.api.CacheableMethod;
-import com.cache.base.CacheManagerBase;
+import com.cache.base.Cache;
 import com.cache.base.CachePolicyBase;
 import com.cache.base.CacheStorageBase;
 import com.cache.storage.KafkaStorage;
@@ -15,7 +15,7 @@ import java.util.*;
  * to perform clean based on time
  * replace all cache with fresh objects
  * */
-public class CacheManager implements CacheManagerBase {
+public class CacheManager implements Cache {
 
     /** UUID for cache manager - globaly unique */
     private String cacheManagerGuid = UUID.randomUUID().toString();
@@ -59,6 +59,7 @@ public class CacheManager implements CacheManagerBase {
 
         return "";
     }
+
     public <T> Object withCache(String key, Method method, Object obj) {
         // TODO: get object with cache
         for (CacheStorageBase storage: storages.values()) {

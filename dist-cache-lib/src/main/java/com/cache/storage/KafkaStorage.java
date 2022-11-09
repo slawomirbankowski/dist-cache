@@ -4,6 +4,8 @@ import com.cache.api.CacheObject;
 import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
 
+import java.util.Optional;
+
 /** cache with Kafka topic - key would be key for object
  * */
 public class KafkaStorage extends CacheStorageBase {
@@ -15,11 +17,11 @@ public class KafkaStorage extends CacheStorageBase {
     /** Kafka is external storage */
     public  boolean isInternal() { return false; }
     /** TODO: get item from Kafka */
-    public CacheObject getItem(String key) {
-        return null;
+    public Optional<CacheObject> getItem(String key) {
+        return Optional.empty();
     }
-    public void setItem(CacheObject o) {
-        return ;
+    public Optional<CacheObject> setItem(CacheObject o) {
+        return Optional.empty();
     }
 
 }
