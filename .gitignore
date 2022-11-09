@@ -44,3 +44,5 @@ logs/
 **.keys
 **.key
 RUNNING_PID
+
+.bsp/sbt.json
