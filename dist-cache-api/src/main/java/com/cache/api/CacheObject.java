@@ -35,8 +35,8 @@ public class CacheObject {
     /** release action for this cache object */
     public void releaseObject() {
 
-
     }
+
     /** use of this cache object */
     public long use() {
         return usages.incrementAndGet();

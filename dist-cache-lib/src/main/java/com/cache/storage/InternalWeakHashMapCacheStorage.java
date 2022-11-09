@@ -5,6 +5,7 @@ import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
 
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.WeakHashMap;
 
 /** cache with internal WeakHashMap */
@@ -17,12 +18,12 @@ public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
     public InternalWeakHashMapCacheStorage(StorageInitializeParameter p) {
     }
     /** */
-    public CacheObject getItem(String key) {
-        return null;
+    public Optional<CacheObject> getItem(String key) {
+        return Optional.empty();
     }
     /** put object to cache */
-    public void setItem(CacheObject o) {
-        return ;
+    public Optional<CacheObject> setItem(CacheObject o) {
+        return Optional.empty();
     }
 
 }
