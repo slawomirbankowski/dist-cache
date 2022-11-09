@@ -12,15 +12,18 @@ import java.util.Optional;
 public class InternalHashMapCacheStorage extends CacheStorageBase {
 
     /** objects in cache */
-    private java.util.HashMap<String, CacheObject> localCache = new HashMap<>();
+    private final java.util.HashMap<String, CacheObject> localCache = new HashMap<>();
 
     public InternalHashMapCacheStorage(StorageInitializeParameter p) {
     }
     /** HashMap is internal storage */
     public  boolean isInternal() { return true; }
+    /** check if object has given key, optional with specific type */
+    public boolean contains(String key) {
+        return false;
+    }
     /** get item from cache */
     public Optional<CacheObject> getItem(String key) {
-
         return Optional.of(localCache.get(key));
     }
     /** add item into cache  */

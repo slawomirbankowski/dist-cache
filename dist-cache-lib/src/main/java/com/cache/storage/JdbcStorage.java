@@ -18,6 +18,10 @@ public class JdbcStorage extends CacheStorageBase {
 
     /** Kafka is external storage */
     public  boolean isInternal() { return false; }
+    /** check if object has given key, optional with specific type */
+    public boolean contains(String key) {
+        return false;
+    }
     /** TODO: get item from JDBC */
     public Optional<CacheObject> getItem(String key) {
         return Optional.empty();
