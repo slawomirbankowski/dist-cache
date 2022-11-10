@@ -2,8 +2,12 @@ package com.cache;
 
 import com.cache.api.CacheConfig;
 import com.cache.managers.CacheManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.spi.SLF4JServiceProvider;
 
 import java.util.Properties;
+import java.util.ServiceLoader;
 
 /**
  * local cache object contains storages that keeps object for fast read
@@ -11,6 +15,7 @@ import java.util.Properties;
  *
  * */
 public class DistCacheFactory {
+    private static final Logger log = LoggerFactory.getLogger(DistCacheFactory.class);
 
     /** factory is just creating managers */
     private DistCacheFactory(Properties p) {
@@ -31,7 +36,7 @@ public class DistCacheFactory {
     }
 
     public static void main(String[] args) {
-        System.out.println("START");
+        log.info("START");
         CacheConfig cfg= CacheConfig.buildEmptyConfig()
                 .withName("GlobalCacheTest")
                 .withPort(9999)
@@ -40,9 +45,8 @@ public class DistCacheFactory {
 
         CacheManager cache = DistCacheFactory.getInstance(cfg);
         //cache.withCache("", );
-
         //cache.withCache()
-        System.out.println("STOP");
+        log.info("STOP");
     }
 
 }
