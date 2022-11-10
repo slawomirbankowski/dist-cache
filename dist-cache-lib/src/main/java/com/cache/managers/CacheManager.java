@@ -2,7 +2,7 @@ package com.cache.managers;
 
 import com.cache.agent.AgentObject;
 import com.cache.api.*;
-import com.cache.base.Cache;
+import com.cache.api.Cache;
 import com.cache.base.CachePolicyBase;
 import com.cache.base.CacheStorageBase;
 import java.lang.reflect.Method;
@@ -29,7 +29,7 @@ public class CacheManager implements Cache {
     private AgentObject agent = new AgentObject();
     /** all storages to store cache objects - there could be internal storages,
      * Elasticsearch, Redis, local disk, JDBC database with indexed table, and many others */
-    private Map<String, CacheStorageBase> storages = new HashMap<>();
+    private final Map<String, CacheStorageBase> storages = new HashMap<>();
     /** list of policies for given cache object to check to what caches that object should be add */
     private List<CachePolicyBase> policies = new LinkedList<CachePolicyBase>();
     /** queue of issues reported when using cache */
@@ -44,7 +44,14 @@ public class CacheManager implements Cache {
         this.cacheProps = p;
         // TODO: finishing initialization - to be done, creating agent, storages, policies
         initializeStorages();
+        initializeAgent();
+        initializePolicies();
     }
+
+    /** get unique identifier for this CacheManager object */
+    public String getCacheManagerGuid() { return cacheManagerGuid; }
+    /** get date and time of creation for this CacheManager */
+    public LocalDateTime getCreatedDateTime() { return createdDateTime; }
 
     /** initialize all storages from configuration*/
     private void initializeStorages() {
@@ -68,6 +75,17 @@ public class CacheManager implements Cache {
             // TODO: report problem with storage creation
         }
     }
+
+    /** initialize Agent to communicate with other CacheManagers */
+    public void initializeAgent() {
+
+    }
+
+    /** initialize policies */
+    public void initializePolicies() {
+
+    }
+
     /** set object in all or one internal caches */
     private List<Optional<CacheObject>> setItemInternal(CacheObject co) {
         return storages.values().stream()
@@ -75,6 +93,7 @@ public class CacheManager implements Cache {
                 .map(storage -> storage.setItem(co))
                 .collect(Collectors.toList());
     }
+
     /** acquire object from external method, this could be slow because if could be a database query of external service
      * we would like to put cache around */
     private <T> T acquireObject(String key, CacheableMethod<T> m) {

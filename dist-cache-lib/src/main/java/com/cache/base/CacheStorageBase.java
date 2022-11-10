@@ -1,18 +1,28 @@
 package com.cache.base;
 
-import com.cache.api.CacheObject;
-import com.cache.api.CacheableMethod;
-import com.cache.api.CacheableObject;
-import com.cache.api.CacheableWrapper;
+import com.cache.api.*;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-/** base abstract class for storage to keep caches */
+/** base abstract class for storage to keep caches
+ * storage could be:
+ * internal (HashMap, WeakHashMap) - kept in local JVM memory
+ * external (Elasticsearch, Redis) - kept somewhere outside JVM memory */
 public abstract class CacheStorageBase {
 
     /** unique identifier of this storage */
-    private String storageUid = UUID.randomUUID().toString();
+    private final String storageUid = UUID.randomUUID().toString();
+    /** date and time of creation of this storage */
+    private final LocalDateTime storageCreatedDate = LocalDateTime.now();
+    /** initialization parameters for subclasses */
+    protected StorageInitializeParameter initParams;
+
+    /** base constructor to pass initialization parameters */
+    public CacheStorageBase(StorageInitializeParameter p) {
+        this.initParams = p;
+    }
     /** check if object has given key, optional with specific type */
     public abstract boolean contains(String key);
     /** get CacheObject item from cache by full key */
@@ -26,37 +36,7 @@ public abstract class CacheStorageBase {
     public void disposeStorage() {
         // by default no dispose - it could be overriden by any storage
     }
-    /** check if object is in cache for given key
-     * if yes then get that object from cache
-     * if no then run method to get item and put to cache to be add later */
-    public <T> T withCache(String key, CacheableMethod<T> m) {
-        Optional<CacheObject> fromCache = getItem(key);
-        if (fromCache.isPresent()) {
-            try {
-                CacheObject co = fromCache.get();
-                co.use();
-                // TODO: if this is not internal cache - need to increase usage and lastUseDate ???
-                return (T)co.getValue();
-            } catch (Exception ex) {
-                // TODO: report incorrect type expected from cache for that key - maybe callback method
-                return acquireObject(key, m);
-            }
-        } else {
-            return acquireObject(key, m);
-        }
-    }
-    private <T> T acquireObject(String key, CacheableMethod<T> m) {
-        // Measure time of getting this object from cache
-        long startActTime = System.currentTimeMillis();
-        T objFromMethod = m.get(key);
-        long acquireTimeMs = System.currentTimeMillis()-startActTime; // this is time of getting this object from method
-        // TODO: add this object to cache
-        CacheObject co = new CacheObject(key, new CacheableWrapper(objFromMethod), acquireTimeMs, m);
-        Optional<CacheObject> prev = setItem(co);
-        prev.ifPresent(CacheObject::releaseObject);
-        return objFromMethod;
-    }
-    // TODO: add more methods that could be via reflection String => Object
-
+    /** get unique storage ID */
+    public String getStorageUid() { return storageUid; }
 
 }

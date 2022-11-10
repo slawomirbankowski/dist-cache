@@ -15,6 +15,7 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
     private final java.util.HashMap<String, CacheObject> localCache = new HashMap<>();
 
     public InternalHashMapCacheStorage(StorageInitializeParameter p) {
+        super(p);
     }
     /** HashMap is internal storage */
     public  boolean isInternal() { return true; }

@@ -13,6 +13,7 @@ public class RedisCacheStorage extends CacheStorageBase {
 
     /** initialize Redis storage */
     public RedisCacheStorage(StorageInitializeParameter p) {
+        super(p);
     }
     /** Redis is external storage */
     public  boolean isInternal() { return false; }

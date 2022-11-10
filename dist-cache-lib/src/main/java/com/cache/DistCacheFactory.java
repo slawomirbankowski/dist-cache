@@ -1,6 +1,7 @@
 package com.cache;
 
 import com.cache.api.CacheConfig;
+import com.cache.api.CacheableMethod;
 import com.cache.managers.CacheManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,8 +46,13 @@ public class DistCacheFactory {
                 .withMaxObjectAndItems(100, 20000);
 
         CacheManager cache = DistCacheFactory.getInstance(cfg);
-        //cache.withCache("", );
-        //cache.withCache()
+
+        cache.withCache("key", new CacheableMethod<String>() {
+            public String get(String key) {
+                return "";
+            }
+        });
+
         log.info("STOP");
     }
 

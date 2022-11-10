@@ -12,6 +12,7 @@ public class KafkaStorage extends CacheStorageBase {
 
     /** TODO: init Kafka storage */
     public KafkaStorage(StorageInitializeParameter p) {
+        super(p);
 
     }
     /** Kafka is external storage */

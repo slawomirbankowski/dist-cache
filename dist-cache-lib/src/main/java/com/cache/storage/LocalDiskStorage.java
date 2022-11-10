@@ -12,6 +12,7 @@ public class LocalDiskStorage extends CacheStorageBase {
 
     /** TODO: init local disk storage */
     public LocalDiskStorage(StorageInitializeParameter p) {
+        super(p);
 
     }
     /** Local Disk is external storage */
