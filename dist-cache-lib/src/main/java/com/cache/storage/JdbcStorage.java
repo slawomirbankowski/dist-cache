@@ -4,6 +4,8 @@ import com.cache.api.CacheObject;
 import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
 
+import java.util.Optional;
+
 /** cache with JDBC connection to any compliant database
  * it would create special table with cache items and index to fast access
  * */
@@ -11,17 +13,22 @@ public class JdbcStorage extends CacheStorageBase {
 
     /** TODO: init JDBC storage */
     public JdbcStorage(StorageInitializeParameter p) {
+        super(p);
 
     }
 
     /** Kafka is external storage */
     public  boolean isInternal() { return false; }
-    /** TODO: get item from JDBC */
-    public CacheObject getItem(String key) {
-        return null;
+    /** check if object has given key, optional with specific type */
+    public boolean contains(String key) {
+        return false;
     }
-    public void setItem(CacheObject o) {
-        return ;
+    /** TODO: get item from JDBC */
+    public Optional<CacheObject> getItem(String key) {
+        return Optional.empty();
+    }
+    public  Optional<CacheObject> setItem(CacheObject o) {
+        return Optional.empty();
     }
 
 }

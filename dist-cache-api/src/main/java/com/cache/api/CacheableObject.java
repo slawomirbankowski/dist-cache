@@ -7,4 +7,6 @@ public interface CacheableObject {
     int getPriority();
     /** get mode of kept for this object in cache */
     int getMode();
+    /** method to release this object */
+    void releaseObject();
 }
