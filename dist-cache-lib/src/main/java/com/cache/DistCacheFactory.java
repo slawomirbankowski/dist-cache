@@ -46,13 +46,11 @@ public class DistCacheFactory {
                 .withMaxObjectAndItems(100, 20000);
 
         CacheManager cache = DistCacheFactory.getInstance(cfg);
-
         cache.withCache("key", new CacheableMethod<String>() {
             public String get(String key) {
                 return "";
             }
         });
-
         log.info("STOP");
     }
 
