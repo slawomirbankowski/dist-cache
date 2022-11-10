@@ -13,7 +13,7 @@ public class ElasticsearchCacheStorage extends CacheStorageBase {
 
     /** TODO: init Elasticsearch storage */
     public ElasticsearchCacheStorage(StorageInitializeParameter p) {
-
+        super(p);
     }
     /** Elasticsearch is external storage */
     public  boolean isInternal() { return false; }

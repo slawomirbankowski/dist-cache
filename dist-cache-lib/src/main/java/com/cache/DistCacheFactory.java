@@ -1,6 +1,7 @@
 package com.cache;
 
 import com.cache.api.CacheConfig;
+import com.cache.api.CacheableMethod;
 import com.cache.managers.CacheManager;
 
 import java.util.Properties;
@@ -40,7 +41,11 @@ public class DistCacheFactory {
                 .withMaxObjectAndItems(100, 20000);
 
         CacheManager cache = DistCacheFactory.getInstance(cfg);
-        //cache.withCache("", );
+        cache.withCache("key", new CacheableMethod<String>() {
+            public String get(String key) {
+                return "";
+            }
+        });
 
         //cache.withCache()
         System.out.println("STOP");

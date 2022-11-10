@@ -16,6 +16,7 @@ public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
     /** WeakHashMap is internal storage */
     public  boolean isInternal() { return true; }
     public InternalWeakHashMapCacheStorage(StorageInitializeParameter p) {
+        super(p);
     }
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
