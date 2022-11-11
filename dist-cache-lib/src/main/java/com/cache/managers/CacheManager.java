@@ -56,7 +56,7 @@ public class CacheManager implements Cache {
     /** initialize all storages from configuration*/
     private void initializeStorages() {
         StorageInitializeParameter initParams = new StorageInitializeParameter();
-        Arrays.stream(cacheProps.getProperty(CacheConfig.CACHE_STORAGES).split(","))
+        Arrays.stream((""+cacheProps.getProperty(CacheConfig.CACHE_STORAGES)).split(","))
                 .distinct()
                 .forEach(storageClass -> initializeSingleStorage(initParams, storageClass));
     }
