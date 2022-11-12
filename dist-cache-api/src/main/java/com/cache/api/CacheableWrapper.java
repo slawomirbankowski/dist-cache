@@ -25,4 +25,5 @@ public class CacheableWrapper implements CacheableObject {
     public int getMode() { return CacheMode.MODE_TTL; }
     /** method to dispose or release this object - default set to no action */
     public void releaseObject() {}
+    public Object getObject() { return objInCache; }
 }

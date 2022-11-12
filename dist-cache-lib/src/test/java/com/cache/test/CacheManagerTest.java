@@ -21,7 +21,8 @@ public class CacheManagerTest {
                 .withPort(9999)
                 .withCacheApp("https://localhost:9999/")
                 .withServers("localhost:9095")
-                .withStorageKafka("")
+                .withStorageHashMap()
+                //.withStorageKafka("")
                 .withMaxObjectAndItems(100, 20000);
 
         log.info("Initializing cache");
@@ -43,7 +44,7 @@ public class CacheManagerTest {
 
         for (int test=0; test<10; test++) {
             long startTime = System.currentTimeMillis();
-            for (int i=0; i<100; i++) {
+            for (int i=0; i<10; i++) {
                 dao.getOrders().getById(i);
                 // TODO: add more tests
             }
@@ -55,7 +56,7 @@ public class CacheManagerTest {
 
         for (int test=0; test<10; test++) {
             long startTime = System.currentTimeMillis();
-            for (int i=0; i<100; i++) {
+            for (int i=0; i<10; i++) {
                 cacheDao.getOrders().getById(i);
                 // TODO: add more tests
             }
@@ -64,6 +65,7 @@ public class CacheManagerTest {
 
         log.info("Start testing DAO with cache");
 
+        cache.close();
         System.out.println("END-----");
     }
 }

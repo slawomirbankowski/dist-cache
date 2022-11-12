@@ -9,4 +9,5 @@ public interface CacheableObject {
     int getMode();
     /** method to release this object */
     void releaseObject();
+    Object getObject();
 }

@@ -28,5 +28,21 @@ public class LocalDiskStorage extends CacheStorageBase {
     public Optional<CacheObject> setItem(CacheObject o) {
         return Optional.empty();
     }
+    /** get number of items in cache */
+    public  int getItemsCount() {
+        return 0;
+    }
+    /** clear caches with given clear cache */
+    public int clearCaches(int clearMode) {
 
+        return 1;
+    }
+    /** clear cache contains given partial key */
+    public int clearCacheContains(String str) {
+        return 1;
+    }
+    /** check cache every X seconds to clear TTL caches */
+    public void onTime(long checkSeq) {
+
+    }
 }
