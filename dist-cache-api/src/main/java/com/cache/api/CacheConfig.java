@@ -1,10 +1,13 @@
 package com.cache.api;
 
+import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 
 /** factory to create configuration for cache  */
 public class CacheConfig {
 
+    /** GUID for configuration */
+    private final String configGuid = CacheUtils.generateConfigGuid();
     /** all properties to be used for DistCache initialization */
     private Properties props = null;
     public CacheConfig(Properties p) {
@@ -14,6 +17,10 @@ public class CacheConfig {
     public Properties getProperties() {
         return props;
     }
+    public String getConfigGuid() {
+        return configGuid;
+    }
+
 
     /** build empty CacheConfig with no values */
     public static CacheConfig buildEmptyConfig() {
@@ -38,6 +45,11 @@ public class CacheConfig {
     public CacheConfig withStorageHashMap() {
         String existingProps = ""+props.getProperty(CACHE_STORAGES);
         props.setProperty(CACHE_STORAGES, existingProps + "," + CACHE_STORAGE_VALUE_HASHMAP);
+        return this;
+    }
+    public CacheConfig withStoragePriorityQueue() {
+        String existingProps = ""+props.getProperty(CACHE_STORAGES);
+        props.setProperty(CACHE_STORAGES, existingProps + "," + CACHE_STORAGE_VALUE_PRIORITYQUEUE);
         return this;
     }
     public CacheConfig withStorageWeakHashMap() {
@@ -81,7 +93,6 @@ public class CacheConfig {
         return this;
     }
 
-
     /** name of group - all caches connecting together should be having the same group
      * name of group could be like GlobalAppCache */
     public static String CACHE_GROUP = "CACHE_GROUP";
@@ -92,6 +103,12 @@ public class CacheConfig {
     public static String CACHE_PORT = "CACHE_PORT";
     /** */
     public static int CACHE_PORT_VALUE_DEFAULT = 9999;
+
+    public static String CACHE_TIMER_DELAY = "CACHE_TIMER_DELAY";
+    public static long CACHE_TIMER_DELAY_VALUE = 6000;
+
+    public static String CACHE_TIMER_PERIOD = "CACHE_TIMER_PERIOD";
+    public static long CACHE_TIMER_PERIOD_VALUE = 6000;
 
     /** list of cache agent servers - this should be semicolon separated list of initial cache agents like:
      * server001d:9999;server015d:9999;server018d:9999

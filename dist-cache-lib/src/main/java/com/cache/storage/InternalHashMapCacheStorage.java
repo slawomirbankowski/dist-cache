@@ -1,12 +1,10 @@
 package com.cache.storage;
 
-import com.cache.api.CacheObject;
-import com.cache.api.StorageInitializeParameter;
+import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /** cache with internal HashMap */
 public class InternalHashMapCacheStorage extends CacheStorageBase {
@@ -21,7 +19,7 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
     public  boolean isInternal() { return true; }
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
-        return false;
+        return localCache.containsKey(key);
     }
     /** get item from cache */
     public Optional<CacheObject> getItem(String key) {
@@ -41,23 +39,57 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
     public int getItemsCount() {
         return localCache.size();
     }
+    /** get number of objects in this cache */
+    public int getObjectsCount() { return localCache.size(); }
 
+    /** get keys for all cache items */
+    public Set<String> getKeys(String containsStr) {
+        return localCache.keySet();
+    }
     public void onTime(long checkSeq) {
-        for (Map.Entry<String, CacheObject> e: localCache.entrySet()) {
+        log.info("CLEARING objects in cache HashMap, check: " + checkSeq + ", size: " + localCache.size() + ", max:" + maxObjects);
+        if (localCache.size() > maxObjects) {
+            List<String> oldKeys = localCache.values()
+                    .stream()
+                    .filter(CacheObject::isOld)
+                    .map(CacheObject::getKey)
+                    .collect(Collectors.toList());
+            // remove old TTL items
+            oldKeys.forEach(keyToRemove -> removeItem(keyToRemove));
+            // check if there is too many items in cache even after deleting old ones
 
-            // TODO: clear
-            //e.getKey();
-            //e.getValue().releaseObject();
-
+            for (Map.Entry<String, CacheObject> e: localCache.entrySet()) {
+                e.getValue().isOld();
+                // TODO: clear
+                //e.getKey();
+                //e.getValue().releaseObject();
+            }
+        }
+    }
+    public void removeItems(List<String> keys) {
+        // TODO: add removed items
+        keys.forEach(keyToRemove -> removeItem(keyToRemove));
+    }
+    public void removeItem(String key) {
+        CacheObject prev = localCache.remove(key);
+        if (prev != null) {
+            prev.releaseObject();
         }
     }
     /** clear caches with given clear cache */
     public int clearCaches(int clearMode) {
+
         return 0;
     }
 
     /** clear cache contains given partial key */
     public int clearCacheContains(String str) {
+        List<String> keys = localCache.values()
+                .stream()
+                .filter(x -> x.keyContains(str))
+                .map(CacheObject::getKey)
+                .collect(Collectors.toList());
+        removeItems(keys);
         return 0;
     }
 }

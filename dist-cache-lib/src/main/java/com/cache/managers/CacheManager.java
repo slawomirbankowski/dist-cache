@@ -19,19 +19,19 @@ public class CacheManager extends CacheBase {
 
     /** timer to schedule important check methods */
     private final Timer timer = new Timer();
-    private LinkedList<TimerTask> timerTasks = new LinkedList<>();
+    private final LinkedList<TimerTask> timerTasks = new LinkedList<>();
     /** agent object connected to given manager
      * agent can connect to different cache managers in the same group
      * to cooperate as distributed cache
      *  */
-    private AgentObject agent = new AgentObject();
+    private final AgentObject agent = new AgentObject();
     /** all storages to store cache objects - there could be internal storages,
      * Elasticsearch, Redis, local disk, JDBC database with indexed table, and many others */
     private final Map<String, CacheStorageBase> storages = new HashMap<>();
     /** list of policies for given cache object to check to what caches that object should be add */
-    private List<CachePolicyBase> policies = new LinkedList<CachePolicyBase>();
+    private final List<CachePolicyBase> policies = new LinkedList<CachePolicyBase>();
     /** queue of issues reported when using cache */
-    private Queue<String> issues = new LinkedList<>();
+    private final Queue<String> issues = new LinkedList<>();
 
     // TODO: add callbacks to be called when something important is happening to cache, each callback method would be called in different places of dist-cache
 
@@ -65,7 +65,7 @@ public class CacheManager extends CacheBase {
             CacheStorageBase storage = (CacheStorageBase)Class.forName(fullClassName)
                     .getConstructor(StorageInitializeParameter.class)
                     .newInstance(initParams);
-            CacheStorageBase prevStorage = storages.put(storage.toString(), storage);
+            CacheStorageBase prevStorage = storages.put(storage.getStorageUid(), storage);
             log.info("Initialized storage: " + storage.getStorageUid() + ", current storages: " + storages.size());
             if (prevStorage != null) {
                 log.debug("Got previous storage to dispose: " + prevStorage.getStorageUid());
@@ -78,18 +78,18 @@ public class CacheManager extends CacheBase {
     }
 
     /** initialize Agent to communicate with other CacheManagers */
-    public void initializeAgent() {
+    protected void initializeAgent() {
 
     }
 
     /** initialize policies */
-    public void initializePolicies() {
+    protected void initializePolicies() {
 
     }
 
-    public void initializeTimer() {
-        long delayMs = 1000;
-        long periodMs = 1000;
+    protected void initializeTimer() {
+        long delayMs = CacheUtils.parseLong(cacheProps.getProperty(CacheConfig.CACHE_TIMER_DELAY), CacheConfig.CACHE_TIMER_DELAY_VALUE);
+        long periodMs = CacheUtils.parseLong(cacheProps.getProperty(CacheConfig.CACHE_TIMER_PERIOD), CacheConfig.CACHE_TIMER_PERIOD_VALUE);
         TimerTask onTimeTask = new TimerTask() {
             @Override
             public void run() {
@@ -107,7 +107,7 @@ public class CacheManager extends CacheBase {
     /** */
     protected void onClose() {
         log.info("Stopping all timer tasks");
-        timerTasks.forEach(x -> x.cancel());
+        timerTasks.forEach(TimerTask::cancel);
         timer.cancel();
         log.info("Removing caches and dispose storages");
         synchronized (storages) {
@@ -121,26 +121,25 @@ public class CacheManager extends CacheBase {
         issues.clear();
     }
 
-
     /** set object in all or one internal caches */
     private List<Optional<CacheObject>> setItemInternal(CacheObject co) {
         addedItemsSequence.incrementAndGet();
         return storages.values().stream()
-                .filter(x -> x.isInternal())
+                .filter(CacheStorageBase::isInternal)
                 .map(storage -> storage.setItem(co))
                 .collect(Collectors.toList());
     }
 
     /** acquire object from external method, this could be slow because if could be a database query of external service
      * we would like to put cache around */
-    private <T> T acquireObject(String key, CacheableMethod<T> m) {
+    private <T> T acquireObject(String key, CacheableMethod<T> m, CacheMode mode) {
         // Measure time of getting this object from cache
         long startActTime = System.currentTimeMillis();
         T objFromMethod = m.get(key);
         long acquireTimeMs = System.currentTimeMillis()-startActTime; // this is time of getting this object from method
         // TODO: add this object to cache
         log.info("===> Got object from external method/supplier, time: " + acquireTimeMs);
-        CacheObject co = new CacheObject(key, new CacheableWrapper(objFromMethod), acquireTimeMs, m);
+        CacheObject co = new CacheObject(key, objFromMethod, acquireTimeMs, m, mode);
         // TODO: need to set object in internal caches
         setItemInternal(co);
         //Optional<CacheObject> prev = setItem(co);
@@ -161,7 +160,23 @@ public class CacheManager extends CacheBase {
     public Set<String> getStorageKeys() {
         return storages.keySet();
     }
-    /** get number of items in cache */
+    /** get all cache keys that contains given string */
+    public Set<String> getCacheKeys(String containsStr) {
+        return storages.values()
+                .stream()
+                .filter(x -> x.isInternal())
+                .flatMap(x -> x.getKeys(containsStr).stream())
+                .collect(Collectors.toSet());
+    }
+
+    /** get number of objects in all storages
+     * if one object is inserted into cache - this is still one object even if this is a list of 1000 elements */
+    public int getObjectsCount() {
+        return storages.values().stream().map(x -> x.getObjectsCount()).reduce((x, y) -> x+y).orElse(0);
+    }
+
+    /** get number of items in cache, if a list with 100 elements is inserted into cache
+     * then this is 1 object but 100 items  */
     public int getItemsCount() {
         return storages.values().stream().map(x -> x.getItemsCount()).reduce((x, y) -> x+y).orElse(0);
     }
@@ -190,7 +205,7 @@ public class CacheManager extends CacheBase {
                     CacheObject co = fromCache.get();
                     co.use();
                     // TODO: if this is not internal cache - need to increase usage and lastUseDate ???
-                    return Optional.ofNullable((T) co.getValue().getObject());
+                    return Optional.ofNullable((T) co.getValue());
                 } catch (Exception ex) {
                     // TODO: log problem with casting value from cache for given key into specific type
                 }
@@ -205,11 +220,7 @@ public class CacheManager extends CacheBase {
     public <T> T withCache(String key, CacheableMethod<T> m, CacheMode mode) {
         try {
             Optional<T> itemFromCache = getItem(key);
-            if (itemFromCache.isPresent()) {
-                return itemFromCache.get();
-            } else {
-                return acquireObject(key, m);
-            }
+            return itemFromCache.orElseGet(() -> acquireObject(key, m, mode));
         } catch (Exception ex) {
             return null;
         }

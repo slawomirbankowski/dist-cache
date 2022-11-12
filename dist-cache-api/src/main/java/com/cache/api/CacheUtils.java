@@ -1,10 +1,10 @@
 package com.cache.api;
 
 import java.lang.reflect.Method;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Random;
-import java.util.UUID;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class CacheUtils {
 
@@ -23,6 +23,26 @@ public class CacheUtils {
         return cacheGuid;
     }
 
+    public static String getCurrentHostName() {
+        try {
+            return java.net.InetAddress.getLocalHost().getHostName();
+        } catch (Exception ex) {
+            return "localhost";
+        }
+    }
+    public static final String hostName = getCurrentHostName();
+    private static final AtomicLong configGuidSeq = new AtomicLong();
+    public static String generateConfigGuid() {
+        return "CONFIG_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + configGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+    private static final AtomicLong cacheGuidSeq = new AtomicLong();
+    public static String generateCacheGuid() {
+        return "CACHE_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + cacheGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+    private static AtomicLong storageGuidSeq = new AtomicLong();
+    public static String generateStorageGuid(String className) {
+        return "STORAGE_H" + getCurrentHostName() + "_S" + className + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
     /** initialized random object to generate random values globally */
     private static final Random rndObj = new Random();
 
@@ -35,9 +55,15 @@ public class CacheUtils {
     public static double randomDouble() {
         return rndObj.nextDouble();
     }
+    private static DateTimeFormatter formatFull = java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+    public static String getDateTimeYYYYMMDDHHmmss() {
+        return LocalDateTime.now().format(formatFull);
+    }
+
+
     public static void sleep(long timeMs) {
         try {
-            Thread.sleep(10L);
+            Thread.sleep(timeMs);
         } catch (Exception ex) {
         }
     }
@@ -49,4 +75,42 @@ public class CacheUtils {
         }
     }
 
+    public static long parseLong(String str, long defaultValue) {
+        try {
+            return Long.parseLong(str);
+        } catch (Exception ex) {
+            return defaultValue;
+        }
+    }
+    public static double parseDouble(String str, double defaultValue) {
+        try {
+            return Double.parseDouble(str);
+        } catch (Exception ex) {
+            return defaultValue;
+        }
+    }
+    public static int parseInt(String str, int defaultValue) {
+        try {
+            return Integer.parseInt(str);
+        } catch (Exception ex) {
+            return defaultValue;
+        }
+    }
+    public static int estimateSize(Object obj) {
+        try {
+            if (obj instanceof List<?>) {
+                return ((List)obj).size();
+            } else if (obj instanceof Map<?,?>) {
+                return ((Map)obj).size();
+            } else if (obj instanceof Set<?>) {
+                return ((Set)obj).size();
+            } else if (obj instanceof Collection<?>) {
+                return ((Collection)obj).size();
+            } else {
+                return 1;
+            }
+        } catch (Exception ex) {
+            return 1;
+        }
+    }
 }

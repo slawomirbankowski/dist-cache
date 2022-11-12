@@ -27,7 +27,6 @@ public class DistCacheFactory {
         Properties p = new Properties();
         // TODO: create default cache parameters
         p.setProperty(CacheConfig.CACHE_NAME, "");
-        p.setProperty("CACHE_NAME", "");
         return new CacheManager(p);
     }
     public static CacheManager getInstance(CacheConfig cfg) {

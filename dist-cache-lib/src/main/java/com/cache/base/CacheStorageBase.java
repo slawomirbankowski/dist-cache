@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /** base abstract class for storage to keep caches
@@ -18,13 +19,18 @@ public abstract class CacheStorageBase {
     private final String storageUid;
     /** date and time of creation of this storage */
     private final LocalDateTime storageCreatedDate = LocalDateTime.now();
+    protected final long maxItems;
+    protected final long maxObjects;
     /** initialization parameters for subclasses */
     protected StorageInitializeParameter initParams;
 
     /** base constructor to pass initialization parameters */
     public CacheStorageBase(StorageInitializeParameter p) {
         this.initParams = p;
-        this.storageUid  = "STORAGE_" + this.getClass().getSimpleName() + "_" + UUID.randomUUID();
+        this.storageUid = CacheUtils.generateStorageGuid(getClass().getSimpleName());
+        maxObjects = CacheUtils.parseLong(p.p.getProperty(CacheConfig.CACHE_MAX_LOCAL_OBJECTS), 1000);
+        maxItems = CacheUtils.parseLong(p.p.getProperty(CacheConfig.CACHE_MAX_LOCAL_ITEMS), 1000);
+
     }
     /** check if object has given key, optional with specific type */
     public abstract boolean contains(String key);
@@ -32,8 +38,11 @@ public abstract class CacheStorageBase {
     public abstract Optional<CacheObject> getItem(String key);
     /** set item to cache and get previous item in cache for the same key */
     public abstract Optional<CacheObject> setItem(CacheObject o);
-    /** get number of items in cache */
+    /** get number of objects in cache storage */
+    public abstract int getObjectsCount();
+    /** get number of items in cache storage */
     public abstract int getItemsCount();
+    public abstract Set<String> getKeys(String containsStr);
 
     /** clear caches with given clear cache */
     public abstract int clearCaches(int clearMode);
@@ -48,6 +57,7 @@ public abstract class CacheStorageBase {
     /** dispose this storage if needed */
     public void disposeStorage() {
         // by default no dispose - it could be overriden by any storage
+
     }
     /** get unique storage ID */
     public String getStorageUid() { return storageUid; }
