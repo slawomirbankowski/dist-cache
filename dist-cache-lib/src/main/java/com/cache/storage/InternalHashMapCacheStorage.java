@@ -22,11 +22,11 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
         return localCache.containsKey(key);
     }
     /** get item from cache */
-    public Optional<CacheObject> getItem(String key) {
+    public Optional<CacheObject> getObject(String key) {
         return Optional.ofNullable(localCache.get(key));
     }
     /** add item into cache  */
-    public Optional<CacheObject> setItem(CacheObject o) {
+    public Optional<CacheObject> setObject(CacheObject o) {
         log.info("Set new item for cache, key: " + o.getKey());
         CacheObject prev = localCache.put(o.getKey(), o);
         if (prev != null) {
@@ -46,18 +46,20 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
     public Set<String> getKeys(String containsStr) {
         return localCache.keySet();
     }
-    public void onTime(long checkSeq) {
+    public void onTimeClean(long checkSeq) {
         log.info("CLEARING objects in cache HashMap, check: " + checkSeq + ", size: " + localCache.size() + ", max:" + maxObjects);
+        List<String> oldKeys = localCache.values()
+                .stream()
+                .filter(CacheObject::isOld)
+                .map(CacheObject::getKey)
+                .collect(Collectors.toList());
+        // remove old TTL items
+        oldKeys.forEach(keyToRemove -> removeObjectByKey(keyToRemove));
+        localCache.values()
+                .stream()
+                .forEach(CacheObject::refreshIfNeeded);
         if (localCache.size() > maxObjects) {
-            List<String> oldKeys = localCache.values()
-                    .stream()
-                    .filter(CacheObject::isOld)
-                    .map(CacheObject::getKey)
-                    .collect(Collectors.toList());
-            // remove old TTL items
-            oldKeys.forEach(keyToRemove -> removeItem(keyToRemove));
             // check if there is too many items in cache even after deleting old ones
-
             for (Map.Entry<String, CacheObject> e: localCache.entrySet()) {
                 e.getValue().isOld();
                 // TODO: clear
@@ -66,19 +68,19 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
             }
         }
     }
-    public void removeItems(List<String> keys) {
+    public void removeObjectsByKeys(List<String> keys) {
         // TODO: add removed items
-        keys.forEach(keyToRemove -> removeItem(keyToRemove));
+        keys.forEach(keyToRemove -> removeObjectByKey(keyToRemove));
     }
-    public void removeItem(String key) {
+    public void removeObjectByKey(String key) {
         CacheObject prev = localCache.remove(key);
         if (prev != null) {
             prev.releaseObject();
         }
     }
-    /** clear caches with given clear cache */
+    /** clear caches with given clear cache method */
     public int clearCaches(int clearMode) {
-
+        // TODO: implement clearing caches with given mode
         return 0;
     }
 
@@ -89,7 +91,7 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
                 .filter(x -> x.keyContains(str))
                 .map(CacheObject::getKey)
                 .collect(Collectors.toList());
-        removeItems(keys);
+        removeObjectsByKeys(keys);
         return 0;
     }
 }

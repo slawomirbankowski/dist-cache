@@ -28,7 +28,10 @@ public class CacheMode {
 
     public long getTimeToLiveMs() { return timeToLiveMs; }
 
-
+    public int getMode() { return mode; }
+    public boolean isTtl() { return mode == MODE_TTL; }
+    public boolean isRefresh() { return mode == MODE_KEEP; }
+    public boolean isKeep() { return mode == MODE_REFRESH; }
 
     /** based time-to-live model where object is removed from cache after given milliseconds */
     public static int MODE_TTL = 1;
@@ -75,6 +78,7 @@ public class CacheMode {
 
     public static CacheMode modeKeep = new CacheMode(MODE_KEEP, TIME_FOREVER);
 
+    public static CacheMode modeRefreshTenSeconds = new CacheMode(MODE_REFRESH, TIME_TEN_SECONDS);
     public static CacheMode modeRefreshOneMinute = new CacheMode(MODE_REFRESH, TIME_ONE_MINUTE);
     public static CacheMode modeRefreshOneHour = new CacheMode(MODE_REFRESH, TIME_ONE_HOUR);
     public static CacheMode modeRefreshSixHours = new CacheMode(MODE_REFRESH, TIME_SIX_HOURS);

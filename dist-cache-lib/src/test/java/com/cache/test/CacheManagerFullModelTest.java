@@ -1,21 +1,18 @@
 package com.cache.test;
 
 import com.cache.DistCacheFactory;
+import com.cache.api.Cache;
 import com.cache.api.CacheConfig;
-import com.cache.api.CacheableMethod;
-import com.cache.managers.CacheManager;
 import com.cache.test.dao.DatabaseCacheDao;
 import com.cache.test.dao.DatabaseDao;
-import com.cache.test.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CacheManagerTest {
-    private static final Logger log = LoggerFactory.getLogger(CacheManagerTest.class);
+public class CacheManagerFullModelTest {
+    private static final Logger log = LoggerFactory.getLogger(CacheManagerFullModelTest.class);
 
     public static void main(String[] args) {
-        System.out.println("START------");
-
+        log.info("START------");
         CacheConfig cfg= CacheConfig.buildEmptyConfig()
                 .withName("GlobalCacheTest")
                 .withPort(9999)
@@ -26,7 +23,7 @@ public class CacheManagerTest {
                 .withMaxObjectAndItems(100, 20000);
 
         log.info("Initializing cache");
-        CacheManager cache = DistCacheFactory.getInstance(cfg);
+        Cache cache = DistCacheFactory.createInstance(cfg);
 
         log.info("Initialize DAO to keep objects");
         DatabaseDao dao = new DatabaseDao();
@@ -58,7 +55,7 @@ public class CacheManagerTest {
             long startTime = System.currentTimeMillis();
             for (int i=0; i<10; i++) {
                 cacheDao.getOrders().getById(i);
-                // TODO: add more tests
+                // TODO: add more tests for different objects
             }
             log.info("Test: " + test + ", time: " + (System.currentTimeMillis()-startTime));
         }
@@ -66,6 +63,6 @@ public class CacheManagerTest {
         log.info("Start testing DAO with cache");
 
         cache.close();
-        System.out.println("END-----");
+        log.info("END-----");
     }
 }

@@ -1,48 +1,47 @@
 package com.cache.test;
 
 import com.cache.DistCacheFactory;
-import com.cache.api.CacheConfig;
-import com.cache.api.CacheMode;
-import com.cache.api.CacheUtils;
-import com.cache.api.CacheableMethod;
+import com.cache.api.*;
 import com.cache.managers.CacheManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.LinkedList;
 
 public class CacheManagerPerformanceTest {
     private static final Logger log = LoggerFactory.getLogger(CacheManagerPerformanceTest.class);
 
     public static void main(String[] args) {
-        System.out.println("START------");
-
-        CacheConfig cfg = CacheConfig.buildEmptyConfig()
+        log.info("START------");
+        CacheConfig cfg = DistCacheFactory.createEmptyConfig()
                 .withName("GlobalCacheTest")
-                .withPort(9999)
-                .withCacheApp("https://localhost:9999/")
-                .withServers("localhost:9095")
                 .withStorageHashMap()
-                .withMaxObjectAndItems(30, 100);
-        CacheManager cache = DistCacheFactory.getInstance(cfg);
+                .withObjectTimeToLive(CacheMode.TIME_ONE_HOUR)
+                .withMaxObjectAndItems(500, 3000);
+        Cache cache = DistCacheFactory.createInstance(cfg);
         log.info("Cache storages: " + cache.getStorageKeys());
-
+        LinkedList<Object[]> testResults = new LinkedList<>();
+        // run 50 tests and 500 random keys get
+        // each key is taking 10ms
+        // each test is trying to get 50 keys
         for (int test=0; test<50; test++) {
             long startTime = System.currentTimeMillis();
-            for (int i=0; i<10+test*5; i++) {
-                String v = cache.withCache("key"+i, new CacheableMethod<String>() {
-                    @Override
-                    public String get(String key) {
-                        CacheUtils.sleep(80);
-                        return "value for " + key;
-                    }
-                }, CacheMode.modeTtlThirtySeconds);
+            for (int i=0; i<50; i++) {
+                String key = "key" + CacheUtils.randomInt(500);
+                String v = cache.withCache(key, k -> {
+                        CacheUtils.sleep(10);
+                        return "value for " + k;
+                }, CacheMode.modeTtlOneHour);
                 //log.info("Test=" + test + ", i=" + i + ", value= " + v);
             }
             long totalTime = System.currentTimeMillis() - startTime;
-            log.info("TEST " + test + ", TIME: " + totalTime + ", objectsInCache: " + cache.getObjectsCount());
-            CacheUtils.sleep(1000);
+            testResults.add(new Object[] { test, totalTime, cache.getObjectsCount() });
         }
-        log.info("Cache getObjectsCount: " + cache.getObjectsCount());
+        // show all test results
+        testResults.stream().forEach(tr -> {
+            log.info("!!!!!!!!!!!!!!!!!! Test " + tr[0] + ", time: " + tr[1] + ", objectsInCache: " + tr[2]);
+        });
         cache.close();
-        System.out.println("END-----");
+        log.info("END-----");
     }
 }

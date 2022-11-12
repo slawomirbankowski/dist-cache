@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class CacheUtils {
 
-    /** */
+    /** time and date of utils creation - this could be considered as date/time of cache initialization first time */
     private static final LocalDateTime createdDate = LocalDateTime.now();
 
     /** get creation date of this utils */
@@ -61,12 +61,14 @@ public class CacheUtils {
     }
 
 
+    /** sleep for given time in milliseconds, catch exception */
     public static void sleep(long timeMs) {
         try {
             Thread.sleep(timeMs);
         } catch (Exception ex) {
         }
     }
+    /** get object from method and object */
     public static Object getFromMethod(Method method, Object obj) {
         try {
             return method.invoke(obj);
@@ -96,6 +98,8 @@ public class CacheUtils {
             return defaultValue;
         }
     }
+    /** calculate estimate size of given object,
+     * works only with lists, maps, sets, collections */
     public static int estimateSize(Object obj) {
         try {
             if (obj instanceof List<?>) {

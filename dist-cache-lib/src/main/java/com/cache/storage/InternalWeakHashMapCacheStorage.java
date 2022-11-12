@@ -21,12 +21,18 @@ public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
         return false;
     }
     /** */
-    public Optional<CacheObject> getItem(String key) {
+    public Optional<CacheObject> getObject(String key) {
         return Optional.empty();
     }
     /** put object to cache */
-    public Optional<CacheObject> setItem(CacheObject o) {
+    public Optional<CacheObject> setObject(CacheObject o) {
         return Optional.empty();
+    }
+    /** remove objects in cache storage by keys */
+    public void removeObjectsByKeys(List<String> keys) {
+    }
+    /** remove object in cache storage by key */
+    public void removeObjectByKey(String key) {
     }
     /** get number of items in cache */
     public int getItemsCount() {
@@ -49,7 +55,7 @@ public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
         return 1;
     }
     /** check cache every X seconds to clear TTL caches */
-    public void onTime(long checkSeq) {
+    public void onTimeClean(long checkSeq) {
 
     }
 }
