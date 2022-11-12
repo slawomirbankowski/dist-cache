@@ -21,7 +21,7 @@ public abstract class CacheBase implements Cache {
 
     protected static final Logger log = LoggerFactory.getLogger(CacheBase.class);
     /** UUID for cache manager - globaly unique */
-    protected String cacheManagerGuid = UUID.randomUUID().toString();
+    protected String cacheManagerGuid = CacheUtils.generateCacheGuid();
     /** creation date and time of this cache manager */
     protected LocalDateTime createdDateTime = LocalDateTime.now();
     /** check sequence - this is number of executions of onTime() method */

@@ -4,7 +4,9 @@ import com.cache.api.CacheObject;
 import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 /** cache with Kafka topic - key would be key for object
  * */
@@ -31,6 +33,12 @@ public class LocalDiskStorage extends CacheStorageBase {
     /** get number of items in cache */
     public  int getItemsCount() {
         return 0;
+    }
+    /** get number of objects in this cache */
+    public int getObjectsCount() { return 0; }
+    /** get keys for all cache items */
+    public Set<String> getKeys(String containsStr) {
+        return new HashSet<String>();
     }
     /** clear caches with given clear cache */
     public int clearCaches(int clearMode) {

@@ -26,6 +26,10 @@ public class CacheMode {
         this(m, TIME_FOREVER, true, false);
     }
 
+    public long getTimeToLiveMs() { return timeToLiveMs; }
+
+
+
     /** based time-to-live model where object is removed from cache after given milliseconds */
     public static int MODE_TTL = 1;
     /** mode when object is kept in cache till cleared by clear method */

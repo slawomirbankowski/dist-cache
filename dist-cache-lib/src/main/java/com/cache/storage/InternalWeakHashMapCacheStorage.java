@@ -4,9 +4,7 @@ import com.cache.api.CacheObject;
 import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
 
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.WeakHashMap;
+import java.util.*;
 
 /** cache with internal WeakHashMap */
 public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
@@ -34,7 +32,13 @@ public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
     public int getItemsCount() {
         return localCache.size();
     }
+    /** get number of objects in this cache */
+    public int getObjectsCount() { return localCache.size(); }
 
+    /** get keys for all cache items */
+    public Set<String> getKeys(String containsStr) {
+        return new HashSet<String>();
+    }
     /** clear caches with given clear cache */
     public int clearCaches(int clearMode) {
 
