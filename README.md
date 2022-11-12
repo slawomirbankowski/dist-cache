@@ -13,6 +13,10 @@ Cache can be fully configured how to keep objects:
 
 Cache is distributed and can be deployed as many instances with additional configuration.
 - there is agent-based system to keep cache-instances connected
+- there are callback to be set when something important is happening
+- last usage date is available
+- get cache size per storage
+- refresh all caches with refresh mode
 
 Cache can be connected to different storages to keep cache items and communicate between cache-agents:
 - Redis
@@ -25,21 +29,14 @@ Cache could be used as:
 - library to be linked and used inside application
 - standalone application having public API to be used and REST API
 - code to be included "as it is"
--
+
 To be added: 
-- hit ration of cache usage
+- hit ratio of cache usage
 - cache re-set while working
-- callback structures for events
-- last usage date
-- timer for maintenance
-- timer for exchange data with other agents 
-- timer run sequence
 - publish events to compliant storages
 - cache blacklist
 - cache object group and mode, acquire time, refresh time, methods to get next value for model
-- refresh all caches with refresh mode
-- get cache size per storage
-- ge total cache size
+
+- get total cache size
 - get list of current cache list
 - cache key for secrets
-- removing ttl old caches

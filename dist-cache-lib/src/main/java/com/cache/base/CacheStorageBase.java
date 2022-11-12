@@ -5,9 +5,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 /** base abstract class for storage to keep caches
  * storage could be:
@@ -19,7 +19,11 @@ public abstract class CacheStorageBase {
     private final String storageUid;
     /** date and time of creation of this storage */
     private final LocalDateTime storageCreatedDate = LocalDateTime.now();
+    /** maximum number of items in cache,
+     * this is not ceil that is strict but above that more clearing will be done */
     protected final long maxItems;
+    /** maximum number of objects in cache,
+     * this is not ceil that is strict but above that more clearing will be done */
     protected final long maxObjects;
     /** initialization parameters for subclasses */
     protected StorageInitializeParameter initParams;
@@ -32,12 +36,19 @@ public abstract class CacheStorageBase {
         maxItems = CacheUtils.parseLong(p.p.getProperty(CacheConfig.CACHE_MAX_LOCAL_ITEMS), 1000);
 
     }
+    /** get unique storage ID */
+    public String getStorageUid() { return storageUid; }
+
     /** check if object has given key, optional with specific type */
     public abstract boolean contains(String key);
     /** get CacheObject item from cache by full key */
-    public abstract Optional<CacheObject> getItem(String key);
+    public abstract Optional<CacheObject> getObject(String key);
     /** set item to cache and get previous item in cache for the same key */
-    public abstract Optional<CacheObject> setItem(CacheObject o);
+    public abstract Optional<CacheObject> setObject(CacheObject o);
+    /** remove objects in cache by keys */
+    public abstract void removeObjectsByKeys(List<String> keys);
+    /** remove single object by key */
+    public abstract void removeObjectByKey(String key);
     /** get number of objects in cache storage */
     public abstract int getObjectsCount();
     /** get number of items in cache storage */
@@ -50,16 +61,13 @@ public abstract class CacheStorageBase {
     public abstract int clearCacheContains(String str);
     /** check cache every X seconds to clear TTL caches
      * onTime should be run by parent manager in cycles */
-    public abstract void onTime(long checkSeq);
+    public abstract void onTimeClean(long checkSeq);
     /** returns true if storage is internal and cache objects are kept in local memory
      * false if storage is external and cache objects are kept in any storages like Redis, Elasticsearch, DB*/
     public abstract boolean isInternal();
     /** dispose this storage if needed */
     public void disposeStorage() {
         // by default no dispose - it could be overriden by any storage
-
     }
-    /** get unique storage ID */
-    public String getStorageUid() { return storageUid; }
 
 }

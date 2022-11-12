@@ -23,11 +23,11 @@ public class InternalPriorityQueueCacheStorage extends CacheStorageBase {
         return localCache.containsKey(key);
     }
     /** get item from cache */
-    public Optional<CacheObject> getItem(String key) {
+    public Optional<CacheObject> getObject(String key) {
         return Optional.ofNullable(localCache.get(key));
     }
     /** add item into cache  */
-    public Optional<CacheObject> setItem(CacheObject o) {
+    public Optional<CacheObject> setObject(CacheObject o) {
         log.info("Set new item for cache, key: " + o.getKey());
         CacheObject prev = localCache.put(o.getKey(), o);
         if (prev != null) {
@@ -35,6 +35,12 @@ public class InternalPriorityQueueCacheStorage extends CacheStorageBase {
         }
         // TODO: need to dispose object after removing from cache - this would be based on policy
         return Optional.empty();
+    }
+    /** remove objects in cache storage by keys */
+    public void removeObjectsByKeys(List<String> keys) {
+    }
+    /** remove object in cache storage by key */
+    public void removeObjectByKey(String key) {
     }
     /** get number of items in cache */
     public int getItemsCount() {
@@ -47,7 +53,7 @@ public class InternalPriorityQueueCacheStorage extends CacheStorageBase {
     public Set<String> getKeys(String containsStr) {
         return new HashSet<String>();
     }
-    public void onTime(long checkSeq) {
+    public void onTimeClean(long checkSeq) {
         for (Map.Entry<String, CacheObject> e: localCache.entrySet()) {
 
             // TODO: clear
