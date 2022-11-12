@@ -25,10 +25,11 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
     }
     /** get item from cache */
     public Optional<CacheObject> getItem(String key) {
-        return Optional.of(localCache.get(key));
+        return Optional.ofNullable(localCache.get(key));
     }
     /** add item into cache  */
     public Optional<CacheObject> setItem(CacheObject o) {
+        log.info("Set new item for cache, key: " + o.getKey());
         CacheObject prev = localCache.put(o.getKey(), o);
         if (prev != null) {
             prev.releaseObject();
@@ -36,14 +37,27 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
         // TODO: need to dispose object after removing from cache - this would be based on policy
         return Optional.empty();
     }
+    /** get number of items in cache */
+    public int getItemsCount() {
+        return localCache.size();
+    }
 
-    public void onTime() {
+    public void onTime(long checkSeq) {
         for (Map.Entry<String, CacheObject> e: localCache.entrySet()) {
 
-            e.getKey();
-            e.getValue().releaseObject();
+            // TODO: clear
+            //e.getKey();
+            //e.getValue().releaseObject();
 
         }
     }
+    /** clear caches with given clear cache */
+    public int clearCaches(int clearMode) {
+        return 0;
+    }
 
+    /** clear cache contains given partial key */
+    public int clearCacheContains(String str) {
+        return 0;
+    }
 }

@@ -35,6 +35,16 @@ public class CacheConfig {
     public CacheConfig withDefaultPort() {
         return withPort(CACHE_PORT_VALUE_DEFAULT);
     }
+    public CacheConfig withStorageHashMap() {
+        String existingProps = ""+props.getProperty(CACHE_STORAGES);
+        props.setProperty(CACHE_STORAGES, existingProps + "," + CACHE_STORAGE_VALUE_HASHMAP);
+        return this;
+    }
+    public CacheConfig withStorageWeakHashMap() {
+        String existingProps = ""+props.getProperty(CACHE_STORAGES);
+        props.setProperty(CACHE_STORAGES, existingProps + "," + CACHE_STORAGE_VALUE_WEAKHASHMAP);
+        return this;
+    }
     public CacheConfig withStorageElasticsearch(String url, String user, String pass) {
         String existingProps = ""+props.getProperty(CACHE_STORAGES);
         props.setProperty(CACHE_STORAGES, existingProps + "," + CACHE_STORAGE_VALUE_ELASTICSEARCH);

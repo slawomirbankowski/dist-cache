@@ -1,5 +1,6 @@
 package com.cache.api;
 
+import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Random;
@@ -38,6 +39,13 @@ public class CacheUtils {
         try {
             Thread.sleep(10L);
         } catch (Exception ex) {
+        }
+    }
+    public static Object getFromMethod(Method method, Object obj) {
+        try {
+            return method.invoke(obj);
+        } catch (Exception ex) {
+            return null;
         }
     }
 

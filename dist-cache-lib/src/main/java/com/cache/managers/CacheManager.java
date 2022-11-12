@@ -2,26 +2,24 @@ package com.cache.managers;
 
 import com.cache.agent.AgentObject;
 import com.cache.api.*;
-import com.cache.api.Cache;
+import com.cache.base.CacheBase;
 import com.cache.base.CachePolicyBase;
 import com.cache.base.CacheStorageBase;
 import java.lang.reflect.Method;
-import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /** manager to connect all storages, policies, agents
  * to perform clean based on time
  * replace all cache with fresh objects
  * */
-public class CacheManager implements Cache {
+public class CacheManager extends CacheBase {
 
-    /** UUID for cache manager - globaly unique */
-    private String cacheManagerGuid = UUID.randomUUID().toString();
-    /** creation date and time of this cache manager */
-    private LocalDateTime createdDateTime = LocalDateTime.now();
-    /** cache properties to initialize all storages, agent, policies, */
-    private Properties cacheProps = null;
+    /** timer to schedule important check methods */
+    private final Timer timer = new Timer();
+    private LinkedList<TimerTask> timerTasks = new LinkedList<>();
     /** agent object connected to given manager
      * agent can connect to different cache managers in the same group
      * to cooperate as distributed cache
@@ -34,45 +32,48 @@ public class CacheManager implements Cache {
     private List<CachePolicyBase> policies = new LinkedList<CachePolicyBase>();
     /** queue of issues reported when using cache */
     private Queue<String> issues = new LinkedList<>();
-    // TODO: add callbacks to be called when something important is happening to cache, each callback method would be called in different places of dist-cache
 
+    // TODO: add callbacks to be called when something important is happening to cache, each callback method would be called in different places of dist-cache
 
     /** initialize current manager with properties
      * this is creating storages, connecting to storages
      * creating cache policy, create agent and connecting to other cache agents */
     public CacheManager(Properties p) {
-        this.cacheProps = p;
+        super(p);
         // TODO: finishing initialization - to be done, creating agent, storages, policies
         initializeStorages();
         initializeAgent();
         initializePolicies();
+        initializeTimer();
     }
-
-    /** get unique identifier for this CacheManager object */
-    public String getCacheManagerGuid() { return cacheManagerGuid; }
-    /** get date and time of creation for this CacheManager */
-    public LocalDateTime getCreatedDateTime() { return createdDateTime; }
 
     /** initialize all storages from configuration*/
     private void initializeStorages() {
-        StorageInitializeParameter initParams = new StorageInitializeParameter();
-        Arrays.stream((""+cacheProps.getProperty(CacheConfig.CACHE_STORAGES)).split(","))
+        StorageInitializeParameter initParams = new StorageInitializeParameter(cacheProps, this);
+        String cacheStorageList = ""+cacheProps.getProperty(CacheConfig.CACHE_STORAGES);
+        log.info("Initializing cache storages: " + cacheStorageList);
+        Arrays.stream(cacheStorageList.split(","))
                 .distinct()
+                //.filter(st -> !st.isBlank() && st.isEmpty())
                 .forEach(storageClass -> initializeSingleStorage(initParams, storageClass));
     }
     /** initialize single storage */
     private void initializeSingleStorage(StorageInitializeParameter initParams, String className) {
         try {
             String fullClassName = "com.cache.storage." + className;
+            log.debug("Initializing storage for class: " + fullClassName + ", current storages: " + storages.size());
             CacheStorageBase storage = (CacheStorageBase)Class.forName(fullClassName)
-                    .getConstructor()
+                    .getConstructor(StorageInitializeParameter.class)
                     .newInstance(initParams);
             CacheStorageBase prevStorage = storages.put(storage.toString(), storage);
+            log.info("Initialized storage: " + storage.getStorageUid() + ", current storages: " + storages.size());
             if (prevStorage != null) {
+                log.debug("Got previous storage to dispose: " + prevStorage.getStorageUid());
                 prevStorage.disposeStorage();
             }
         } catch (Exception ex) {
             // TODO: report problem with storage creation
+            log.warn("Cannot initialize storage for class: " + className);
         }
     }
 
@@ -86,8 +87,44 @@ public class CacheManager implements Cache {
 
     }
 
+    public void initializeTimer() {
+        long delayMs = 1000;
+        long periodMs = 1000;
+        TimerTask onTimeTask = new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    onTime();
+                } catch (Exception ex) {
+                    // TODO: mark exception
+                }
+            }
+        };
+        timerTasks.add(onTimeTask);
+        timer.scheduleAtFixedRate(onTimeTask, delayMs, periodMs);
+    }
+
+    /** */
+    protected void onClose() {
+        log.info("Stopping all timer tasks");
+        timerTasks.forEach(x -> x.cancel());
+        timer.cancel();
+        log.info("Removing caches and dispose storages");
+        synchronized (storages) {
+            for (CacheStorageBase value : storages.values()) {
+                value.clearCaches(1);
+                value.disposeStorage();
+            }
+            storages.clear();
+        }
+        log.info("Clearing issues");
+        issues.clear();
+    }
+
+
     /** set object in all or one internal caches */
     private List<Optional<CacheObject>> setItemInternal(CacheObject co) {
+        addedItemsSequence.incrementAndGet();
         return storages.values().stream()
                 .filter(x -> x.isInternal())
                 .map(storage -> storage.setItem(co))
@@ -102,6 +139,7 @@ public class CacheManager implements Cache {
         T objFromMethod = m.get(key);
         long acquireTimeMs = System.currentTimeMillis()-startActTime; // this is time of getting this object from method
         // TODO: add this object to cache
+        log.info("===> Got object from external method/supplier, time: " + acquireTimeMs);
         CacheObject co = new CacheObject(key, new CacheableWrapper(objFromMethod), acquireTimeMs, m);
         // TODO: need to set object in internal caches
         setItemInternal(co);
@@ -115,12 +153,36 @@ public class CacheManager implements Cache {
         return storages.values().stream().anyMatch(x -> x.contains(key));
     }
 
-    // TODO: implement many methods to be used for wrapping DAO and other slow methods
-    /** execute with cache for key
-     * if object in cache exists and it is valid, then this object would be returned
-     * if not exists then method would be executed to get object, object would be put to cache and returned */
-    public <T> T withCache(String key, CacheableMethod<T> m) {
-        // TODO: change this to get from internal first and then from external in specific order
+    /** clear caches with given clear cache */
+    public int clearCaches(int clearMode) {
+        storages.values().stream().forEach(x -> x.clearCaches(clearMode));
+        return 1;
+    }
+    public Set<String> getStorageKeys() {
+        return storages.keySet();
+    }
+    /** get number of items in cache */
+    public int getItemsCount() {
+        return storages.values().stream().map(x -> x.getItemsCount()).reduce((x, y) -> x+y).orElse(0);
+    }
+    public Map<String, Integer> getItemsCountPerStorage() {
+        Map<String, Integer> cnts = new HashMap<>();
+        storages.values().stream().forEach(x -> cnts.put(x.getStorageUid(), x.getItemsCount()));
+        return cnts;
+    }
+
+    /** clear cache contains given partial key */
+    public int clearCacheContains(String str) {
+        storages.values().stream().forEach(x -> x.clearCacheContains(str));
+        return 1;
+    }
+    /** check cache every X seconds to clear TTL caches */
+    public void onTime() {
+        long checkSeq = checkSequence.incrementAndGet();
+        storages.values().stream().forEach(x -> x.onTime(checkSeq));
+    }
+    /** get item from cache if exists or None */
+    public <T> Optional<T> getItem(String key) {
         for (CacheStorageBase storage: storages.values()) {
             Optional<CacheObject> fromCache = storage.getItem(key);
             if (fromCache.isPresent()) {
@@ -128,26 +190,44 @@ public class CacheManager implements Cache {
                     CacheObject co = fromCache.get();
                     co.use();
                     // TODO: if this is not internal cache - need to increase usage and lastUseDate ???
-                    return (T) co.getValue();
+                    return Optional.ofNullable((T) co.getValue().getObject());
                 } catch (Exception ex) {
                     // TODO: log problem with casting value from cache for given key into specific type
                 }
             }
         }
-        // no value found in storages
-        return acquireObject(key, m);
+        return Optional.empty();
     }
 
-    public <T> Object withCache(String key, Method method, Object obj) {
-        // TODO: get object with cache
-        for (CacheStorageBase storage: storages.values()) {
-            if (storage.isInternal()) {
-                // TO
-
+    /** execute with cache for key
+     * if object in cache exists and it is valid, then this object would be returned
+     * if not exists then method would be executed to get object, object would be put to cache and returned */
+    public <T> T withCache(String key, CacheableMethod<T> m, CacheMode mode) {
+        try {
+            Optional<T> itemFromCache = getItem(key);
+            if (itemFromCache.isPresent()) {
+                return itemFromCache.get();
+            } else {
+                return acquireObject(key, m);
             }
+        } catch (Exception ex) {
+            return null;
         }
-        // TODO:
-        return "";
+    }
+    public <T> T withCache(String key, Supplier<? extends T> supplier, CacheMode mode) {
+        return withCache(key, (CacheableMethod<T>) key1 -> supplier.get(), mode);
+    }
+    public <T> T withCache(String key, Function<String, ? extends T> mapper, CacheMode mode) {
+        return withCache(key, (CacheableMethod<T>) mapper, mode);
+    }
+    public <T> T withCache(String key, Method method, Object obj, CacheMode mode) {
+        try {
+            // TODO: implement getting value by reflection
+            return withCache(key, (CacheableMethod<T>) key1 -> (T)CacheUtils.getFromMethod(method, obj), mode);
+        } catch (Exception ex) {
+            // TODO:
+            return null;
+        }
     }
 
 }
