@@ -37,11 +37,7 @@ public class CacheObject {
 
     public CacheObject(String key, Object o, long ackTimeMs, CacheableMethod method, CacheMode mode, Set<String> groups) {
         this.key = key;
-        if (o instanceof CacheableObject) {
-            this.objSize = ((CacheableObject) o).getSize();
-        } else {
-            this.objSize = CacheUtils.estimateSize(o);
-        }
+        this.objSize = CacheUtils.estimateSize(o);
         this.objectInCache = o;
         this.acquireTimeMs = ackTimeMs;
         this.methodToAcquire = method;
@@ -56,11 +52,7 @@ public class CacheObject {
                 objectInCache.getClass().getName());
     }
     private void calculateSize() {
-        if (objectInCache instanceof CacheableObject) {
-            this.objSize = ((CacheableObject) objectInCache).getSize();
-        } else {
-            this.objSize = CacheUtils.estimateSize(objectInCache);
-        }
+        this.objSize = CacheUtils.estimateSize(objectInCache);
     }
     /** get key of object in cache */
     public String getKey() {
@@ -84,9 +76,7 @@ public class CacheObject {
     public long getAcquireTimeMs() { return acquireTimeMs; }
     /** release action for this cache object */
     public void releaseObject() {
-        if (objectInCache instanceof CacheableObject) {
-            ((CacheableObject)objectInCache).releaseObject();
-        }
+
     }
 
     /** check if key of this object contains given string */
