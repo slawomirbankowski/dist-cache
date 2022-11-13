@@ -14,7 +14,7 @@ import java.util.Set;
  * internal (HashMap, WeakHashMap) - kept in local JVM memory
  * external (Elasticsearch, Redis) - kept somewhere outside JVM memory */
 public abstract class CacheStorageBase {
-    protected static final Logger log = LoggerFactory.getLogger(CacheBase.class);
+    protected static final Logger log = LoggerFactory.getLogger(CacheStorageBase.class);
     /** unique identifier of this storage */
     private final String storageUid;
     /** date and time of creation of this storage */

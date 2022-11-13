@@ -106,6 +106,11 @@ public class CacheConfig {
     public static String CACHE_MAX_LOCAL_ITEMS = "CACHE_MAX_LOCAL_ITEMS";
     public static int CACHE_MAX_LOCAL_ITEMS_VALUE = 100000;
 
+    public static String CACHE_KEY_ENCODER = "CACHE_KEY_ENCODER";
+    public static String CACHE_KEY_ENCODER_VALUE_NONE = "com.cache.encoders.KeyEncoderNone";
+    public static String CACHE_KEY_ENCODER_VALUE_SECRET = "com.cache.encoders.KeyEncoderStarting";
+    public static String CACHE_KEY_ENCODER_VALUE_FULL = "com.cache.encoders.KeyEncoderFull";
+
     /** default number of milliseconds as time to live for given cache object */
     public static String CACHE_DEFAULT_TTL_TIME = "CACHE_DEFAULT_TTL_TIME";
     /** list of semicolon separated storages initialized for cache

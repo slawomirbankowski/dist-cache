@@ -102,8 +102,9 @@ public class CacheManager extends CacheBase {
 
     protected void initializeTimer() {
         addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMERS));
-        long delayMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_DELAY, CacheConfig.CACHE_TIMER_DELAY_VALUE);
-        long periodMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_PERIOD, CacheConfig.CACHE_TIMER_PERIOD_VALUE);
+        // initialization for clean
+        long cleanDelayMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_DELAY, CacheConfig.CACHE_TIMER_DELAY_VALUE);
+        long cleanPeriodMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_PERIOD, CacheConfig.CACHE_TIMER_PERIOD_VALUE);
         log.info("Scheduling clean timer task for cache: " + getCacheGuid());
         TimerTask onTimeCleanTask = new TimerTask() {
             @Override
@@ -116,8 +117,11 @@ public class CacheManager extends CacheBase {
             }
         };
         timerTasks.add(onTimeCleanTask);
-        timer.scheduleAtFixedRate(onTimeCleanTask, delayMs, periodMs);
+        timer.scheduleAtFixedRate(onTimeCleanTask, cleanDelayMs, cleanPeriodMs);
         addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMER_CLEAN));
+        // initialization for communicate
+        long communicateDelayMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_DELAY, CacheConfig.CACHE_TIMER_DELAY_VALUE);
+        long communicatePeriodMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_PERIOD, CacheConfig.CACHE_TIMER_PERIOD_VALUE);
         log.info("Scheduling communicating timer task for cache: " + getCacheGuid());
         TimerTask onTimeCommunicateTask = new TimerTask() {
             @Override
@@ -131,8 +135,26 @@ public class CacheManager extends CacheBase {
             }
         };
         timerTasks.add(onTimeCommunicateTask);
-        timer.scheduleAtFixedRate(onTimeCommunicateTask, delayMs, periodMs);
+        timer.scheduleAtFixedRate(onTimeCommunicateTask, communicateDelayMs, communicatePeriodMs);
         addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMER_COMMUNICATE));
+        // initialization for
+        long ratioDelayMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_DELAY, CacheConfig.CACHE_TIMER_DELAY_VALUE);
+        long ratioPeriodMs = 60 * cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_PERIOD, CacheConfig.CACHE_TIMER_PERIOD_VALUE);
+        log.info("Scheduling ratio timer task for cache: " + getCacheGuid());
+        TimerTask onTimeHitRatioTask = new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    onTimeCommunicate();
+                } catch (Exception ex) {
+                    // TODO: mark exception
+                    addIssue("initializeTimer:ratio", ex);
+                }
+            }
+        };
+        timerTasks.add(onTimeHitRatioTask);
+        timer.scheduleAtFixedRate(onTimeHitRatioTask, ratioDelayMs, ratioPeriodMs);
+        addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMER_RATIO));
     }
 
     /** executing close of this cache */
@@ -170,10 +192,9 @@ public class CacheManager extends CacheBase {
     private <T> T acquireObject(String key, CacheableMethod<T> acquireMethod, CacheMode mode, Set<String> groups) {
         // Measure time of getting this object from cache
         long startActTime = System.currentTimeMillis();
-
+        hitRatio.miss(); // hit ratio - add miss event
         T objFromMethod = acquireMethod.get(key);
         long acquireTimeMs = System.currentTimeMillis()-startActTime; // this is time of getting this object from method
-        // TODO: add this object to cache
         log.info("===> Got object from external method/supplier, time: " + acquireTimeMs);
         CacheObject co = new CacheObject(key, objFromMethod, acquireTimeMs, acquireMethod, mode, groups);
         // TODO: need to set object in internal caches
@@ -280,6 +301,9 @@ public class CacheManager extends CacheBase {
     public <T> T withCache(String key, CacheableMethod<T> m, CacheMode mode, Set<String> groups) {
         try {
             Optional<T> itemFromCache = getObject(key);
+            if (itemFromCache.isPresent()) {
+                hitRatio.hit();
+            }
             return itemFromCache.orElseGet(() -> acquireObject(key, m, mode, groups));
         } catch (Exception ex) {
             addIssue("withCache", ex);
