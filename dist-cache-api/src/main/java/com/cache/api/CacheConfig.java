@@ -1,6 +1,8 @@
 package com.cache.api;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
 
@@ -19,10 +21,14 @@ public class CacheConfig {
     public CacheConfig(Properties p) {
         this.props = p;
     }
+    public CacheConfig(Properties p, Function<CacheConfig, Cache> parentFactory) {
+        this.props = p;
+        this.parentFactory = parentFactory;
+    }
 
     /** get current properties */
-    public Properties getProperties() {
-        return props;
+    public Map getProperties() {
+        return Collections.unmodifiableMap(props);
     }
     public String getConfigGuid() {
         return configGuid;
@@ -30,6 +36,7 @@ public class CacheConfig {
 
     /** get callbacks assigned to this configuration */
     public HashMap<String, Function<CacheEvent, String>> getCallbacks() { return callbacks; }
+    /** get cache property for given name */
     public String getProperty(String name) {
         return props.getProperty(name);
     }
@@ -44,15 +51,26 @@ public class CacheConfig {
     public long getPropertyAsLong(String name, long defaultValue) {
         return CacheUtils.parseLong(getProperty(name), defaultValue);
     }
+
+
     /** build empty CacheConfig with no values */
     public static CacheConfig buildEmptyConfig() {
-
         return new CacheConfig(new Properties());
     }
     /** build default configuration with default name, HashMap as storage */
     public static CacheConfig buildDefaultConfig() {
         return CacheConfig
                 .buildEmptyConfig()
+                .withNameDefault()
+                .withStorageHashMap()
+                .withMaxIssues(CACHE_ISSUES_MAX_COUNT_VALUE)
+                .withMaxEvents(CACHE_EVENTS_MAX_COUNT_VALUE)
+                .withMaxObjectAndItems(CACHE_MAX_LOCAL_OBJECTS_VALUE, CACHE_MAX_LOCAL_ITEMS_VALUE);
+    }
+    /** build default configuration with default name, HashMap as storage */
+    public static CacheConfig buildBindedConfig(Function<CacheConfig, Cache> parentFactory) {
+        return new CacheConfig(new Properties(), parentFactory)
+                //.buildEmptyConfig()
                 .withNameDefault()
                 .withStorageHashMap()
                 .withMaxIssues(CACHE_ISSUES_MAX_COUNT_VALUE)
@@ -171,9 +189,11 @@ public class CacheConfig {
     /** */
     public static int CACHE_PORT_VALUE_DEFAULT = 9999;
 
+    /** delay of timer run to clear storages - value in milliseconds */
     public static String CACHE_TIMER_DELAY = "CACHE_TIMER_DELAY";
     public static long CACHE_TIMER_DELAY_VALUE = 1000;
 
+    /** period of timer to clear storages - value in milliseconds */
     public static String CACHE_TIMER_PERIOD = "CACHE_TIMER_PERIOD";
     public static long CACHE_TIMER_PERIOD_VALUE = 1000;
 
@@ -194,7 +214,6 @@ public class CacheConfig {
     /** maximum number of local objects */
     public static String CACHE_MAX_LOCAL_OBJECTS = "CACHE_MAX_LOCAL_OBJECTS";
     public static int CACHE_MAX_LOCAL_OBJECTS_VALUE = 1000;
-
 
     /** maximum number of issues stored in cache */
     public static String CACHE_ISSUES_MAX_COUNT = "CACHE_ISSUES_MAX_COUNT";
@@ -232,9 +251,13 @@ public class CacheConfig {
     public static String ELASTICSEARCH_USER = "ELASTICSEARCH_USER";
     /** elasticsearch password */
     public static String ELASTICSEARCH_PASS = "ELASTICSEARCH_PASS";
+
     /** Kafka brokers */
     public static String KAFKA_BROKERS = "KAFKA_BROKERS";
+
     /** URL for redis */
     public static String REDIS_URL = "REDIS_URL";
     public static String REDIS_PORT = "REDIS_PORT";
+
+    public static String LOCAL_DISK_PREFIX_PATH = "LOCAL_DISK_PREFIX_PATH";
 }

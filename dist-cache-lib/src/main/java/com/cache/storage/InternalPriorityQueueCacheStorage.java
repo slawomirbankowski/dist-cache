@@ -1,6 +1,7 @@
 package com.cache.storage;
 
 import com.cache.api.CacheObject;
+import com.cache.api.CacheObjectInfo;
 import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
 
@@ -52,6 +53,10 @@ public class InternalPriorityQueueCacheStorage extends CacheStorageBase {
     /** get keys for all cache items */
     public Set<String> getKeys(String containsStr) {
         return new HashSet<String>();
+    }
+    /** get info values */
+    public List<CacheObjectInfo> getValues(String containsStr) {
+        return new LinkedList<CacheObjectInfo>();
     }
     public void onTimeClean(long checkSeq) {
         for (Map.Entry<String, CacheObject> e: localCache.entrySet()) {

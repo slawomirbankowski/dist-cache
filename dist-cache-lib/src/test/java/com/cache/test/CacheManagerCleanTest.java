@@ -30,6 +30,7 @@ public class CacheManagerCleanTest {
             log.info("Objects in cache: " + cache.getObjectsCount() + ", keys: " + cache.getCacheKeys("" + ", key_refresh: " + cache.getObject("key_refresh")));
             CacheUtils.sleep(1000);
         }
+        cache.getCacheValues("");
         log.info("Cache getItemsCount: " + cache.getItemsCount() + ", keys: " + cache.getCacheKeys("") + ", key_refresh: " + cache.getObject("key_refresh"));
         cache.close();
         log.info("END-----");

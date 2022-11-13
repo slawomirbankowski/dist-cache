@@ -50,8 +50,9 @@ public class CacheManager extends CacheBase {
 
     /** initialize all storages from configuration*/
     private void initializeStorages() {
-        StorageInitializeParameter initParams = new StorageInitializeParameter(cacheCfg.getProperties(), this);
-        String cacheStorageList = ""+cacheCfg.getProperties().getProperty(CacheConfig.CACHE_STORAGES);
+        addEvent(new CacheEvent(this, "initializeStorages", CacheEvent.EVENT_INITIALIZE_STORAGES));
+        StorageInitializeParameter initParams = new StorageInitializeParameter(cacheCfg, this);
+        String cacheStorageList = ""+cacheCfg.getProperty(CacheConfig.CACHE_STORAGES);
         log.info("Initializing cache storages: " + cacheStorageList);
         Arrays.stream(cacheStorageList.split(","))
                 .distinct()
@@ -62,6 +63,7 @@ public class CacheManager extends CacheBase {
     private void initializeSingleStorage(StorageInitializeParameter initParams, String className) {
         try {
             String fullClassName = "com.cache.storage." + className;
+            addEvent(new CacheEvent(this, "initializeStorages", CacheEvent.EVENT_INITIALIZE_STORAGE, fullClassName));
             log.debug("Initializing storage for class: " + fullClassName + ", current storages: " + storages.size());
             CacheStorageBase storage = (CacheStorageBase)Class.forName(fullClassName)
                     .getConstructor(StorageInitializeParameter.class)
@@ -70,9 +72,11 @@ public class CacheManager extends CacheBase {
             log.info("Initialized storage: " + storage.getStorageUid() + ", current storages: " + storages.size());
             if (prevStorage != null) {
                 log.debug("Got previous storage to dispose: " + prevStorage.getStorageUid());
+                addEvent(new CacheEvent(this, "initializeStorages", CacheEvent.EVENT_DISPOSE_STORAGE, fullClassName));
                 prevStorage.disposeStorage();
             }
         } catch (Exception ex) {
+            addIssue("initializeSingleStorage", ex);
             // TODO: report problem with storage creation
             log.warn("Cannot initialize storage for class: " + className);
         }
@@ -80,33 +84,33 @@ public class CacheManager extends CacheBase {
 
     /** initialize Agent to communicate with other CacheManagers */
     protected void initializeAgent() {
-
+        addEvent(new CacheEvent(this, "initializeAgent", CacheEvent.EVENT_INITIALIZE_AGENT));
     }
 
     /** initialize policies */
     protected void initializePolicies() {
-
+        addEvent(new CacheEvent(this, "initializePolicies", CacheEvent.EVENT_INITIALIZE_POLICIES));
     }
 
     protected void initializeTimer() {
+        addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMERS));
         long delayMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_DELAY, CacheConfig.CACHE_TIMER_DELAY_VALUE);
         long periodMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_PERIOD, CacheConfig.CACHE_TIMER_PERIOD_VALUE);
-        log.info("Scheduling clean timer task for cache: " + getCacheManagerGuid());
+        log.info("Scheduling clean timer task for cache: " + getCacheGuid());
         TimerTask onTimeCleanTask = new TimerTask() {
             @Override
             public void run() {
                 try {
                     onTimeClean();
                 } catch (Exception ex) {
-                    // TODO: mark exception
-                    addIssue("initializeTimer", ex);
-
+                    addIssue("initializeTimer:clean", ex);
                 }
             }
         };
         timerTasks.add(onTimeCleanTask);
         timer.scheduleAtFixedRate(onTimeCleanTask, delayMs, periodMs);
-        log.info("Scheduling communicating timer task for cache: " + getCacheManagerGuid());
+        addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMER_CLEAN));
+        log.info("Scheduling communicating timer task for cache: " + getCacheGuid());
         TimerTask onTimeCommunicateTask = new TimerTask() {
             @Override
             public void run() {
@@ -114,16 +118,18 @@ public class CacheManager extends CacheBase {
                     onTimeCommunicate();
                 } catch (Exception ex) {
                     // TODO: mark exception
-                    addIssue("initializeTimer", ex);
+                    addIssue("initializeTimer:communicate", ex);
                 }
             }
         };
         timerTasks.add(onTimeCommunicateTask);
         timer.scheduleAtFixedRate(onTimeCommunicateTask, delayMs, periodMs);
+        addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMER_COMMUNICATE));
     }
 
     /** executing close of this cache */
     protected void onClose() {
+        addEvent(new CacheEvent(this, "onClose", CacheEvent.EVENT_CLOSE_BEGIN));
         log.info("Stopping all timer tasks");
         timerTasks.forEach(TimerTask::cancel);
         timer.cancel();
@@ -139,6 +145,7 @@ public class CacheManager extends CacheBase {
         events.clear();
         log.info("Clearing issues");
         issues.clear();
+        addEvent(new CacheEvent(this, "onClose", CacheEvent.EVENT_CLOSE_END));
     }
 
     /** set object in all or one internal caches */
@@ -152,14 +159,15 @@ public class CacheManager extends CacheBase {
 
     /** acquire object from external method, this could be slow because if could be a database query of external service
      * we would like to put cache around */
-    private <T> T acquireObject(String key, CacheableMethod<T> m, CacheMode mode) {
+    private <T> T acquireObject(String key, CacheableMethod<T> acquireMethod, CacheMode mode, Set<String> groups) {
         // Measure time of getting this object from cache
         long startActTime = System.currentTimeMillis();
-        T objFromMethod = m.get(key);
+
+        T objFromMethod = acquireMethod.get(key);
         long acquireTimeMs = System.currentTimeMillis()-startActTime; // this is time of getting this object from method
         // TODO: add this object to cache
         log.info("===> Got object from external method/supplier, time: " + acquireTimeMs);
-        CacheObject co = new CacheObject(key, objFromMethod, acquireTimeMs, m, mode);
+        CacheObject co = new CacheObject(key, objFromMethod, acquireTimeMs, acquireMethod, mode, groups);
         // TODO: need to set object in internal caches
         setItemInternal(co);
         //Optional<CacheObject> prev = setItem(co);
@@ -172,8 +180,10 @@ public class CacheManager extends CacheBase {
         return storages.values().stream().anyMatch(x -> x.contains(key));
     }
 
+
     /** clear caches with given clear cache */
     public int clearCaches(int clearMode) {
+        addEvent(new CacheEvent(this, "clearCaches", CacheEvent.EVENT_CACHE_CLEAN));
         storages.values().stream().forEach(x -> x.clearCaches(clearMode));
         return 1;
     }
@@ -188,6 +198,16 @@ public class CacheManager extends CacheBase {
                 .flatMap(x -> x.getKeys(containsStr).stream())
                 .collect(Collectors.toSet());
     }
+    /** get values stored in cache
+     * this might returns only first X values */
+    public List<CacheObjectInfo> getCacheValues(String containsStr) {
+        return storages.values()
+                .stream()
+                .filter(x -> x.isInternal())
+                .flatMap(x -> x.getValues(containsStr).stream())
+                .collect(Collectors.toList());
+    }
+
 
     /** get number of objects in all storages
      * if one object is inserted into cache - this is still one object even if this is a list of 1000 elements */
@@ -205,7 +225,12 @@ public class CacheManager extends CacheBase {
         storages.values().stream().forEach(x -> cnts.put(x.getStorageUid(), x.getItemsCount()));
         return cnts;
     }
-
+    /** get number of objects in each storage */
+    public Map<String, Integer> getObjectsCountPerStorage() {
+        Map<String, Integer> cnts = new HashMap<>();
+        storages.values().stream().forEach(x -> cnts.put(x.getStorageUid(), x.getObjectsCount()));
+        return cnts;
+    }
     /** clear cache contains given partial key */
     public int clearCacheContains(String str) {
         storages.values().stream().forEach(x -> x.clearCacheContains(str));
@@ -214,10 +239,12 @@ public class CacheManager extends CacheBase {
     /** check cache every X seconds to clear TTL caches */
     public void onTimeClean() {
         long checkSeq = checkSequence.incrementAndGet();
+        addEvent(new CacheEvent(this, "onTimeClean", CacheEvent.EVENT_TIMER_CLEAN));
         storages.values().stream().forEach(x -> x.onTimeClean(checkSeq));
     }
     public void onTimeCommunicate() {
-
+        addEvent(new CacheEvent(this, "onTimeClean", CacheEvent.EVENT_TIMER_COMMUNICATE));
+        // TODO: implement communication of agent with other cache agents
     }
 
     /** get item from cache if exists or None */
@@ -232,6 +259,7 @@ public class CacheManager extends CacheBase {
                     return Optional.ofNullable((T) co.getValue());
                 } catch (Exception ex) {
                     // TODO: log problem with casting value from cache for given key into specific type
+                    addIssue("getObject", ex);
                 }
             }
         }
@@ -241,31 +269,32 @@ public class CacheManager extends CacheBase {
     /** execute with cache for key
      * if object in cache exists and it is valid, then this object would be returned
      * if not exists then method would be executed to get object, object would be put to cache and returned */
-    public <T> T withCache(String key, CacheableMethod<T> m, CacheMode mode) {
+    public <T> T withCache(String key, CacheableMethod<T> m, CacheMode mode, Set<String> groups) {
         try {
             Optional<T> itemFromCache = getObject(key);
-            return itemFromCache.orElseGet(() -> acquireObject(key, m, mode));
+            return itemFromCache.orElseGet(() -> acquireObject(key, m, mode, groups));
         } catch (Exception ex) {
+            addIssue("withCache", ex);
             return null;
         }
     }
-    public <T> T withCache(String key, Supplier<? extends T> supplier, CacheMode mode) {
-        return withCache(key, (CacheableMethod<T>) key1 -> supplier.get(), mode);
+    public <T> T withCache(String key, Supplier<? extends T> supplier, CacheMode mode, Set<String> groups) {
+        return withCache(key, (CacheableMethod<T>) key1 -> supplier.get(), mode, groups);
     }
-    public <T> T withCache(String key, Function<String, ? extends T> mapper, CacheMode mode) {
+    public <T> T withCache(String key, Function<String, ? extends T> mapper, CacheMode mode, Set<String> groups) {
         return withCache(key, new CacheableMethod<T>() {
             @Override
             public T get(String key) {
                 return mapper.apply(key);
             }
-        }, mode);
+        }, mode, groups);
     }
-    public <T> T withCache(String key, Method method, Object obj, CacheMode mode) {
+    public <T> T withCache(String key, Method method, Object obj, CacheMode mode, Set<String> groups) {
         try {
             // TODO: implement getting value by reflection
-            return withCache(key, (CacheableMethod<T>) key1 -> (T)CacheUtils.getFromMethod(method, obj), mode);
+            return withCache(key, (CacheableMethod<T>) key1 -> (T)CacheUtils.getFromMethod(method, obj), mode, groups);
         } catch (Exception ex) {
-            // TODO:
+            addIssue("withCache", ex);
             return null;
         }
     }

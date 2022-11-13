@@ -33,10 +33,8 @@ Cache could be used as:
 To be added: 
 - hit ratio of cache usage
 - cache re-set while working
-- publish events to compliant storages
 - cache blacklist
 - cache object group and mode, acquire time, refresh time, methods to get next value for model
-
 - get total cache size
 - get list of current cache list
 - cache key for secrets

@@ -7,31 +7,52 @@ public class CacheMode {
     private final int mode;
     /** time to live milliseconds */
     private final long timeToLiveMs;
+    private final int priority;
     private final boolean addToInternal;
     private final boolean addToExternal;
 
+    public CacheMode(int m, long timeToLiveMs, boolean addToInternal, boolean addToExternal, int priority) {
+        this.mode = m;
+        this.timeToLiveMs = timeToLiveMs;
+        this.addToInternal = addToInternal;
+        this.addToExternal = addToExternal;
+        this.priority = priority;
+    }
     public CacheMode(int m, long timeToLiveMs, boolean addToInternal, boolean addToExternal) {
         this.mode = m;
         this.timeToLiveMs = timeToLiveMs;
         this.addToInternal = addToInternal;
         this.addToExternal = addToExternal;
+        this.priority = CachePriority.PRIORITY_MEDIUM;
     }
     public CacheMode(int m, long timeToLiveMs) {
         this.mode = m;
         this.timeToLiveMs = timeToLiveMs;
         this.addToInternal = true;
         this.addToExternal = false;
+        this.priority = CachePriority.PRIORITY_MEDIUM;
     }
-    public CacheMode(int m) {
-        this(m, TIME_FOREVER, true, false);
+    public CacheMode(int cacheMode) {
+        this(cacheMode, TIME_FOREVER, true, false);
     }
 
     public long getTimeToLiveMs() { return timeToLiveMs; }
 
     public int getMode() { return mode; }
+    /** get priority for this mode
+     * priorities are defined in CachePriority class
+     * default priority is PRIORITY_MEDIUM
+     * */
+    public int getPriority() { return priority; }
     public boolean isTtl() { return mode == MODE_TTL; }
     public boolean isRefresh() { return mode == MODE_KEEP; }
     public boolean isKeep() { return mode == MODE_REFRESH; }
+    public boolean isAddToInternal() {
+        return addToInternal;
+    }
+    public boolean isAddToExternal() {
+        return addToExternal;
+    }
 
     /** based time-to-live model where object is removed from cache after given milliseconds */
     public static int MODE_TTL = 1;
@@ -42,7 +63,9 @@ public class CacheMode {
     public static int MODE_USED = 3;
     /** refresh mode when item could be refreshed every N seconds through refreshing handler */
     public static int MODE_REFRESH = 4;
-
+    /** object in cache is kept until there is too many objects in cache,
+     * after that objects with the lowest priority would be removed  */
+    public static int MODE_PRIORITY = 3;
     public static long TIME_TEN_SECONDS = 10 * 1000L;
     public static long TIME_TWENTY_SECONDS = 20 * 1000L;
     public static long TIME_THIRTY_SECONDS = 30 * 1000L;
@@ -58,6 +81,7 @@ public class CacheMode {
     public static long TIME_ONE_DAY = 24 * 3600 * 1000L;
     public static long TIME_ONE_WEEK = 7 * 24 * 3600 * 1000L;
     public static long TIME_TWO_WEEKS = 14 * 24 * 3600 * 1000L;
+    public static long TIME_FOUR_WEEKS = 28 * 24 * 3600 * 1000L;
     public static long TIME_FOREVER = Long.MAX_VALUE;
 
     public static CacheMode modeTtlTenSeconds = new CacheMode(MODE_TTL, TIME_TEN_SECONDS);
@@ -75,6 +99,7 @@ public class CacheMode {
     public static CacheMode modeTtlOneDay = new CacheMode(MODE_TTL, TIME_ONE_DAY);
     public static CacheMode modeTtlOneWeek = new CacheMode(MODE_TTL, TIME_ONE_WEEK);
     public static CacheMode modeTtlTwoWeeks = new CacheMode(MODE_TTL, TIME_TWO_WEEKS);
+    public static CacheMode modeTtlFourWeeks = new CacheMode(MODE_TTL, TIME_FOUR_WEEKS);
 
     public static CacheMode modeKeep = new CacheMode(MODE_KEEP, TIME_FOREVER);
 
