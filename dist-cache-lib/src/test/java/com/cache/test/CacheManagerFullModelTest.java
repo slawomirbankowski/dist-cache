@@ -5,13 +5,15 @@ import com.cache.api.Cache;
 import com.cache.api.CacheConfig;
 import com.cache.test.dao.DatabaseCacheDao;
 import com.cache.test.dao.DatabaseDao;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CacheManagerFullModelTest {
     private static final Logger log = LoggerFactory.getLogger(CacheManagerFullModelTest.class);
 
-    public static void main(String[] args) {
+    @Test
+    public void fullDaoModelTest() {
         log.info("START------");
         Cache cache = DistCacheFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")

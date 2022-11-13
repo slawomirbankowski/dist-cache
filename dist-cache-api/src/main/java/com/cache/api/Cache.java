@@ -59,7 +59,7 @@ public interface Cache {
     Queue<CacheEvent> getEvents();
 
     /** set new callback method for events for given type */
-    public void setCallback(String eventType, Function<CacheEvent, String> callback);
+    void setCallback(String eventType, Function<CacheEvent, String> callback);
 
     <T> T withCache(String key, Supplier<? extends T> supplier, CacheMode mode, Set<String> groups);
     <T> T withCache(String key, Function<String, ? extends T> mapper, CacheMode mode, Set<String> groups);

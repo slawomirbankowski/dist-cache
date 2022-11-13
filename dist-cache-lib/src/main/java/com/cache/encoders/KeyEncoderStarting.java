@@ -6,8 +6,9 @@ import com.cache.api.CacheKeyEncoder;
 public class KeyEncoderStarting implements CacheKeyEncoder {
     @Override
     public String encodeKey(String key) {
-        if (key.indexOf("secret:") >= 0) {
-            return key;
+        int secretPos = key.indexOf("secret:");
+        if (secretPos >= 0) {
+            return key.substring(0, secretPos) + key.substring(secretPos);
         } else {
             return key;
         }

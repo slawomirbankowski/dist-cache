@@ -28,6 +28,8 @@ public abstract class CacheBase implements Cache {
     protected AtomicLong checkSequence = new AtomicLong();
     /** sequence of added items into this cache */
     protected AtomicLong addedItemsSequence = new AtomicLong();
+    /** class to register hit/miss ratio with historical records */
+    protected CacheHitRatio hitRatio = new CacheHitRatio();
     /** if cache has been already closed */
     protected boolean isClosed = false;
     /** cache properties to initialize all storages, agent, policies, */
