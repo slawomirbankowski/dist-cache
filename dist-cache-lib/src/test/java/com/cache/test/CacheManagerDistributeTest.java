@@ -10,7 +10,7 @@ public class CacheManagerDistributeTest {
 
     public static void main(String[] args) {
         log.info("START------");
-        CacheConfig cfg = CacheConfig.buildEmptyConfig()
+        Cache cache = DistCacheFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest") // set friendly cache name
                 .withDefaultPort() // open TCP port for listening to commands and external cache agents
                 .withCacheApp("https://localhost:9999/") // connect to cache standalone application to synchronize cache agents
@@ -19,8 +19,9 @@ public class CacheManagerDistributeTest {
                 .withStorageElasticsearch("", "", "") // connect to Elasticsearch storage
                 .withStorageHashMap() // add storage build of HashMap manager by cache
                 .withObjectTimeToLive(100000) // set default time to live objects in cache for 100 seconds
-                .withMaxObjectAndItems(30, 100); // set maximum number of objects to 30 and items to 100
-        Cache cache = DistCacheFactory.createInstance(cfg);
+                .withMaxObjectAndItems(30, 100) // set maximum number of objects to 30 and items to 100
+                .createInstance();
+
         log.info("Cache storages: " + cache.getStorageKeys());
 
         for (int test=0; test<50; test++) {

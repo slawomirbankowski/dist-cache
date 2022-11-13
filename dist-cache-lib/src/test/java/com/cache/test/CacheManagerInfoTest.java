@@ -12,11 +12,11 @@ public class CacheManagerInfoTest {
 
     public static void main(String[] args) {
         log.info("START------");
-        CacheConfig cfg = CacheConfig.buildEmptyConfig()
+        Cache cache = DistCacheFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withStorageHashMap()
-                .withMaxObjectAndItems(30, 100);
-        Cache cache = DistCacheFactory.createInstance(cfg);
+                .withMaxObjectAndItems(30, 100)
+                .createInstance();
         for (int i=0; i<50; i++) {
             // get 30 times the same value
             String currKey = "key" + CacheUtils.randomInt(10);

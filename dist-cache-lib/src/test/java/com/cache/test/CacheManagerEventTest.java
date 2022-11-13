@@ -10,7 +10,7 @@ public class CacheManagerEventTest {
 
     public static void main(String[] args) {
         log.info("START------");
-        CacheConfig cfg = CacheConfig.buildEmptyConfig()
+        Cache cache = DistCacheFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withStorageHashMap()
                 .withObjectTimeToLive(CacheMode.TIME_TEN_SECONDS)
@@ -28,11 +28,8 @@ public class CacheManagerEventTest {
                 })
                 .withTimer(1000L, 1000L)
                 .withMaxEvents(100)
-                .withMaxObjectAndItems(30, 100);
-        DistCacheFactory.createEmptyFactory().create();
-
-        // create new cache with previously created configuration
-        Cache cache = DistCacheFactory.createInstance(cfg);
+                .withMaxObjectAndItems(30, 100)
+                .createInstance();
 
         // key_keep should be still kept in
         cache.withCache("key_keep", key -> "value", CacheMode.modeKeep);

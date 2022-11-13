@@ -2,7 +2,6 @@ package com.cache.test;
 
 import com.cache.DistCacheFactory;
 import com.cache.api.*;
-import com.cache.managers.CacheManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,12 +12,13 @@ public class CacheManagerPerformanceTest {
 
     public static void main(String[] args) {
         log.info("START------");
-        CacheConfig cfg = DistCacheFactory.createEmptyConfig()
+        Cache cache = DistCacheFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withStorageHashMap()
                 .withObjectTimeToLive(CacheMode.TIME_ONE_HOUR)
-                .withMaxObjectAndItems(500, 3000);
-        Cache cache = DistCacheFactory.createInstance(cfg);
+                .withMaxObjectAndItems(500, 3000)
+                .createInstance();
+
         log.info("Cache storages: " + cache.getStorageKeys());
         LinkedList<Object[]> testResults = new LinkedList<>();
         // run 50 tests and 500 random keys get

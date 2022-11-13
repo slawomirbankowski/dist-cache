@@ -9,33 +9,30 @@ import java.util.function.Function;
 /** factory to create configuration for cache  */
 public class CacheConfig {
 
-    /** parent factory to create cache from given configuration */
-    private Function<CacheConfig, Cache> parentFactory;
+    /** build empty CacheConfig with no values */
+    public static CacheConfig buildEmptyConfig() {
+        return new CacheConfig(new Properties());
+    }
+    public static CacheConfig buildConfig(Properties initialProperties) {
+        return new CacheConfig(initialProperties);
+    }
     /** GUID for configuration */
     private final String configGuid = CacheUtils.generateConfigGuid();
     /** all properties to be used for DistCache initialization */
     private Properties props = null;
-    /** callbacks */
-    private final HashMap<String, Function<CacheEvent, String>> callbacks = new HashMap<>();
 
     public CacheConfig(Properties p) {
         this.props = p;
-    }
-    public CacheConfig(Properties p, Function<CacheConfig, Cache> parentFactory) {
-        this.props = p;
-        this.parentFactory = parentFactory;
     }
 
     /** get current properties */
     public Map getProperties() {
         return Collections.unmodifiableMap(props);
     }
+    /** get unique ID of this config for cache */
     public String getConfigGuid() {
         return configGuid;
     }
-
-    /** get callbacks assigned to this configuration */
-    public HashMap<String, Function<CacheEvent, String>> getCallbacks() { return callbacks; }
     /** get cache property for given name */
     public String getProperty(String name) {
         return props.getProperty(name);
@@ -51,132 +48,10 @@ public class CacheConfig {
     public long getPropertyAsLong(String name, long defaultValue) {
         return CacheUtils.parseLong(getProperty(name), defaultValue);
     }
-
-
-    /** build empty CacheConfig with no values */
-    public static CacheConfig buildEmptyConfig() {
-        return new CacheConfig(new Properties());
-    }
-    /** build default configuration with default name, HashMap as storage */
-    public static CacheConfig buildDefaultConfig() {
-        return CacheConfig
-                .buildEmptyConfig()
-                .withNameDefault()
-                .withStorageHashMap()
-                .withMaxIssues(CACHE_ISSUES_MAX_COUNT_VALUE)
-                .withMaxEvents(CACHE_EVENTS_MAX_COUNT_VALUE)
-                .withMaxObjectAndItems(CACHE_MAX_LOCAL_OBJECTS_VALUE, CACHE_MAX_LOCAL_ITEMS_VALUE);
-    }
-    /** build default configuration with default name, HashMap as storage */
-    public static CacheConfig buildBindedConfig(Function<CacheConfig, Cache> parentFactory) {
-        return new CacheConfig(new Properties(), parentFactory)
-                //.buildEmptyConfig()
-                .withNameDefault()
-                .withStorageHashMap()
-                .withMaxIssues(CACHE_ISSUES_MAX_COUNT_VALUE)
-                .withMaxEvents(CACHE_EVENTS_MAX_COUNT_VALUE)
-                .withMaxObjectAndItems(CACHE_MAX_LOCAL_OBJECTS_VALUE, CACHE_MAX_LOCAL_ITEMS_VALUE);
-    }
-    /** add friendly name for this cache - it would be any name that would be visible in logs, via REST endpoints
-     * name should be unique, but it is not a must */
-    public CacheConfig withName(String name) {
-        props.setProperty(CACHE_NAME, name);
-        return this;
-    }
-    public CacheConfig withNameDefault() {
-        return withName(CACHE_NAME_VALUE_DEFAULT);
-    }
-    /** add comma-separated cache agent list */
-    public CacheConfig withServers(String servs) {
-        props.setProperty(CACHE_SERVERS, servs);
-        return this;
-    }
-    /** define port on which agent will be listening */
-    public CacheConfig withPort(int port) {
-        props.setProperty(CACHE_PORT, ""+port);
-        return this;
-    }
-    /** define port to define value on which agent will be listening */
-    public CacheConfig withDefaultPort() {
-        return withPort(CACHE_PORT_VALUE_DEFAULT);
-    }
-    /** add storage with HashMap */
-    public CacheConfig withStorageHashMap() {
-        String existingProps = ""+props.getProperty(CACHE_STORAGES);
-        props.setProperty(CACHE_STORAGES, existingProps + "," + CACHE_STORAGE_VALUE_HASHMAP);
-        return this;
-    }
-    public CacheConfig withStoragePriorityQueue() {
-        String existingProps = ""+props.getProperty(CACHE_STORAGES);
-        props.setProperty(CACHE_STORAGES, existingProps + "," + CACHE_STORAGE_VALUE_PRIORITYQUEUE);
-        return this;
-    }
-    public CacheConfig withStorageWeakHashMap() {
-        String existingProps = ""+props.getProperty(CACHE_STORAGES);
-        props.setProperty(CACHE_STORAGES, existingProps + "," + CACHE_STORAGE_VALUE_WEAKHASHMAP);
-        return this;
-    }
-    public CacheConfig withStorageElasticsearch(String url, String user, String pass) {
-        String existingProps = ""+props.getProperty(CACHE_STORAGES);
-        props.setProperty(CACHE_STORAGES, existingProps + "," + CACHE_STORAGE_VALUE_ELASTICSEARCH);
-        props.setProperty(ELASTICSEARCH_URL, url);
-        props.setProperty(ELASTICSEARCH_USER, user);
-        props.setProperty(ELASTICSEARCH_PASS, pass);
-        return this;
-    }
-    public CacheConfig withStorageRedis(String url, String port) {
-        String existingProps = ""+props.getProperty(CACHE_STORAGES);
-        props.setProperty(CACHE_STORAGES, existingProps + "," + CACHE_STORAGE_VALUE_REDIS);
-        props.setProperty(REDIS_URL, url);
-        props.setProperty(REDIS_PORT, port);
-        return this;
-    }
-    public CacheConfig withStorageKafka(String brokers) {
-        String existingProps = ""+props.getProperty(CACHE_STORAGES);
-        props.setProperty(CACHE_STORAGES, existingProps + "," + CACHE_STORAGE_VALUE_KAFKA);
-        props.setProperty(KAFKA_BROKERS, brokers);
-        return this;
-    }
-    /** add URL for Dist Cache standalone application */
-    public CacheConfig withCacheApp(String cacheAppUrl) {
-        props.setProperty(CACHE_APPLICATION_URL, cacheAppUrl);
-        return this;
-    }
-    public CacheConfig addProperty(String name, String value) {
-        props.setProperty(name, value);
-        return this;
-    }
-    public CacheConfig withObjectTimeToLive(long timeToLiveMs) {
-        props.setProperty(CACHE_TTL, ""+timeToLiveMs);
-        return this;
+    public double getPropertyAsDouble(String name, double defaultValue) {
+        return CacheUtils.parseDouble(getProperty(name), defaultValue);
     }
 
-    public CacheConfig withMaxObjectAndItems(int maxObjects, int maxItems) {
-        props.setProperty(CACHE_MAX_LOCAL_OBJECTS, ""+maxObjects);
-        props.setProperty(CACHE_MAX_LOCAL_ITEMS, ""+maxItems);
-        return this;
-    }
-    public CacheConfig withMaxIssues(long maxIssues) {
-        props.setProperty(CACHE_ISSUES_MAX_COUNT, ""+maxIssues);
-        return this;
-    }
-    /** set maximum number of events kept in cache queue */
-    public CacheConfig withMaxEvents(long maxEvents) {
-        props.setProperty(CACHE_EVENTS_MAX_COUNT, ""+maxEvents);
-        return this;
-    }
-    /** add callback */
-    public CacheConfig withCallback(String eventType, Function<CacheEvent, String> callback) {
-        callbacks.put(eventType, callback);
-        return this;
-    }
-
-    /** define internal timer delay and period time in milliseconds */
-    public CacheConfig withTimer(long delayMs, long periodMs) {
-        props.setProperty(CACHE_TIMER_DELAY, ""+delayMs);
-        props.setProperty(CACHE_TIMER_PERIOD, ""+periodMs);
-        return this;
-    }
     /** name of group - all caches connecting together should be having the same group
      * name of group could be like GlobalAppCache */
     public static String CACHE_GROUP = "CACHE_GROUP";

@@ -11,7 +11,7 @@ import java.util.*;
 public class InternalPriorityQueueCacheStorage extends CacheStorageBase {
 
     /** objects in cache */
-    private final HashMap<String, CacheObject> localCache = new HashMap<>();
+    private final java.util.concurrent.ConcurrentHashMap<String, CacheObject> localCache = new java.util.concurrent.ConcurrentHashMap<>();
     private final PriorityQueue<CacheObject> queue = new PriorityQueue<>();
 
     public InternalPriorityQueueCacheStorage(StorageInitializeParameter p) {

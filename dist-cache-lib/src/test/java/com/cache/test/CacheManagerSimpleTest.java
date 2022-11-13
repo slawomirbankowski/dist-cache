@@ -10,13 +10,12 @@ public class CacheManagerSimpleTest {
 
     public static void main(String[] args) {
         log.info("START------");
-        CacheConfig cfg = CacheConfig.buildEmptyConfig()
+        Cache cache = DistCacheFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withStorageHashMap()
-                .withMaxObjectAndItems(30, 100);
-        log.info("Config GUID: " + cfg.getConfigGuid());
-        log.info("Initializing cache");
-        Cache cache = DistCacheFactory.createInstance(cfg);
+                .withMaxObjectAndItems(30, 100)
+                .createInstance();
+        log.info("Config GUID: " + cache.getCacheConfig().getConfigGuid());
         log.info("Cache GUID: " + cache.getCacheGuid());
         log.info("Cache createdDateTime: " + cache.getCreatedDateTime());
         log.info("Cache getObjectsCount: " + cache.getObjectsCount());

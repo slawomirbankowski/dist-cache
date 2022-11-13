@@ -1,6 +1,7 @@
 package com.cache.base;
 
 import com.cache.api.*;
+import com.cache.encoders.KeyEncoderNone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ public abstract class CacheBase implements Cache {
     protected boolean isClosed = false;
     /** cache properties to initialize all storages, agent, policies, */
     protected CacheConfig cacheCfg = null;
+    /**default mode for cache objects added without mode */
     protected CacheMode defaultMode = CacheMode.modeTtlTenSeconds;
     /** queue of issues reported when using cache */
     protected final Queue<CacheIssue> issues = new LinkedList<>();
@@ -39,20 +41,23 @@ public abstract class CacheBase implements Cache {
     /** callbacks - methods to be called when given event is happening
      * only one callback per event type is allowed */
     protected HashMap<String, Function<CacheEvent, String>> callbacks = new HashMap<>();
+    /** key encoder to hide passwords and secrets in keys */
+    protected CacheKeyEncoder keyEncoder;
 
     public CacheBase() {
-        this.cacheCfg = CacheConfig.buildDefaultConfig();
-        addEvent(CacheEvent.startCache());
-
-        log.info("Creating new cache with DEFAULT CONFIG and GUID: " + cacheManagerGuid);
+        this(CacheConfig.buildEmptyConfig(), new HashMap<>());
+    }
+    public CacheBase(CacheConfig cfg) {
+        this(cfg, new HashMap<>());
     }
     /** initialize current manager with properties
      * this is creating storages, connecting to storages
      * creating cache policy, create agent and connecting to other cache agents */
-    public CacheBase(CacheConfig cfg) {
+    public CacheBase(CacheConfig cfg, Map<String, Function<CacheEvent, String>> callbacksMethods) {
         this.cacheCfg = cfg;
         // add all callback functions
-        cacheCfg.getCallbacks().entrySet().stream().forEach(cb -> callbacks.put(cb.getKey(), cb.getValue()));
+        callbacksMethods.entrySet().stream().forEach(cb -> callbacks.put(cb.getKey(), cb.getValue()));
+        initializeEncoder();
         log.info("--------> Creating new cache with GUID: " + cacheManagerGuid + ", CONFIG: " + cfg.getConfigGuid() + ", properties: " + cfg.getProperties().size());
     }
 
@@ -69,6 +74,11 @@ public abstract class CacheBase implements Cache {
     /** get date and time of creation for this CacheManager */
     public LocalDateTime getCreatedDateTime() { return createdDateTime; }
 
+    /** initialize key encoder to encode secrets */
+    private void initializeEncoder() {
+        // TODO: initialize encoder for secrets and passwords in key
+        keyEncoder = new KeyEncoderNone();
+    }
     /** add issue to cache manager to be revoked by parent
      * issue could be Exception, Error, problem with connecting to storage,
      * internal error, not consistent state that is unknown and could be used by parent manager */

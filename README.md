@@ -35,6 +35,4 @@ To be added:
 - cache re-set while working
 - cache blacklist
 - cache object group and mode, acquire time, refresh time, methods to get next value for model
-- get total cache size
-- get list of current cache list
 - cache key for secrets

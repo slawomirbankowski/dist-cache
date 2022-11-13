@@ -13,6 +13,9 @@ public interface Cache {
     String getCacheGuid();
     /** get date and time of creation for this cache */
     LocalDateTime getCreatedDateTime();
+
+    /** get configuration for cache */
+    CacheConfig getCacheConfig();
     /** check if cache has been already closed and deinitialized */
     boolean getClosed();
     /** check if there is object for given key in cache - this is checking in all storages available */
