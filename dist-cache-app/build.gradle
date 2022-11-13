@@ -1,0 +1,14 @@
+plugins {
+    id 'java'
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':dist-cache-api')
+    implementation project(':dist-cache-lib')
+}

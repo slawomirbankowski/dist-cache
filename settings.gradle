@@ -1,0 +1,5 @@
+rootProject.name = 'dist-cache'
+include 'dist-cache-api'
+include 'dist-cache-lib'
+include 'dist-cache-app'
+include 'dist-cache-client'
