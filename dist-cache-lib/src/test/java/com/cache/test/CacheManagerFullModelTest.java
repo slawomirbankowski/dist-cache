@@ -13,17 +13,15 @@ public class CacheManagerFullModelTest {
 
     public static void main(String[] args) {
         log.info("START------");
-        CacheConfig cfg= CacheConfig.buildEmptyConfig()
+        Cache cache = DistCacheFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withPort(9999)
                 .withCacheApp("https://localhost:9999/")
                 .withServers("localhost:9095")
                 .withStorageHashMap()
                 //.withStorageKafka("")
-                .withMaxObjectAndItems(100, 20000);
-
-        log.info("Initializing cache");
-        Cache cache = DistCacheFactory.createInstance(cfg);
+                .withMaxObjectAndItems(100, 20000)
+                .createInstance();
 
         log.info("Initialize DAO to keep objects");
         DatabaseDao dao = new DatabaseDao();

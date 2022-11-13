@@ -4,19 +4,22 @@ import com.cache.DistCacheFactory;
 import com.cache.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CacheManagerCleanTest {
     private static final Logger log = LoggerFactory.getLogger(CacheManagerCleanTest.class);
 
     public static void main(String[] args) {
         log.info("START------");
-        CacheConfig cfg = CacheConfig.buildEmptyConfig()
+        Cache cache = DistCacheFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withStorageHashMap()
                 .withObjectTimeToLive(CacheMode.TIME_TEN_SECONDS)
                 .withTimer(1000L, 1000L)
-                .withMaxObjectAndItems(30, 100);
-        Cache cache = DistCacheFactory.createInstance(cfg);
+                .withMaxObjectAndItems(30, 100)
+                .createInstance();
+
         // key_keep should be still kept in
         cache.withCache("key_keep", key -> "value", CacheMode.modeKeep);
         // key_refresh should be refreshed
@@ -34,5 +37,11 @@ public class CacheManagerCleanTest {
         log.info("Cache getItemsCount: " + cache.getItemsCount() + ", keys: " + cache.getCacheKeys("") + ", key_refresh: " + cache.getObject("key_refresh"));
         cache.close();
         log.info("END-----");
+    }
+
+    @Test
+    public void cleanTest() {
+        log.info("START clean test");
+        assertEquals(1, 3);
     }
 }

@@ -67,6 +67,10 @@ public class CacheObjectInfo {
     public String getObjectClassName() {
         return objectClassName;
     }
+    public long getRefreshesCount() {
+        return refreshesCount;
+    }
+
     @Override
     public String toString() {
         return "key="+ key+", createdTimeMs="+createdTimeMs+", objectSeq="+objectSeq+", objSize="+objSize+", acquireTimeMs="+acquireTimeMs+", usagesCount="+usagesCount+", refreshesCount="+refreshesCount+", mode="+mode+", timeToLiveMs="+timeToLiveMs+", lastUseTime="+lastUseTime+", lastRefreshTime="+lastRefreshTime+", objectClassName="+objectClassName;

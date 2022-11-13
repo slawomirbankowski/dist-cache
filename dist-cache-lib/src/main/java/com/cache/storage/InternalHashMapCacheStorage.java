@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 public class InternalHashMapCacheStorage extends CacheStorageBase {
 
     /** objects in cache */
-    private final java.util.HashMap<String, CacheObject> localCache = new HashMap<>();
+    private final java.util.concurrent.ConcurrentHashMap<String, CacheObject> localCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     public InternalHashMapCacheStorage(StorageInitializeParameter p) {
         super(p);

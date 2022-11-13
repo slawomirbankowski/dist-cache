@@ -47,6 +47,14 @@ public class CacheManager extends CacheBase {
         initializePolicies();
         initializeTimer();
     }
+    public CacheManager(CacheConfig cacheCfg, Map<String, Function<CacheEvent, String>> callbacksMethods) {
+        super(cacheCfg, callbacksMethods);
+        // TODO: finishing initialization - to be done, creating agent, storages, policies
+        initializeStorages();
+        initializeAgent();
+        initializePolicies();
+        initializeTimer();
+    }
 
     /** initialize all storages from configuration*/
     private void initializeStorages() {

@@ -17,11 +17,7 @@ lazy val `dist-cache-lib` = project
   )
   .dependsOn(`dist-cache-api`)
   .settings(
-    libraryDependencies ++= Seq(
-      "ch.qos.logback" % "logback-core" % "1.4.4",
-      "ch.qos.logback" % "logback-classic" % "1.4.4",
-      "org.slf4j" % "slf4j-api" % "2.0.3"
-    ),
+    libraryDependencies ++= Dependencies.distCacheLib,
     fork := true
   )
 
