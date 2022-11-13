@@ -46,3 +46,4 @@ logs/
 RUNNING_PID
 
 .bsp/sbt.json
+.gradle
