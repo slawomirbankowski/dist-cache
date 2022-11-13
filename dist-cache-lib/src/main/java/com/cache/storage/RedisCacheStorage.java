@@ -1,13 +1,11 @@
 package com.cache.storage;
 
 import com.cache.api.CacheObject;
+import com.cache.api.CacheObjectInfo;
 import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /** cache with Elasticsearch index - need to connect to Elasticsearch,
  * create index and read/write items from/to cache
@@ -46,6 +44,10 @@ public class RedisCacheStorage extends CacheStorageBase {
     /** get keys for all cache items */
     public Set<String> getKeys(String containsStr) {
         return new HashSet<String>();
+    }
+    /** get info values */
+    public List<CacheObjectInfo> getValues(String containsStr) {
+        return new LinkedList<CacheObjectInfo>();
     }
 
     /** clear caches with given clear cache */

@@ -1,15 +1,16 @@
 package com.cache.api;
 
-import java.util.Properties;
-import java.util.function.Function;
+import java.time.LocalDateTime;
 
 /** factory to create configuration for cache  */
 public class CacheEvent {
 
-    private Object parent;
-    private String method;
-    private String eventType;
-    private Object[] params;
+    /** date and time of event */
+    private final LocalDateTime createdDateTime = LocalDateTime.now();
+    private final Object parent;
+    private final String method;
+    private final String eventType;
+    private final Object[] params;
 
     public CacheEvent(Object parent, String method, String eventType, Object... params) {
         this.parent = parent;
@@ -40,6 +41,18 @@ public class CacheEvent {
         return new CacheEvent(null, "", EVENT_CACHE_START);
     }
 
+    public static String EVENT_INITIALIZE_STORAGES = "EVENT_INITIALIZE_STORAGES";
+    public static String EVENT_INITIALIZE_STORAGE = "EVENT_INITIALIZE_STORAGE";
+    public static String EVENT_DISPOSE_STORAGE = "EVENT_DISPOSE_STORAGE";
+    public static String EVENT_INITIALIZE_AGENT = "EVENT_INITIALIZE_AGENT";
+    public static String EVENT_INITIALIZE_POLICIES = "EVENT_INITIALIZE_POLICIES";
+    public static String EVENT_INITIALIZE_TIMERS = "EVENT_INITIALIZE_TIMERS";
+    public static String EVENT_INITIALIZE_TIMER_CLEAN = "EVENT_INITIALIZE_TIMER_CLEAN";
+    public static String EVENT_INITIALIZE_TIMER_COMMUNICATE = "EVENT_INITIALIZE_TIMER_COMMUNICATE";
+    public static String EVENT_TIMER_CLEAN = "EVENT_TIMER_CLEAN";
+    public static String EVENT_TIMER_COMMUNICATE = "EVENT_TIMER_COMMUNICATE";
     public static String EVENT_CACHE_START = "EVENT_CACHE_START";
     public static String EVENT_CACHE_CLEAN = "EVENT_CACHE_CLEAN";
+    public static String EVENT_CLOSE_BEGIN = "EVENT_CLOSE_BEGIN";
+    public static String EVENT_CLOSE_END = "EVENT_CLOSE_END";
 }

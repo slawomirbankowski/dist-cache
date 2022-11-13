@@ -32,9 +32,8 @@ public abstract class CacheStorageBase {
     public CacheStorageBase(StorageInitializeParameter p) {
         this.initParams = p;
         this.storageUid = CacheUtils.generateStorageGuid(getClass().getSimpleName());
-        maxObjects = CacheUtils.parseLong(p.p.getProperty(CacheConfig.CACHE_MAX_LOCAL_OBJECTS), 1000);
-        maxItems = CacheUtils.parseLong(p.p.getProperty(CacheConfig.CACHE_MAX_LOCAL_ITEMS), 1000);
-
+        maxObjects = initParams.cacheCfg.getPropertyAsLong(CacheConfig.CACHE_MAX_LOCAL_OBJECTS, 1000);
+        maxItems = initParams.cacheCfg.getPropertyAsLong(CacheConfig.CACHE_MAX_LOCAL_ITEMS, 1000);
     }
     /** get unique storage ID */
     public String getStorageUid() { return storageUid; }
@@ -54,6 +53,8 @@ public abstract class CacheStorageBase {
     /** get number of items in cache storage */
     public abstract int getItemsCount();
     public abstract Set<String> getKeys(String containsStr);
+    /** get info values */
+    public abstract List<CacheObjectInfo> getValues(String containsStr);
 
     /** clear caches with given clear cache */
     public abstract int clearCaches(int clearMode);

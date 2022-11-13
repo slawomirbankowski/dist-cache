@@ -22,12 +22,18 @@ public class CacheManagerEventTest {
                     log.info("::::::::: EVENT CLEAN");
                     return "OK";
                 })
+                .withCallback(CacheEvent.EVENT_INITIALIZE_STORAGE, x -> {
+                    log.info("::::::::: STORAGE NEW");
+                    return "OK";
+                })
                 .withTimer(1000L, 1000L)
                 .withMaxEvents(100)
                 .withMaxObjectAndItems(30, 100);
+        DistCacheFactory.createEmptyFactory().create();
 
         // create new cache with previously created configuration
         Cache cache = DistCacheFactory.createInstance(cfg);
+
         // key_keep should be still kept in
         cache.withCache("key_keep", key -> "value", CacheMode.modeKeep);
         // key_refresh should be refreshed

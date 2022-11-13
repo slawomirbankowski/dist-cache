@@ -19,7 +19,7 @@ public abstract class CacheBase implements Cache {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(CacheBase.class);
-    /** UUID for cache manager - globaly unique */
+    /** UUID for cache manager - globally unique */
     protected String cacheManagerGuid = CacheUtils.generateCacheGuid();
     /** creation date and time of this cache manager */
     protected LocalDateTime createdDateTime = LocalDateTime.now();
@@ -36,7 +36,8 @@ public abstract class CacheBase implements Cache {
     protected final Queue<CacheIssue> issues = new LinkedList<>();
     /** queue of events that would be added to callback methods */
     protected final Queue<CacheEvent> events = new LinkedList<>();
-    /** callbacks */
+    /** callbacks - methods to be called when given event is happening
+     * only one callback per event type is allowed */
     protected HashMap<String, Function<CacheEvent, String>> callbacks = new HashMap<>();
 
     public CacheBase() {
@@ -61,17 +62,17 @@ public abstract class CacheBase implements Cache {
     }
     /** get value of cache configuration */
     public String getConfigValue(String cfgName) {
-        return cacheCfg.getProperties().getProperty(cfgName);
+        return cacheCfg.getProperty(cfgName);
     }
     /** get unique identifier for this CacheManager object */
-    public String getCacheManagerGuid() { return cacheManagerGuid; }
+    public String getCacheGuid() { return cacheManagerGuid; }
     /** get date and time of creation for this CacheManager */
     public LocalDateTime getCreatedDateTime() { return createdDateTime; }
 
     /** add issue to cache manager to be revoked by parent
      * issue could be Exception, Error, problem with connecting to storage,
      * internal error, not consistent state that is unknown and could be used by parent manager */
-    protected void addIssue(CacheIssue issue) {
+    public void addIssue(CacheIssue issue) {
         synchronized (issues) {
             issues.add(issue);
             while (issues.size() > cacheCfg.getPropertyAsLong(CacheConfig.CACHE_ISSUES_MAX_COUNT, CacheConfig.CACHE_ISSUES_MAX_COUNT_VALUE)) {
@@ -80,7 +81,7 @@ public abstract class CacheBase implements Cache {
         }
     }
     /** add issue with method and exception */
-    protected void addIssue(String methodName, Exception ex) {
+    public void addIssue(String methodName, Exception ex) {
         addIssue(new CacheIssue(this, methodName, ex));
     }
     /** add new event and distribute it to callback methods,
@@ -117,16 +118,36 @@ public abstract class CacheBase implements Cache {
     }
 
     public <T> T withCache(String key, CacheableMethod<T> m) {
-        return withCache(key, k -> m.get(k), defaultMode);
+        return withCache(key, k -> m.get(k), defaultMode, Collections.emptySet());
     }
     public <T> T withCache(String key, Supplier<? extends T> supplier) {
-        return withCache(key, supplier, defaultMode);
+        return withCache(key, supplier, defaultMode, Collections.emptySet());
     }
     public <T> T withCache(String key, Function<String, ? extends T> mapper) {
-        return withCache(key, mapper, defaultMode);
+        return withCache(key, mapper, defaultMode, Collections.emptySet());
     }
     public <T> T withCache(String key, Method method, Object obj) {
         return withCache(key, method, obj, defaultMode);
+    }
+
+    public <T> T withCache(String key, Supplier<? extends T> supplier, CacheMode mode) {
+        return withCache(key, supplier, mode, Collections.emptySet());
+    }
+    public <T> T withCache(String key, Function<String, ? extends T> mapper, CacheMode mode) {
+        return withCache(key, mapper, mode, Collections.emptySet());
+    }
+    public <T> T withCache(String key, Method method, Object obj, CacheMode mode) {
+        return withCache(key, method, obj, mode, Collections.emptySet());
+    }
+
+    public <T> T withCache(String key, Supplier<? extends T> supplier, Set<String> groups) {
+        return withCache(key, supplier, defaultMode, groups);
+    }
+    public <T> T withCache(String key, Function<String, ? extends T> mapper, Set<String> groups) {
+        return withCache(key, mapper, defaultMode, groups);
+    }
+    public <T> T withCache(String key, Method method, Object obj, Set<String> groups) {
+        return withCache(key, method, obj, defaultMode, groups);
     }
 
     /** check if cache has been already closed and deinitialized */
@@ -136,7 +157,7 @@ public abstract class CacheBase implements Cache {
     /** close and deinitialize cache - remove all items, disconnect from all storages, stop all timers*/
     public void close() {
         isClosed = true;
-        log.info("Closing cache for GUID: " + getCacheManagerGuid());
+        log.info("Closing cache for GUID: " + getCacheGuid());
         onClose();
     }
 }

@@ -1,13 +1,11 @@
 package com.cache.storage;
 
 import com.cache.api.CacheObject;
+import com.cache.api.CacheObjectInfo;
 import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /** cache with JDBC connection to any compliant database
  * it would create special table with cache items and index to fast access
@@ -47,6 +45,10 @@ public class JdbcStorage extends CacheStorageBase {
     /** get keys for all cache items */
     public Set<String> getKeys(String containsStr) {
         return new HashSet<String>();
+    }
+    /** get info values */
+    public List<CacheObjectInfo> getValues(String containsStr) {
+        return new LinkedList<CacheObjectInfo>();
     }
     /** clear caches with given clear cache */
     public int clearCaches(int clearMode) {

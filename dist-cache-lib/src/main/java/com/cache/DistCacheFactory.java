@@ -20,9 +20,6 @@ public class DistCacheFactory {
 
     /** all created caches so far, this is just to iterate through objects and close them if needed */
     private static final LinkedList<Cache> createdCaches = new LinkedList<>();
-    /** factory is just creating managers */
-    private DistCacheFactory(Properties p) {
-    }
 
     /** get existing instance OR create one if it is not existing */
     public static synchronized Cache getInstance() {
@@ -53,5 +50,22 @@ public class DistCacheFactory {
     public static CacheConfig createEmptyConfig() {
         return CacheConfig.buildEmptyConfig();
     }
+
+    /** cache properties for factory */
+    private Properties props = new Properties();
+
+    /** factory is just creating managers */
+    private DistCacheFactory() {
+    }
+    public static DistCacheFactory createEmptyFactory() {
+        return new DistCacheFactory();
+    }
+    /** */
+    public DistCacheFactory create() {
+
+
+        return new DistCacheFactory();
+    }
+
 
 }

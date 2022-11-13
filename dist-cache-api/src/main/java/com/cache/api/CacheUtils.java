@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
+/** Utilities for dist-cache - different static methods to be used in projects */
 public class CacheUtils {
 
     /** time and date of utils creation - this could be considered as date/time of cache initialization first time */

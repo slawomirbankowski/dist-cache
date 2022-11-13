@@ -37,6 +37,7 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
     }
     /** get number of items in cache */
     public int getItemsCount() {
+        // TODO: calculate number of items
         return localCache.size();
     }
     /** get number of objects in this cache */
@@ -46,8 +47,16 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
     public Set<String> getKeys(String containsStr) {
         return localCache.keySet();
     }
+    /** get info values */
+    public List<CacheObjectInfo> getValues(String containsStr) {
+        return localCache.values()
+                .stream()
+                .map(CacheObject::getInfo)
+                .collect(Collectors.toList());
+    }
     public void onTimeClean(long checkSeq) {
         log.info("CLEARING objects in cache HashMap, check: " + checkSeq + ", size: " + localCache.size() + ", max:" + maxObjects);
+        // TODO: no need to perform this every single time
         List<String> oldKeys = localCache.values()
                 .stream()
                 .filter(CacheObject::isOld)
@@ -60,6 +69,7 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
                 .forEach(CacheObject::refreshIfNeeded);
         if (localCache.size() > maxObjects) {
             // check if there is too many items in cache even after deleting old ones
+            // TODO: implement removing some objects based on policy
             for (Map.Entry<String, CacheObject> e: localCache.entrySet()) {
                 e.getValue().isOld();
                 // TODO: clear
@@ -68,6 +78,7 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
             }
         }
     }
+    /** remove all objects by keys */
     public void removeObjectsByKeys(List<String> keys) {
         // TODO: add removed items
         keys.forEach(keyToRemove -> removeObjectByKey(keyToRemove));
