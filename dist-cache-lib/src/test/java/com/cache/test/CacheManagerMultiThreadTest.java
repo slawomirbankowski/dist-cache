@@ -8,6 +8,9 @@ import com.cache.api.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class CacheManagerMultiThreadTest {
     private static final Logger log = LoggerFactory.getLogger(CacheManagerMultiThreadTest.class);
 
@@ -19,7 +22,6 @@ public class CacheManagerMultiThreadTest {
                 .withObjectTimeToLive(CacheMode.TIME_ONE_HOUR)
                 .withMaxObjectAndItems(1000, 3000)
                 .createInstance();
-
         log.info("Cache storages: " + cache.getStorageKeys());
         int maxThreads = 10;
         ReadingWritingThread[] threaads = new ReadingWritingThread[maxThreads];
@@ -34,8 +36,8 @@ public class CacheManagerMultiThreadTest {
         for (int th=0; th<maxThreads; th++) {
             threaads[th].working = false;
         }
+        assertTrue(cache.getCacheValues("").size() > 100);
         // wait 1 second to finish all tests
-
         CacheUtils.sleep(1000);
         cache.close();
         log.info("END-----");

@@ -66,6 +66,8 @@ public class CacheMode {
     /** object in cache is kept until there is too many objects in cache,
      * after that objects with the lowest priority would be removed  */
     public static int MODE_PRIORITY = 3;
+    public static long TIME_THREE_SECONDS = 3 * 1000L;
+    public static long TIME_FIVE_SECONDS = 5 * 1000L;
     public static long TIME_TEN_SECONDS = 10 * 1000L;
     public static long TIME_TWENTY_SECONDS = 20 * 1000L;
     public static long TIME_THIRTY_SECONDS = 30 * 1000L;
@@ -102,7 +104,7 @@ public class CacheMode {
     public static CacheMode modeTtlFourWeeks = new CacheMode(MODE_TTL, TIME_FOUR_WEEKS);
 
     public static CacheMode modeKeep = new CacheMode(MODE_KEEP, TIME_FOREVER);
-
+    public static CacheMode modeInternalOnly = new CacheMode(MODE_KEEP, TIME_FOREVER);
     public static CacheMode modeRefreshTenSeconds = new CacheMode(MODE_REFRESH, TIME_TEN_SECONDS);
     public static CacheMode modeRefreshOneMinute = new CacheMode(MODE_REFRESH, TIME_ONE_MINUTE);
     public static CacheMode modeRefreshOneHour = new CacheMode(MODE_REFRESH, TIME_ONE_HOUR);

@@ -2,13 +2,15 @@ package com.cache.test;
 
 import com.cache.DistCacheFactory;
 import com.cache.api.*;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CacheManagerDistributeTest {
     private static final Logger log = LoggerFactory.getLogger(CacheManagerDistributeTest.class);
 
-    public static void main(String[] args) {
+    @Test
+    public void distributeAgentsTest() {
         log.info("START------");
         Cache cache = DistCacheFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest") // set friendly cache name
@@ -28,9 +30,9 @@ public class CacheManagerDistributeTest {
             long startTime = System.currentTimeMillis();
             for (int i=0; i<10+test*5; i++) {
                 String v = cache.withCache("key"+i, key -> {
-                        CacheUtils.sleep(80);
-                        return "value for " + key;
-                    }, CacheMode.modeTtlThirtySeconds);
+                    CacheUtils.sleep(80);
+                    return "value for " + key;
+                }, CacheMode.modeTtlThirtySeconds);
                 //log.info("Test=" + test + ", i=" + i + ", value= " + v);
             }
             long totalTime = System.currentTimeMillis() - startTime;
@@ -40,5 +42,6 @@ public class CacheManagerDistributeTest {
         log.info("Cache getObjectsCount: " + cache.getObjectsCount());
         cache.close();
         log.info("END-----");
+
     }
 }

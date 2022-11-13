@@ -46,6 +46,7 @@ public class CacheManager extends CacheBase {
         initializeAgent();
         initializePolicies();
         initializeTimer();
+        addEvent(new CacheEvent(this, "CacheManager", CacheEvent.EVENT_CACHE_START));
     }
     public CacheManager(CacheConfig cacheCfg, Map<String, Function<CacheEvent, String>> callbacksMethods) {
         super(cacheCfg, callbacksMethods);
@@ -54,6 +55,7 @@ public class CacheManager extends CacheBase {
         initializeAgent();
         initializePolicies();
         initializeTimer();
+        addEvent(new CacheEvent(this, "CacheManager", CacheEvent.EVENT_CACHE_START));
     }
 
     /** initialize all storages from configuration*/
