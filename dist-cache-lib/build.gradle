@@ -22,12 +22,12 @@ dependencies {
 
 def testLoggingConf = {
     testLogging {
-        showStandardStreams = false
+        showStandardStreams = true
         events "started", "passed", "skipped", "failed"
         exceptionFormat "short"
 
         info {
-            showStandardStreams = false
+            showStandardStreams = true
             events "started", "passed", "skipped", "failed"
             exceptionFormat "short"
         }
