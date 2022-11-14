@@ -144,37 +144,24 @@ public abstract class CacheBase implements Cache {
         return events;
     }
 
-    public <T> T withCache(String key, CacheableMethod<T> m) {
-        return withCache(key, k -> m.get(k), defaultMode, Collections.emptySet());
-    }
     public <T> T withCache(String key, Supplier<? extends T> supplier) {
         return withCache(key, supplier, defaultMode, Collections.emptySet());
     }
-    public <T> T withCache(String key, Function<String, ? extends T> mapper) {
-        return withCache(key, mapper, defaultMode, Collections.emptySet());
-    }
-    public <T> T withCache(String key, Method method, Object obj) {
-        return withCache(key, method, obj, defaultMode);
-    }
-
     public <T> T withCache(String key, Supplier<? extends T> supplier, CacheMode mode) {
         return withCache(key, supplier, mode, Collections.emptySet());
+    }
+    public <T> T withCache(String key, Supplier<? extends T> supplier, Set<String> groups) {
+        return withCache(key, supplier, defaultMode, groups);
+    }
+
+    public <T> T withCache(String key, Function<String, ? extends T> mapper) {
+        return withCache(key, mapper, defaultMode, Collections.emptySet());
     }
     public <T> T withCache(String key, Function<String, ? extends T> mapper, CacheMode mode) {
         return withCache(key, mapper, mode, Collections.emptySet());
     }
-    public <T> T withCache(String key, Method method, Object obj, CacheMode mode) {
-        return withCache(key, method, obj, mode, Collections.emptySet());
-    }
-
-    public <T> T withCache(String key, Supplier<? extends T> supplier, Set<String> groups) {
-        return withCache(key, supplier, defaultMode, groups);
-    }
     public <T> T withCache(String key, Function<String, ? extends T> mapper, Set<String> groups) {
         return withCache(key, mapper, defaultMode, groups);
-    }
-    public <T> T withCache(String key, Method method, Object obj, Set<String> groups) {
-        return withCache(key, method, obj, defaultMode, groups);
     }
 
     /** check if cache has been already closed and deinitialized */

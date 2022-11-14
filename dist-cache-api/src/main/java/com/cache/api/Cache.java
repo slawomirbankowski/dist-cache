@@ -74,20 +74,14 @@ public interface Cache {
     void setCallback(String eventType, Function<CacheEvent, String> callback);
 
     <T> T withCache(String key, Supplier<? extends T> supplier, CacheMode mode, Set<String> groups);
-    <T> T withCache(String key, Function<String, ? extends T> mapper, CacheMode mode, Set<String> groups);
-    <T> T withCache(String key, Method method, Object obj, CacheMode mode, Set<String> groups);
-
     <T> T withCache(String key, Supplier<? extends T> supplier, Set<String> groups);
-    <T> T withCache(String key, Function<String, ? extends T> mapper, Set<String> groups);
-    <T> T withCache(String key, Method method, Object obj, Set<String> groups);
-
     <T> T withCache(String key, Supplier<? extends T> supplier, CacheMode mode);
-    <T> T withCache(String key, Function<String, ? extends T> mapper, CacheMode mode);
-    <T> T withCache(String key, Method method, Object obj, CacheMode mode);
-
     <T> T withCache(String key, Supplier<? extends T> supplier);
+
+    <T> T withCache(String key, Function<String, ? extends T> mapper, CacheMode mode, Set<String> groups);
+    <T> T withCache(String key, Function<String, ? extends T> mapper, Set<String> groups);
+    <T> T withCache(String key, Function<String, ? extends T> mapper, CacheMode mode);
     <T> T withCache(String key, Function<String, ? extends T> mapper);
-    <T> T withCache(String key, Method method, Object obj);
 
     /** close and deinitialize cache - remove all items, disconnect from all storages, stop all timers*/
     void close();

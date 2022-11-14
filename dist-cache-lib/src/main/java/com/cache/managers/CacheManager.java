@@ -9,7 +9,6 @@ import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -180,7 +179,7 @@ public class CacheManager extends CacheBase {
         log.info("Removing caches and dispose storages");
         synchronized (storages) {
             for (CacheStorageBase value : storages.values()) {
-                value.clearCaches(1);
+                value.clearCache(1);
                 value.disposeStorage();
             }
             storages.clear();
@@ -203,11 +202,11 @@ public class CacheManager extends CacheBase {
 
     /** acquire object from external method, this could be slow because if could be a database query of external service
      * we would like to put cache around */
-    private <T> T acquireObject(String key, CacheableMethod<T> acquireMethod, CacheMode mode, Set<String> groups) {
+    private <T> T acquireObject(String key, Function<String, T> acquireMethod, CacheMode mode, Set<String> groups) {
         // Measure time of getting this object from cache
         long startActTime = System.currentTimeMillis();
         hitRatio.miss(); // hit ratio - add miss event
-        T objFromMethod = acquireMethod.get(key);
+        T objFromMethod = acquireMethod.apply(key);
         long acquireTimeMs = System.currentTimeMillis()-startActTime; // this is time of getting this object from method
         log.info("===> Got object from external method/supplier, time: " + acquireTimeMs);
         CacheObject co = new CacheObject(key, objFromMethod, acquireTimeMs, acquireMethod, mode, groups);
@@ -220,12 +219,7 @@ public class CacheManager extends CacheBase {
     /** set object to cache */
     public CacheSetBack setCacheObject(String key, Object value, CacheMode mode, Set<String> groups) {
         log.info("Set cache, key=" + key + ", mode=" + mode.getMode());
-        CacheableMethod<Object> acquireMethod = new CacheableMethod<Object>() {
-            @Override
-            public Object get(String key) {
-                return value;
-            }
-        };
+        Function<String, Object> acquireMethod = s -> value;
         CacheObject co = new CacheObject(key, value, 0L, acquireMethod, mode, groups);
         List<CacheObject> prevObjects = setItemInternal(co);
         return new CacheSetBack(prevObjects, co);
@@ -233,13 +227,13 @@ public class CacheManager extends CacheBase {
 
     /** if cache contains given key */
     public boolean contains(String key) {
-        return storages.values().stream().anyMatch(x -> x.contains(key));
+        return storages.values().stream().anyMatch(x -> x.getObject(key).isPresent());
     }
 
     /** clear caches with given clear cache */
     public int clearCaches(int clearMode) {
         addEvent(new CacheEvent(this, "clearCaches", CacheEvent.EVENT_CACHE_CLEAN));
-        storages.values().stream().forEach(x -> x.clearCaches(clearMode));
+        storages.values().stream().forEach(x -> x.clearCache(clearMode));
         return 1;
     }
     public Set<String> getStorageKeys() {
@@ -347,37 +341,20 @@ public class CacheManager extends CacheBase {
     /** execute with cache for key
      * if object in cache exists and it is valid, then this object would be returned
      * if not exists then method would be executed to get object, object would be put to cache and returned */
-    public <T> T withCache(String key, CacheableMethod<T> m, CacheMode mode, Set<String> groups) {
+    public <T> T withCache(String key, Supplier<? extends T> m, CacheMode mode, Set<String> groups) {
         try {
             Optional<T> itemFromCache = getObject(key);
             if (itemFromCache.isPresent()) {
                 hitRatio.hit();
             }
-            return itemFromCache.orElseGet(() -> acquireObject(key, m, mode, groups));
+            return itemFromCache.orElseGet(() -> acquireObject(key, __ -> m.get(), mode, groups));
         } catch (Exception ex) {
             addIssue("withCache", ex);
             return null;
         }
-    }
-    public <T> T withCache(String key, Supplier<? extends T> supplier, CacheMode mode, Set<String> groups) {
-        return withCache(key, (CacheableMethod<T>) key1 -> supplier.get(), mode, groups);
     }
     public <T> T withCache(String key, Function<String, ? extends T> mapper, CacheMode mode, Set<String> groups) {
-        return withCache(key, new CacheableMethod<T>() {
-            @Override
-            public T get(String key) {
-                return mapper.apply(key);
-            }
-        }, mode, groups);
-    }
-    public <T> T withCache(String key, Method method, Object obj, CacheMode mode, Set<String> groups) {
-        try {
-            // TODO: implement getting value by reflection
-            return withCache(key, (CacheableMethod<T>) key1 -> (T) CacheUtils.getFromMethod(method, obj), mode, groups);
-        } catch (Exception ex) {
-            addIssue("withCache", ex);
-            return null;
-        }
+        return withCache(key, () -> mapper.apply(key), mode, groups);
     }
 
 }

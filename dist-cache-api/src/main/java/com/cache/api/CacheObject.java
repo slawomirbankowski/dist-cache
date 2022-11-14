@@ -7,6 +7,8 @@ import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /** class to be put to cache - it contains object caches AND many other statistics
  * this cache is representing internal cache with object stored */
@@ -26,7 +28,7 @@ public class CacheObject {
     /** object to be push to cache */
     private Object objectInCache;
     /** method to refresh this object in local cache */
-    private CacheableMethod methodToAcquire;
+    private final Function<String, ?> methodToAcquire;
     /** size of object */
     private int objSize = 1;
     /** time of get this object from external sources, time to acquire in milliseconds */
@@ -43,7 +45,7 @@ public class CacheObject {
 
     /** creates object from deserialization */
     public CacheObject(long objectSeq, long createdTimeMs, long lastUseTime, long lastRefreshTime, String key,
-                       Object objectInCache, CacheableMethod methodToAcquire, int objSize, long acquireTimeMs,
+                       Object objectInCache, Function<String, ?> methodToAcquire, int objSize, long acquireTimeMs,
                        long usages, long refreshes, CacheMode mode, Set<String> groups) {
         this.objectSeq = objectSeq;
         this.createdTimeMs = createdTimeMs;
@@ -61,7 +63,7 @@ public class CacheObject {
     }
 
     /** creates new object in memory */
-    public CacheObject(String key, Object o, long acqTimeMs, CacheableMethod method, CacheMode mode, Set<String> groups) {
+    public CacheObject(String key, Object o, long acqTimeMs, Function<String, ?> method, CacheMode mode, Set<String> groups) {
         this.key = key;
         this.objSize = CacheUtils.estimateSize(o);
         this.objectInCache = o;
@@ -73,12 +75,7 @@ public class CacheObject {
     }
     /** creates new object in memory */
     public CacheObject(String key, Object o, long acqTimeMs, CacheMode mode, Set<String> groups) {
-        this(key, o, acqTimeMs, new CacheableMethod() {
-            @Override
-            public Object get(String key) {
-                return o;
-            }
-        }, mode, groups);
+        this(key, o, acqTimeMs, k -> o, mode, groups);
     }
     /** creates new object in memory */
     public CacheObject(String key, Object o, long ackTimeMs, CacheMode mode) {
@@ -125,6 +122,19 @@ public class CacheObject {
      * GC should normally dispose this object */
     public void releaseObject() {
     }
+
+    public boolean isOutdated() {
+        return this.timeToLive() > 0;
+    }
+
+    public int getPriority() {
+        return mode.getPriority();
+    }
+
+    public void renew() {
+        lastUseTime = System.currentTimeMillis();
+    }
+
     /** check if key of this object contains given string */
     public boolean keyContains(String str) {
         return key.contains(str);
@@ -163,7 +173,7 @@ public class CacheObject {
                 try {
                     long startAckTime = System.currentTimeMillis();
                     refreshes.incrementAndGet();
-                    objectInCache = methodToAcquire.get(getKey());
+                    objectInCache = methodToAcquire.apply(getKey());
                     acquireTimeMs = System.currentTimeMillis()-startAckTime;
                     calculateSize();
                     return objSize;

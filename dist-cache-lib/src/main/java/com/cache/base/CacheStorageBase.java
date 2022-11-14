@@ -46,7 +46,6 @@ public abstract class CacheStorageBase {
         return new StorageInfo(storageUid, storageCreatedDate, this.getClass().getName(),
                 getItemsCount(), getObjectsCount(), isInternal()); }
     /** check if object has given key, optional with specific type */
-    public abstract boolean contains(String key);
     /** get CacheObject item from cache by full key */
     public abstract Optional<CacheObject> getObject(String key);
     /** set item to cache and get previous item in cache for the same key */
@@ -54,7 +53,9 @@ public abstract class CacheStorageBase {
     /** remove objects in cache by keys */
     public abstract void removeObjectsByKeys(List<String> keys);
     /** remove single object by key */
-    public abstract void removeObjectByKey(String key);
+    public void removeObjectByKey(String key) {
+        removeObjectsByKeys(List.of(key));
+    }
     /** get number of objects in cache storage */
     public abstract int getObjectsCount();
     /** get number of items in cache storage */
@@ -64,7 +65,7 @@ public abstract class CacheStorageBase {
     public abstract List<CacheObjectInfo> getValues(String containsStr);
 
     /** clear caches with given clear cache */
-    public abstract int clearCaches(int clearMode);
+    public abstract int clearCache(int clearMode);
     /** clear cache contains given partial key */
     public abstract int clearCacheContains(String str);
     /** check cache every X seconds to clear TTL caches

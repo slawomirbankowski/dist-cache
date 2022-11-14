@@ -12,14 +12,14 @@ public class CacheObjectInfo {
     private final long acquireTimeMs;
     private final long usagesCount;
     private final long refreshesCount;
-    private final int mode;
+    private final CacheMode.Mode mode;
     private final long timeToLiveMs;
     private final long lastUseTime;
     private final long lastRefreshTime;
     private final String objectClassName;
 
     public CacheObjectInfo(String key, long createdTimeMs, long objectSeq, int objSize, long acquireTimeMs,
-                           long usagesCount, long refreshesCount, int mode, long timeToLiveMs, long lastUseTime, long lastRefreshTime,
+                           long usagesCount, long refreshesCount, CacheMode.Mode mode, long timeToLiveMs, long lastUseTime, long lastRefreshTime,
                            String objectClassName) {
         this.key = key;
         this.createdTimeMs = createdTimeMs;
@@ -52,7 +52,7 @@ public class CacheObjectInfo {
     public long getUsagesCount() {
         return usagesCount;
     }
-    public int getMode() {
+    public CacheMode.Mode getMode() {
         return mode;
     }
     public long getTimeToLiveMs() {

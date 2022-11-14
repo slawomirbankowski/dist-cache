@@ -1,8 +1,9 @@
 package com.cache.utils;
 
 import com.cache.api.AppGlobalInfo;
+import com.cache.api.CacheObject;
 
-import java.io.File;
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -87,6 +88,15 @@ public class CacheUtils {
         return LocalDateTime.now().format(formatFull);
     }
 
+    public static int itemCount(CacheObject o) {
+        if (o == null) return 0;
+        var size = o.getSize();
+        if (size != 1) return size;
+        var obj = o.getValue();
+        if (obj instanceof Collection) return ((Collection) obj).size();
+        else if (obj.getClass().isArray()) return Array.getLength(obj);
+        else return 1;
+    }
 
     public static String formatDateAsYYYYMMDDHHmmss(LocalDateTime ldt) {
         return ldt.format(formatFull);
