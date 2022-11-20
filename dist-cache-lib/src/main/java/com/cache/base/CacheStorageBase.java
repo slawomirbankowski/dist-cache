@@ -12,7 +12,8 @@ import java.util.Set;
 /** base abstract class for storage to keep caches
  * storage could be:
  * internal (HashMap, WeakHashMap) - kept in local JVM memory
- * external (Elasticsearch, Redis) - kept somewhere outside JVM memory */
+ * external (Elasticsearch, Redis) - kept somewhere outside JVM memory
+ * */
 public abstract class CacheStorageBase {
     protected static final Logger log = LoggerFactory.getLogger(CacheStorageBase.class);
     /** unique identifier of this storage */
@@ -35,9 +36,14 @@ public abstract class CacheStorageBase {
         maxObjects = initParams.cacheCfg.getPropertyAsLong(CacheConfig.CACHE_MAX_LOCAL_OBJECTS, 1000);
         maxItems = initParams.cacheCfg.getPropertyAsLong(CacheConfig.CACHE_MAX_LOCAL_ITEMS, 1000);
     }
+
     /** get unique storage ID */
     public String getStorageUid() { return storageUid; }
 
+    /** get information about this storage */
+    public StorageInfo getStorageInfo() {
+        return new StorageInfo(storageUid, storageCreatedDate, this.getClass().getName(),
+                getItemsCount(), getObjectsCount(), isInternal()); }
     /** check if object has given key, optional with specific type */
     public abstract boolean contains(String key);
     /** get CacheObject item from cache by full key */
@@ -68,7 +74,7 @@ public abstract class CacheStorageBase {
     public abstract boolean isInternal();
     /** dispose this storage if needed */
     public void disposeStorage() {
-        // by default no dispose - it could be overriden by any storage
+        // by default no dispose - it could be overridden by any storage
     }
 
 }

@@ -16,7 +16,7 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
         super(p);
     }
     /** HashMap is internal storage */
-    public  boolean isInternal() { return true; }
+    public boolean isInternal() { return true; }
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
         return localCache.containsKey(key);
@@ -55,7 +55,7 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
                 .collect(Collectors.toList());
     }
     public void onTimeClean(long checkSeq) {
-        log.info("CLEARING objects in cache HashMap, check: " + checkSeq + ", size: " + localCache.size() + ", max:" + maxObjects);
+        log.debug("CLEARING objects in cache HashMap, check: " + checkSeq + ", size: " + localCache.size() + ", max:" + maxObjects);
         // TODO: no need to perform this every single time
         List<String> oldKeys = localCache.values()
                 .stream()

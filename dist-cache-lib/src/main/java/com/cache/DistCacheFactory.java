@@ -84,9 +84,9 @@ public class DistCacheFactory {
     public static DistCacheFactory buildPropertiesFactory(Map initialFactoryProperties) {
         return DistCacheFactory
                 .buildEmptyFactory()
-                .withProperties(initialFactoryProperties);
+                .withMap(initialFactoryProperties);
     }
-    /** */
+    /** build factory from given configuration */
     public static DistCacheFactory buildConfigFactory(CacheConfig cacheCfg) {
         return buildPropertiesFactory(cacheCfg.getProperties());
     }
@@ -158,6 +158,23 @@ public class DistCacheFactory {
         props.setProperty(CacheConfig.ELASTICSEARCH_PASS, pass);
         return this;
     }
+
+    public DistCacheFactory withStorageJdbc(String url, String driver, String user, String pass) {
+        String existingProps = ""+props.getProperty(CacheConfig.CACHE_STORAGES);
+        props.setProperty(CacheConfig.CACHE_STORAGES, existingProps + "," + CacheConfig.CACHE_STORAGE_VALUE_JDBC);
+        props.setProperty(CacheConfig.JDBC_URL, url);
+        props.setProperty(CacheConfig.JDBC_DRIVER, driver);
+        props.setProperty(CacheConfig.JDBC_USER, user);
+        props.setProperty(CacheConfig.JDBC_PASS, pass);
+        return this;
+    }
+    public DistCacheFactory withJdbc(String url, String driver, String user, String pass) {
+        props.setProperty(CacheConfig.JDBC_URL, url);
+        props.setProperty(CacheConfig.JDBC_DRIVER, driver);
+        props.setProperty(CacheConfig.JDBC_USER, user);
+        props.setProperty(CacheConfig.JDBC_PASS, pass);
+        return this;
+    }
     public DistCacheFactory withStorageRedis(String url, String port) {
         String existingProps = ""+props.getProperty(CacheConfig.CACHE_STORAGES);
         props.setProperty(CacheConfig.CACHE_STORAGES, existingProps + "," + CacheConfig.CACHE_STORAGE_VALUE_REDIS);
@@ -180,10 +197,16 @@ public class DistCacheFactory {
         props.setProperty(name, value);
         return this;
     }
-    public DistCacheFactory withProperties(Map initialFactoryProperties) {
-        initialFactoryProperties.entrySet().stream().forEach(pr -> {
-
-        });
+    public DistCacheFactory withProperties(Properties initialFactoryProperties) {
+        for (Map.Entry<Object, Object> e: initialFactoryProperties.entrySet()) {
+            props.setProperty(e.getKey().toString(), e.getValue().toString());
+        }
+        return this;
+    }
+    public DistCacheFactory withMap(Map<String, String> initialFactoryProperties) {
+        for (Map.Entry<String, String> e: initialFactoryProperties.entrySet()) {
+            props.setProperty(e.getKey(), e.getValue());
+        }
         return this;
     }
     public DistCacheFactory withObjectTimeToLive(long timeToLiveMs) {

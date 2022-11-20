@@ -18,6 +18,11 @@ public interface Cache {
     CacheConfig getCacheConfig();
     /** check if cache has been already closed and deinitialized */
     boolean getClosed();
+    /** get information about all storages in this cache */
+    List<StorageInfo> getStoragesInfo();
+    /** get information about all storages in this cache */
+    int getStoragesCount();
+
     /** check if there is object for given key in cache - this is checking in all storages available */
     boolean contains(String key);
     /** get all keys for storages, each storage has unique key to identify  */
@@ -47,7 +52,12 @@ public interface Cache {
     /** get first object in cache for given key
      * if many storages has the same object - only first one is retrieved */
     <T> Optional<T> getObject(String key);
-
+    /** get item from cache if exists or None */
+    Optional<CacheObject> getCacheObject(String key);
+    /** get item from cache as String if exists or None */
+    String getCacheObjectAsString(String key);
+    /** get item from cache if exists or None */
+    CacheSetBack setCacheObject(String key, Object value, CacheMode mode, Set<String> groups);
     /** get all recent issues with cache,
      * issues might be caused by internal Exception, connection problems, incorrect usage
      * only last X issues are stored in cache */
@@ -58,6 +68,8 @@ public interface Cache {
      * only last X events are stored in cache */
     Queue<CacheEvent> getEvents();
 
+    /** get info about cache */
+    CacheInfo getCacheInfo();
     /** set new callback method for events for given type */
     void setCallback(String eventType, Function<CacheEvent, String> callback);
 

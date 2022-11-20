@@ -1,6 +1,6 @@
 package com.cache.api;
 
-/** factory to create configuration for cache  */
+/** internal issue in Cache */
 public class CacheIssue {
 
     private final Object parent;

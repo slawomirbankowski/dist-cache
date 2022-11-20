@@ -29,6 +29,14 @@ public class CacheConfig {
     public Map getProperties() {
         return Collections.unmodifiableMap(props);
     }
+    /** get HashMap with properties for cache */
+    public HashMap<String, String> getHashMap() {
+        HashMap<String, String> hm = new HashMap<>();
+        for (Map.Entry<Object, Object> e: props.entrySet()) {
+            hm.put(e.getKey().toString(), e.getValue().toString());
+        }
+        return hm;
+    }
     /** get unique ID of this config for cache */
     public String getConfigGuid() {
         return configGuid;
@@ -37,6 +45,10 @@ public class CacheConfig {
     public String getProperty(String name) {
         return props.getProperty(name);
     }
+    public boolean hasProperty(String name) {
+        return props.containsKey(name);
+    }
+
     public String getProperty(String name, String defaultValue) {
         String value = getProperty(name);
         if (value != null) {
@@ -47,6 +59,9 @@ public class CacheConfig {
     }
     public long getPropertyAsLong(String name, long defaultValue) {
         return CacheUtils.parseLong(getProperty(name), defaultValue);
+    }
+    public int getPropertyAsInt(String name, int defaultValue) {
+        return CacheUtils.parseInt(getProperty(name), defaultValue);
     }
     public double getPropertyAsDouble(String name, double defaultValue) {
         return CacheUtils.parseDouble(getProperty(name), defaultValue);
@@ -67,7 +82,10 @@ public class CacheConfig {
     /** delay of timer run to clear storages - value in milliseconds */
     public static String CACHE_TIMER_DELAY = "CACHE_TIMER_DELAY";
     public static long CACHE_TIMER_DELAY_VALUE = 1000;
-
+    public static String CACHE_TIMER_COMMUNICATE_DELAY = "CACHE_TIMER_COMMUNICATE_DELAY";
+    public static long CACHE_TIMER_COMMUNICATE_DELAY_VALUE = 60000;
+    public static String CACHE_TIMER_RATIO_DELAY = "CACHE_TIMER_COMMUNICATE_DELAY";
+    public static long CACHE_TIMER_RATIO_DELAY_VALUE = 60000;
     /** period of timer to clear storages - value in milliseconds */
     public static String CACHE_TIMER_PERIOD = "CACHE_TIMER_PERIOD";
     public static long CACHE_TIMER_PERIOD_VALUE = 1000;
@@ -98,9 +116,6 @@ public class CacheConfig {
     public static String CACHE_EVENTS_MAX_COUNT = "CACHE_EVENTS_MAX_COUNT";
     public static long CACHE_EVENTS_MAX_COUNT_VALUE = 100;
 
-    /** IDs of static callbacks */
-    public static String CACHE_CALLBACKS = "CACHE_CALLBACKS";
-
     /** maximum number of local items - each object could be a list with many objects
      * this could be taken from collection size = number of items */
     public static String CACHE_MAX_LOCAL_ITEMS = "CACHE_MAX_LOCAL_ITEMS";
@@ -125,6 +140,13 @@ public class CacheConfig {
     public static String CACHE_STORAGE_VALUE_KAFKA = "KafkaStorage";
     public static String CACHE_STORAGE_VALUE_LOCAL_DISK = "LocalDiskStorage";
     public static String CACHE_STORAGE_VALUE_ELASTICSEARCH = "ElasticsearchCacheStorage";
+    public static String CACHE_STORAGE_VALUE_JDBC = "JdbcStorage";
+
+    /** JDBC connection */
+    public static String JDBC_URL = "JDBC_URL";
+    public static String JDBC_DRIVER = "JDBC_DRIVER";
+    public static String JDBC_USER = "JDBC_USER";
+    public static String JDBC_PASS = "JDBC_PASS";
 
     /** elasticsearch URL */
     public static String ELASTICSEARCH_URL = "ELASTICSEARCH_URL";

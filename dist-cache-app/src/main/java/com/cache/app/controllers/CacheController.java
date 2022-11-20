@@ -1,0 +1,52 @@
+package com.cache.app.controllers;
+
+import com.cache.api.AgentRegister;
+import com.cache.api.CacheInfo;
+import com.cache.api.CacheRegister;
+import com.cache.api.ControllerStatus;
+import com.cache.app.services.CacheService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.Set;
+
+@RestController
+@RequestMapping(value = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
+public class CacheController {
+
+    /** local logger for this class*/
+    protected static final Logger log = LoggerFactory.getLogger(CacheController.class);
+    @Autowired
+    protected CacheService cacheService;
+
+    @GetMapping("/caches")
+    public Set<String> getCacheKeys() {
+        return cacheService.listCaches();
+    }
+
+    @GetMapping("/cache/{id}")
+    public CacheInfo getCacheByKey(@PathVariable("id") final String id) {
+        return cacheService.getCacheInfoByKey(id);
+    }
+
+    @PutMapping("/cache")
+    public CacheInfo addCache(@RequestBody CacheRegister register) {
+        return cacheService.initializeCache(register);
+    }
+
+    @PostMapping("/cache")
+    public CacheInfo changeCache(@RequestBody CacheRegister register) {
+        return cacheService.initializeCache(register);
+    }
+
+    @DeleteMapping("/cache/{id}")
+    public ControllerStatus deleteCache(@PathVariable("id") final String id) {
+        return cacheService.deactivateCache(id);
+    }
+
+}

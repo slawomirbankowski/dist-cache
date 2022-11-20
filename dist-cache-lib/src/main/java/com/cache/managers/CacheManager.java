@@ -1,6 +1,6 @@
 package com.cache.managers;
 
-import com.cache.agent.AgentObject;
+import com.cache.agent.AgentInstance;
 import com.cache.api.*;
 import com.cache.base.CacheBase;
 import com.cache.base.CachePolicyBase;
@@ -29,7 +29,7 @@ public class CacheManager extends CacheBase {
      * agent can connect to different cache managers in the same group
      * to cooperate as distributed cache
      *  */
-    private final AgentObject agent = new AgentObject();
+    private AgentInstance agent = new AgentInstance(this);
     /** all storages to store cache objects - there could be internal storages,
      * Elasticsearch, Redis, local disk, JDBC database with indexed table, and many others */
     private final Map<String, CacheStorageBase> storages = new HashMap<>();
@@ -56,6 +56,16 @@ public class CacheManager extends CacheBase {
         initializePolicies();
         initializeTimer();
         addEvent(new CacheEvent(this, "CacheManager", CacheEvent.EVENT_CACHE_START));
+    }
+    /** get information about all storages in this cache */
+    public List<StorageInfo> getStoragesInfo() {
+        return storages.values().stream()
+                .map(CacheStorageBase::getStorageInfo)
+                .collect(Collectors.toList());
+    }
+    /** get number of storages */
+    public int getStoragesCount() {
+        return storages.size();
     }
 
     /** initialize all storages from configuration*/
@@ -95,6 +105,7 @@ public class CacheManager extends CacheBase {
     /** initialize Agent to communicate with other CacheManagers */
     protected void initializeAgent() {
         addEvent(new CacheEvent(this, "initializeAgent", CacheEvent.EVENT_INITIALIZE_AGENT));
+        agent.initializeAgent();
     }
 
     /** initialize policies */
@@ -121,9 +132,10 @@ public class CacheManager extends CacheBase {
         timerTasks.add(onTimeCleanTask);
         timer.scheduleAtFixedRate(onTimeCleanTask, cleanDelayMs, cleanPeriodMs);
         addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMER_CLEAN));
+
         // initialization for communicate
-        long communicateDelayMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_DELAY, CacheConfig.CACHE_TIMER_DELAY_VALUE);
-        long communicatePeriodMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_PERIOD, CacheConfig.CACHE_TIMER_PERIOD_VALUE);
+        long communicateDelayMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_COMMUNICATE_DELAY, CacheConfig.CACHE_TIMER_COMMUNICATE_DELAY_VALUE);
+        long communicatePeriodMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_COMMUNICATE_DELAY, CacheConfig.CACHE_TIMER_COMMUNICATE_DELAY_VALUE);
         log.info("Scheduling communicating timer task for cache: " + getCacheGuid());
         TimerTask onTimeCommunicateTask = new TimerTask() {
             @Override
@@ -140,16 +152,15 @@ public class CacheManager extends CacheBase {
         timer.scheduleAtFixedRate(onTimeCommunicateTask, communicateDelayMs, communicatePeriodMs);
         addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMER_COMMUNICATE));
         // initialization for
-        long ratioDelayMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_DELAY, CacheConfig.CACHE_TIMER_DELAY_VALUE);
-        long ratioPeriodMs = 60 * cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_PERIOD, CacheConfig.CACHE_TIMER_PERIOD_VALUE);
+        long ratioDelayMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_RATIO_DELAY, CacheConfig.CACHE_TIMER_RATIO_DELAY_VALUE);
+        long ratioPeriodMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_RATIO_DELAY, CacheConfig.CACHE_TIMER_RATIO_DELAY_VALUE);
         log.info("Scheduling ratio timer task for cache: " + getCacheGuid());
         TimerTask onTimeHitRatioTask = new TimerTask() {
             @Override
             public void run() {
                 try {
-                    onTimeCommunicate();
+                    onTimeRatio();
                 } catch (Exception ex) {
-                    // TODO: mark exception
                     addIssue("initializeTimer:ratio", ex);
                 }
             }
@@ -181,11 +192,11 @@ public class CacheManager extends CacheBase {
     }
 
     /** set object in all or one internal caches */
-    private List<Optional<CacheObject>> setItemInternal(CacheObject co) {
+    private List<CacheObject> setItemInternal(CacheObject co) {
         addedItemsSequence.incrementAndGet();
         return storages.values().stream()
                 .filter(CacheStorageBase::isInternal)
-                .map(storage -> storage.setObject(co))
+                .flatMap(storage -> storage.setObject(co).stream())
                 .collect(Collectors.toList());
     }
 
@@ -204,6 +215,19 @@ public class CacheManager extends CacheBase {
         //Optional<CacheObject> prev = setItem(co);
         //prev.ifPresent(CacheObject::releaseObject);
         return objFromMethod;
+    }
+    /** set object to cache */
+    public CacheSetBack setCacheObject(String key, Object value, CacheMode mode, Set<String> groups) {
+        log.info("Set cache, key=" + key + ", mode=" + mode.getMode());
+        CacheableMethod<Object> acquireMethod = new CacheableMethod<Object>() {
+            @Override
+            public Object get(String key) {
+                return value;
+            }
+        };
+        CacheObject co = new CacheObject(key, value, 0L, acquireMethod, mode, groups);
+        List<CacheObject> prevObjects = setItemInternal(co);
+        return new CacheSetBack(prevObjects, co);
     }
 
     /** if cache contains given key */
@@ -238,7 +262,6 @@ public class CacheManager extends CacheBase {
                 .flatMap(x -> x.getValues(containsStr).stream())
                 .collect(Collectors.toList());
     }
-
 
     /** get number of objects in all storages
      * if one object is inserted into cache - this is still one object even if this is a list of 1000 elements */
@@ -275,9 +298,31 @@ public class CacheManager extends CacheBase {
     }
     public void onTimeCommunicate() {
         addEvent(new CacheEvent(this, "onTimeClean", CacheEvent.EVENT_TIMER_COMMUNICATE));
-        // TODO: implement communication of agent with other cache agents
+        agent.onTimeCommunicate();
+    }
+    public void onTimeRatio() {
+        //addEvent(new CacheEvent(this, "onTimeClean", CacheEvent.EVENT_TIMER_COMMUNICATE));
+
     }
 
+    /** get item from cache if exists or None */
+    public Optional<CacheObject> getCacheObject(String key) {
+        for (CacheStorageBase storage: storages.values()) {
+            Optional<CacheObject> fromCache = storage.getObject(key);
+            if (fromCache.isPresent()) {
+                try {
+                    CacheObject co = fromCache.get();
+                    co.use();
+                    // TODO: if this is not internal cache - need to increase usage and lastUseDate ???
+                    return Optional.ofNullable(co);
+                } catch (Exception ex) {
+                    // TODO: log problem with casting value from cache for given key into specific type
+                    addIssue("getObject", ex);
+                }
+            }
+        }
+        return Optional.empty();
+    }
     /** get item from cache if exists or None */
     public <T> Optional<T> getObject(String key) {
         for (CacheStorageBase storage: storages.values()) {
@@ -296,6 +341,7 @@ public class CacheManager extends CacheBase {
         }
         return Optional.empty();
     }
+
 
     /** execute with cache for key
      * if object in cache exists and it is valid, then this object would be returned
