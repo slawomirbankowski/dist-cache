@@ -1,5 +1,6 @@
 package com.cache.api;
 
+import java.io.File;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -27,6 +28,20 @@ public class CacheUtils {
     public static String getCurrentHostName() {
         try {
             return java.net.InetAddress.getLocalHost().getHostName();
+        } catch (Exception ex) {
+            return "localhost";
+        }
+    }
+    public static String getCurrentHostAddress() {
+        try {
+            return java.net.InetAddress.getLocalHost().getHostAddress();
+        } catch (Exception ex) {
+            return "localhost";
+        }
+    }
+    public static String getCurrentLocationPath() {
+        try {
+            return new java.io.File(".").getCanonicalPath();
         } catch (Exception ex) {
             return "localhost";
         }
@@ -118,4 +133,15 @@ public class CacheUtils {
             return 1;
         }
     }
+    /** get global info about this app */
+    public static AppGlobalInfo getInfo() {
+        var runTime = java.lang.Runtime.getRuntime();
+        //Arrays.stream(File.listRoots()).toList();
+        return new AppGlobalInfo(getCreatedDate(), getCurrentHostName(), getCurrentHostAddress(), getCurrentLocationPath(),
+                java.lang.Thread.activeCount(),
+                runTime.freeMemory(), runTime.maxMemory(), runTime.totalMemory(),
+                runTime.freeMemory() / MEGABYTE, runTime.maxMemory() / MEGABYTE, runTime.totalMemory() / MEGABYTE);
+    }
+
+    public static final long MEGABYTE = 1024 * 1024;
 }

@@ -3,7 +3,8 @@ package com.cache.api;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** class to be put to cache - it contains object caches AND many other statistics */
+/** class to be put to cache - it contains object caches AND many other statistics
+ * this cache is representing internal cache with object stored */
 public class CacheObject {
 
     /** sequence of object in this JVM */
@@ -45,12 +46,18 @@ public class CacheObject {
         this.groups = groups;
         calculateSize();
     }
+    /** get simple serializable information about this object in cache */
     public CacheObjectInfo getInfo() {
         return new CacheObjectInfo(key, createdTimeMs, objectSeq, objSize, acquireTimeMs,
                 usages.get(), refreshes.get(),
                 mode.getMode(), timeToLive(), lastUseTime, lastRefreshTime,
                 objectInCache.getClass().getName());
     }
+    /** serialize underlying object to String */
+    public String serialize() {
+        return objectInCache.toString();
+    }
+    /** try to calculate size of this object as estimated number of objects */
     private void calculateSize() {
         this.objSize = CacheUtils.estimateSize(objectInCache);
     }
@@ -74,9 +81,9 @@ public class CacheObject {
     public long getLastUseTime() { return lastUseTime; }
     /** get acquire time of getting this object from aquire method */
     public long getAcquireTimeMs() { return acquireTimeMs; }
-    /** release action for this cache object */
+    /** release action for this cache object - by default there is no action for releasing
+     * GC should normally dispose this object */
     public void releaseObject() {
-
     }
 
     /** check if key of this object contains given string */

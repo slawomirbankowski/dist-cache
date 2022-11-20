@@ -1,13 +1,21 @@
 package com.cache.api;
 
-/** cache modes for objects to be kept in cache */
+import java.util.HashMap;
+
+/** cache modes for objects to be kept in cache
+ * mode contains how object would be cleared: time based, priority based, always keep, refresh
+ * timeToLive is defining milliseconds this object is valid for OR time to refresh this object
+ * priority is a number from 0 to 9 to decide in which order objects should be removed if there are too many items in cache
+ * */
 public class CacheMode {
 
     /** mode of keeping item in cache */
     private final int mode;
     /** time to live milliseconds */
     private final long timeToLiveMs;
+    /** priority in cache */
     private final int priority;
+    /** */
     private final boolean addToInternal;
     private final boolean addToExternal;
 
@@ -109,4 +117,16 @@ public class CacheMode {
     public static CacheMode modeRefreshOneMinute = new CacheMode(MODE_REFRESH, TIME_ONE_MINUTE);
     public static CacheMode modeRefreshOneHour = new CacheMode(MODE_REFRESH, TIME_ONE_HOUR);
     public static CacheMode modeRefreshSixHours = new CacheMode(MODE_REFRESH, TIME_SIX_HOURS);
+
+    /** already parsed modes for simplicity and velocity of parsing */
+    private static HashMap<String, CacheMode> parsedModes = new HashMap<>();
+    public static CacheMode createModeFromString(String modeStr) {
+        // TODO: parse mode from string
+
+        return modeRefreshTenSeconds;
+    }
+    /** parse cache mode from String */
+    public static CacheMode fromString(String modeStr) {
+        return parsedModes.computeIfAbsent(modeStr, key -> createModeFromString(key));
+    }
 }

@@ -1,6 +1,6 @@
 package com.cache.api;
 
-/** cache modes for objects to be kept in cache */
+/** list of priorities for cache object from VERY_LOW=1 to VERY_HIGH=9 */
 public class CachePriority {
 
     /**  */

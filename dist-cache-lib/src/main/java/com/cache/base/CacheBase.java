@@ -75,7 +75,21 @@ public abstract class CacheBase implements Cache {
     public String getCacheGuid() { return cacheManagerGuid; }
     /** get date and time of creation for this CacheManager */
     public LocalDateTime getCreatedDateTime() { return createdDateTime; }
-
+    /** get item from cache as String if exists or None */
+    public String getCacheObjectAsString(String key) {
+        Optional<CacheObject> co = getCacheObject(key);
+        if (co.isPresent()) {
+            return co.get().getValue().toString();
+        } else {
+            return "";
+        }
+    }
+    /** get info about cache */
+    public CacheInfo getCacheInfo() {
+        return new CacheInfo(cacheManagerGuid, createdDateTime, checkSequence.get(),
+            addedItemsSequence.get(), isClosed, issues.size(),
+            events.size(), getItemsCount(), getObjectsCount(), getStoragesInfo());
+    }
     /** initialize key encoder to encode secrets */
     private void initializeEncoder() {
         // TODO: initialize encoder for secrets and passwords in key
