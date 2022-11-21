@@ -2,11 +2,11 @@ package com.cache.test;
 
 import com.cache.DistCacheFactory;
 import com.cache.api.*;
+import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.junit.jupiter.api.Test;
 
-import java.sql.DriverManager;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,7 +33,7 @@ public class CacheManagerCleanTest {
         cache.withCache("key_keep", key -> "value", CacheMode.modeKeep);
         assertEquals(cache.getObjectsCount(), 1, "There should be 1 object in cache");
         // key_refresh should be refreshed
-        cache.withCache("key_refresh", key -> ("value"+CacheUtils.randomInt(100000)), CacheMode.modeRefreshTenSeconds);
+        cache.withCache("key_refresh", key -> ("value"+ CacheUtils.randomInt(100000)), CacheMode.modeRefreshTenSeconds);
         for (int i=0; i<30; i++) {
             String v = cache.withCache("key"+i, key -> "value");
             log.info("Objects in cache: " + cache.getObjectsCount() + ", keys: " + cache.getCacheKeys("") + ", key_refresh: " + cache.getObject("key_refresh"));

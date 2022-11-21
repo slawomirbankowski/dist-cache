@@ -17,6 +17,7 @@ public class CacheMode {
     private final int priority;
     /** */
     private final boolean addToInternal;
+    /** */
     private final boolean addToExternal;
 
     public CacheMode(int m, long timeToLiveMs, boolean addToInternal, boolean addToExternal, int priority) {
@@ -44,17 +45,29 @@ public class CacheMode {
         this(cacheMode, TIME_FOREVER, true, false);
     }
 
+    /** get time to live in milliseconds */
     public long getTimeToLiveMs() { return timeToLiveMs; }
 
+    /** get mode as integer number
+     * MODE_TTL = 1
+     * MODE_KEEP = 2
+     * MODE_USER = 3
+     * MODE_REFRESH = 4
+     * MODE_PRIORITY = 5
+     * */
     public int getMode() { return mode; }
     /** get priority for this mode
      * priorities are defined in CachePriority class
      * default priority is PRIORITY_MEDIUM
      * */
+    /** get priority of object with this mode assigned, priority is integer number from 1 (LOWEST) to 9 (HIGHEST)*/
     public int getPriority() { return priority; }
+    /** returns true if this mode is TTL */
     public boolean isTtl() { return mode == MODE_TTL; }
-    public boolean isRefresh() { return mode == MODE_KEEP; }
-    public boolean isKeep() { return mode == MODE_REFRESH; }
+    /** returns true if this mode is REFRESH*/
+    public boolean isRefresh() { return mode == MODE_REFRESH; }
+    /** returns true if this mode is KEEP */
+    public boolean isKeep() { return mode == MODE_KEEP ; }
     public boolean isAddToInternal() {
         return addToInternal;
     }
@@ -73,7 +86,8 @@ public class CacheMode {
     public static int MODE_REFRESH = 4;
     /** object in cache is kept until there is too many objects in cache,
      * after that objects with the lowest priority would be removed  */
-    public static int MODE_PRIORITY = 3;
+    public static int MODE_PRIORITY = 5;
+
     public static long TIME_THREE_SECONDS = 3 * 1000L;
     public static long TIME_FIVE_SECONDS = 5 * 1000L;
     public static long TIME_TEN_SECONDS = 10 * 1000L;
@@ -118,11 +132,12 @@ public class CacheMode {
     public static CacheMode modeRefreshOneHour = new CacheMode(MODE_REFRESH, TIME_ONE_HOUR);
     public static CacheMode modeRefreshSixHours = new CacheMode(MODE_REFRESH, TIME_SIX_HOURS);
 
+    public static CacheMode modePriority = new CacheMode(MODE_PRIORITY, TIME_FOREVER);
+
     /** already parsed modes for simplicity and velocity of parsing */
     private static HashMap<String, CacheMode> parsedModes = new HashMap<>();
     public static CacheMode createModeFromString(String modeStr) {
-        // TODO: parse mode from string
-
+        // TODO: parse mode from string, mode could be something like 'mode=1,priority=3,timeToLiveMs=5000,addToInternal=false,addToExternal=true
         return modeRefreshTenSeconds;
     }
     /** parse cache mode from String */

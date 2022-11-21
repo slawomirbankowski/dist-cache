@@ -1,6 +1,6 @@
 package com.cache.api;
 
-/** internal issue in Cache */
+/** internal issue in Cache - this is full version of object */
 public class CacheIssue {
 
     private final Object parent;

@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-/** base interface for manager */
+/** base interface for cache that is allowing to operate on cache objects */
 public interface Cache {
 
     /** get unique ID of this cache */

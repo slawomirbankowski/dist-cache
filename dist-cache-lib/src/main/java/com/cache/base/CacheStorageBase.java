@@ -1,6 +1,7 @@
 package com.cache.base;
 
 import com.cache.api.*;
+import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

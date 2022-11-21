@@ -1,6 +1,5 @@
 package com.cache.app.controllers;
 
-import com.cache.api.AgentRegister;
 import com.cache.api.CacheInfo;
 import com.cache.api.CacheRegister;
 import com.cache.api.ControllerStatus;
@@ -10,11 +9,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Set;
 
+/** Controller for caches */
 @RestController
 @RequestMapping(value = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class CacheController {

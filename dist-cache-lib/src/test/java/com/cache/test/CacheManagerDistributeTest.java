@@ -2,6 +2,7 @@ package com.cache.test;
 
 import com.cache.DistCacheFactory;
 import com.cache.api.*;
+import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,7 @@ public class CacheManagerDistributeTest {
         Cache cache = DistCacheFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest") // set friendly cache name
                 .withDefaultPort() // open TCP port for listening to commands and external cache agents
-                .withCacheApp("https://localhost:9999/") // connect to cache standalone application to synchronize cache agents
+                .withCacheApp("https://localhost:8080/") // connect to cache standalone application to synchronize cache agents
                 .withServers("localhost:9095") // try to connect to cache agents
                 .withStorageKafka("") // connect to Kafka brokers as storage
                 .withStorageElasticsearch("", "", "") // connect to Elasticsearch storage

@@ -1,9 +1,6 @@
 package com.cache.app.services;
 
-import com.cache.api.AgentConfirmation;
-import com.cache.api.AgentObject;
-import com.cache.api.AgentRegister;
-import com.cache.api.AgentSimplified;
+import com.cache.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -26,12 +23,12 @@ public class AgentService {
     public AgentConfirmation registerAgent(AgentRegister register) {
         AgentConfirmation confirmation;
         synchronized (agents) {
-            log.info("Registering new agent for guid: " + register.agentGuid + " on host: " + register.host);
+            log.info("Registering new agent for guid: " + register.agentGuid + " on host: " + register.hostName);
             List<AgentSimplified> agentsSimplified = getAgents();
             AgentObject currentAgent = agents.get(register.agentGuid);
             confirmation = new AgentConfirmation(register.agentGuid, currentAgent==null, false, agents.size(), agentsSimplified);
             if (currentAgent == null) {
-                log.info("No agent for guid: " + register.agentGuid + ", registering new one, host: " + register.host + ", port: " + register.port);
+                log.info("No agent for guid: " + register.agentGuid + ", registering new one, host: " + register.hostName + ", port: " + register.port);
                 // agent is new - need to register
                 AgentObject agentObj = new AgentObject(register);
                 agents.put(register.agentGuid, agentObj);
@@ -42,6 +39,12 @@ public class AgentService {
             }
         }
         return confirmation;
+    }
+
+    /** ping agent with status information - this could be done every 1 minute */
+    public AgentPingResponse pingAgent(AgentPing pingObject) {
+
+        return new AgentPingResponse(pingObject.agentGuid);
     }
     /** get list of all registered agents */
     public List<AgentSimplified> getAgents() {

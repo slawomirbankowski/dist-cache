@@ -1,6 +1,5 @@
 package com.cache.test.model;
 
-import com.cache.api.CacheUtils;
 import java.time.LocalDateTime;
 
 public abstract class BaseTable {

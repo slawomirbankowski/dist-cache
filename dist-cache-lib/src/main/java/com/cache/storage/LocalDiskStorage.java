@@ -2,7 +2,9 @@ package com.cache.storage;
 
 import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
+import com.cache.utils.CacheUtils;
 
+import java.io.*;
 import java.util.*;
 
 /** cache with local disk - this could be ephemeral
@@ -24,15 +26,31 @@ public class LocalDiskStorage extends CacheStorageBase {
     }
     /** TODO: get item from local disk */
     public Optional<CacheObject> getObject(String key) {
-        return Optional.empty();
+        // try to read object from disk
+        try {
+
+            String cacheObjectFileName = filePrefixName + CacheUtils.stringToHex(key) + ".cache";
+            java.io.File f = new File(cacheObjectFileName);
+            java.io.ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f));
+            CacheObject co = (CacheObject)ois.readObject();
+            ois.close();
+            return Optional.of(co);
+        } catch (Exception ex) {
+            initParams.cache.addIssue("LocalDiskStorage.getObject", ex);
+            return Optional.empty();
+        }
     }
+    /** write object to local disk to be read later */
     public Optional<CacheObject> setObject(CacheObject o) {
         try {
-            String cacheObjectFileName = filePrefixName + o.getKey() + ".cache"; // TODO: change this to have HEX encoding of key
+            String expireDateString = CacheUtils.formatDateAsYYYYMMDDHHmmss(new java.util.Date(System.currentTimeMillis() + o.timeToLive()));
+            String cacheObjectFileName = filePrefixName + ".EXPDATE" + expireDateString + "." + CacheUtils.stringToHex(o.getKey()) + ".cache";
             // create temporary file with content - object
-            java.io.File f = java.io.File.createTempFile("", "");
-            // TODO: get initial path to save file - should be the same path to get it
-            // serialize CacheObject into file stream
+            java.io.File f = new File(cacheObjectFileName);
+            java.io.ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(f));
+            // TODO: serialize somehow this object to be written to Disk
+            oos.writeObject(o);
+            oos.close();
         } catch (Exception ex) {
             initParams.cache.addIssue("LocalDiskStorage.setObject", ex);
         }
@@ -40,18 +58,39 @@ public class LocalDiskStorage extends CacheStorageBase {
     }
     /** remove objects in cache storage by keys */
     public void removeObjectsByKeys(List<String> keys) {
+        try {
+
+
+        } catch (Exception ex) {
+            initParams.cache.addIssue("LocalDiskStorage.removeObjectsByKeys", ex);
+        }
     }
     /** remove object in cache storage by key */
     public void removeObjectByKey(String key) {
+
     }
     /** get number of items in cache */
     public  int getItemsCount() {
-        return 0;
+        try {
+            java.io.File f = new File(filePrefixName);
+            File[] files =  f.listFiles();
+            return getObjectsCount() + (int)Arrays.stream(files).mapToLong(x -> x.length()).sum() / 1024;
+        } catch (Exception ex) {
+            return 0;
+        }
     }
     /** get number of objects in this cache */
-    public int getObjectsCount() { return 0; }
+    public int getObjectsCount() {
+        try {
+            java.io.File f = new File(filePrefixName);
+            return f.list().length;
+        } catch (Exception ex) {
+            return 0;
+        }
+    }
     /** get keys for all cache items */
     public Set<String> getKeys(String containsStr) {
+        // save keys in one text file
         return new HashSet<String>();
     }
     /** get info values */
@@ -60,12 +99,29 @@ public class LocalDiskStorage extends CacheStorageBase {
     }
     /** clear caches with given clear cache */
     public int clearCaches(int clearMode) {
+        try {
+            java.io.File f = new File(filePrefixName);
+            File[] files =  f.listFiles();
 
-        return 1;
+
+            return 3;
+        } catch (Exception ex) {
+            return 0;
+        }
     }
     /** clear cache contains given partial key */
     public int clearCacheContains(String str) {
-        return 1;
+        try {
+            java.io.File f = new File(filePrefixName);
+            File[] files =  f.listFiles();
+            String keyHex = CacheUtils.stringToHex(str);
+            Arrays.stream(files).filter(x -> x.getName().contains(keyHex)).forEach(fileToDelete -> {
+                fileToDelete.delete();
+            });
+            return 3;
+        } catch (Exception ex) {
+            return 0;
+        }
     }
     /** check cache every X seconds to clear TTL caches */
     public void onTimeClean(long checkSeq) {

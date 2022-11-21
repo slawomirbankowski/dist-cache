@@ -1,10 +1,10 @@
 package com.cache.api;
 
 import java.util.HashMap;
-import java.util.Map;
 
 /** registering cache object through REST endpoint */
 public class CacheRegister {
+
     /** unique ID of this cache */
     public String cacheGuid;
     /** properties for the stream */

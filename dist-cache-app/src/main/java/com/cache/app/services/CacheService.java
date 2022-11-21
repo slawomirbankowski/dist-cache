@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+/** singleton service to keep caches */
 @Service
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class CacheService {
@@ -89,7 +90,6 @@ public class CacheService {
             return "";
         }
     }
-
     /** get cache object for cache group and object key */
     public CacheSetBackInfo setObject(String cacheGroup, String objectKey, String contentValue, String mode, Set<String> groups) {
         var cache = caches.get(cacheGroup);
@@ -100,7 +100,7 @@ public class CacheService {
             return null;
         }
     }
-
+    /** clear all caches inside group contains given key */
     public int clearCaches(String cacheGroup, String objectKey) {
         var cache = caches.get(cacheGroup);
         if (cache != null) {

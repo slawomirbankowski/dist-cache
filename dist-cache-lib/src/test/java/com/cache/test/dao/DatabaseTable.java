@@ -1,6 +1,6 @@
 package com.cache.test.dao;
 
-import com.cache.api.CacheUtils;
+import com.cache.utils.CacheUtils;
 import com.cache.test.model.BaseTable;
 
 import java.util.HashMap;

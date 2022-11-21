@@ -10,6 +10,8 @@ public class AgentObject {
     /** registering object for agent */
     private final AgentRegister register;
 
+    // TODO: add more useful info like last ping time, updated storages, connection network from this agent
+
     public AgentObject(AgentRegister register) {
         this.register = register;
     }
@@ -19,15 +21,15 @@ public class AgentObject {
     }
     /** unregister this agent */
     public void unregister() {
-
+        // TODO: unregister this agent from cache
     }
     /** update existing agent with new information */
     public void update(AgentRegister register) {
         // TODO: update existing agent
     }
-    /** */
+    /** get simplified version of agent in cache */
     public AgentSimplified toSimplified() {
-        // TODO: get simplified object of agent with only the most important items
+        // TODO: get simplified object of agent with only the most important items - add current information of agent
         return register.toSimplified();
     }
 

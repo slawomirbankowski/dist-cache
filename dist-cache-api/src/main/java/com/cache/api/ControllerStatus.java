@@ -4,6 +4,7 @@ package com.cache.api;
 public class ControllerStatus {
     /** name of status */
     private String status;
+    /** number of rows affected */
     private int rowsAffected;
 
     public ControllerStatus(String status, int rowsAffected) {
@@ -14,6 +15,7 @@ public class ControllerStatus {
         this.status = status;
         this.rowsAffected = 0;
     }
+    /** get status */
     public String getStatus() {
         return status;
     }

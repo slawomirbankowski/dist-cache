@@ -1,7 +1,7 @@
 package com.cache.utils;
 
+/** response of HTTP(s) call - in case of OK or ERROR */
 public class HttpResponseContent {
-
 
     private boolean isOk;
     private int code;

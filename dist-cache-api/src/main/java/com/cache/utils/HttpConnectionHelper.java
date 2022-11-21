@@ -10,8 +10,12 @@ import java.util.Optional;
 /** simplified agent information about GUID, host, port and create date */
 public class HttpConnectionHelper {
 
+    /** base URL of HTTP(s) connection */
     private String baseUrl;
-    private int defaultTimeout = 5000;
+    /** default timeout in milliseconds to be applied for HTTP connection
+     * default is 10seconds
+     * */
+    private int defaultTimeout = 10000;
 
     public HttpConnectionHelper(String baseUrl) {
         this.baseUrl = baseUrl;

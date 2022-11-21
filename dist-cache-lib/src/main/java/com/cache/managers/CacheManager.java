@@ -5,6 +5,7 @@ import com.cache.api.*;
 import com.cache.base.CacheBase;
 import com.cache.base.CachePolicyBase;
 import com.cache.base.CacheStorageBase;
+import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +69,7 @@ public class CacheManager extends CacheBase {
         return storages.size();
     }
 
-    /** initialize all storages from configuration*/
+    /** initialize all storages from configuration */
     private void initializeStorages() {
         addEvent(new CacheEvent(this, "initializeStorages", CacheEvent.EVENT_INITIALIZE_STORAGES));
         StorageInitializeParameter initParams = new StorageInitializeParameter(cacheCfg, this);
@@ -235,7 +236,6 @@ public class CacheManager extends CacheBase {
         return storages.values().stream().anyMatch(x -> x.contains(key));
     }
 
-
     /** clear caches with given clear cache */
     public int clearCaches(int clearMode) {
         addEvent(new CacheEvent(this, "clearCaches", CacheEvent.EVENT_CACHE_CLEAN));
@@ -296,6 +296,7 @@ public class CacheManager extends CacheBase {
         addEvent(new CacheEvent(this, "onTimeClean", CacheEvent.EVENT_TIMER_CLEAN));
         storages.values().stream().forEach(x -> x.onTimeClean(checkSeq));
     }
+    /** executed every 1 minute to communicate to application and all agents */
     public void onTimeCommunicate() {
         addEvent(new CacheEvent(this, "onTimeClean", CacheEvent.EVENT_TIMER_COMMUNICATE));
         agent.onTimeCommunicate();
@@ -372,7 +373,7 @@ public class CacheManager extends CacheBase {
     public <T> T withCache(String key, Method method, Object obj, CacheMode mode, Set<String> groups) {
         try {
             // TODO: implement getting value by reflection
-            return withCache(key, (CacheableMethod<T>) key1 -> (T)CacheUtils.getFromMethod(method, obj), mode, groups);
+            return withCache(key, (CacheableMethod<T>) key1 -> (T) CacheUtils.getFromMethod(method, obj), mode, groups);
         } catch (Exception ex) {
             addIssue("withCache", ex);
             return null;

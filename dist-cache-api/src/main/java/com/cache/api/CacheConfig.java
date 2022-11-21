@@ -1,12 +1,13 @@
 package com.cache.api;
 
+import com.cache.utils.CacheUtils;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Function;
 
-/** factory to create configuration for cache  */
+/** configuration for cache - this is keeping parameters in Properties format */
 public class CacheConfig {
 
     /** build empty CacheConfig with no values */
@@ -147,7 +148,8 @@ public class CacheConfig {
     public static String JDBC_DRIVER = "JDBC_DRIVER";
     public static String JDBC_USER = "JDBC_USER";
     public static String JDBC_PASS = "JDBC_PASS";
-
+    public static String JDBC_INIT_CONNECTIONS = "JDBC_INIT_CONNECTIONS";
+    public static String JDBC_MAX_ACTIVE_CONNECTIONS = "JDBC_MAX_ACTIVE_CONNECTIONS";
     /** elasticsearch URL */
     public static String ELASTICSEARCH_URL = "ELASTICSEARCH_URL";
     public static String ELASTICSEARCH_USER = "ELASTICSEARCH_USER";
