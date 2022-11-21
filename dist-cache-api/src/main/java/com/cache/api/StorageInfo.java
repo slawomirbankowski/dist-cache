@@ -2,8 +2,9 @@ package com.cache.api;
 
 import java.time.LocalDateTime;
 
-/** information about storage */
+/** information about storage - object to be serialized to JSON and returned to user via dist-cache application */
 public class StorageInfo {
+    /** UID for storage */
     private String storageUid;
     private LocalDateTime storageCreatedDate;
     private String storageClassName;

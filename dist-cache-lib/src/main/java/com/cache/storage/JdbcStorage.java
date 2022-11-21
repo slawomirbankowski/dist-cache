@@ -12,7 +12,6 @@ import java.util.*;
  * */
 public class JdbcStorage extends CacheStorageBase {
 
-
     /** TODO: init JDBC storage */
     public JdbcStorage(StorageInitializeParameter p) {
         super(p);
@@ -53,7 +52,6 @@ public class JdbcStorage extends CacheStorageBase {
     }
     /** clear caches with given clear cache */
     public int clearCaches(int clearMode) {
-
         return 1;
     }
     /** clear cache contains given partial key */

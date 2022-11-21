@@ -1,8 +1,6 @@
 package com.cache.app.controllers;
 
-import com.cache.api.AgentConfirmation;
-import com.cache.api.AgentRegister;
-import com.cache.api.AgentSimplified;
+import com.cache.api.*;
 import com.cache.app.services.AgentService;
 import com.cache.app.services.CacheService;
 import org.slf4j.Logger;
@@ -15,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
+/** Controller to have endpoints to manipulate and */
 @RestController
 @RequestMapping(value = "/api/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class AgentController {
@@ -24,7 +23,7 @@ public class AgentController {
     @Autowired
     protected AgentService agentService;
 
-    /** get list of agents */
+    /** get list of agents - only simplified information about basic things */
     @GetMapping(value = "/agents", consumes = MediaType.ALL_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public List<AgentSimplified> getAgents() {
         return  agentService.getAgents();
@@ -37,18 +36,18 @@ public class AgentController {
     }
 
     /** register new agent */
-    @PutMapping("/agent")
+    @PutMapping(value = "/agent", consumes = MediaType.APPLICATION_JSON_VALUE)
     public AgentConfirmation registerAgent(
             @RequestBody AgentRegister register) {
-        log.info("Register agent: " + register.agentGuid + " from host: " + register.host + ":" + register.port);
+        log.info("Register agent: " + register.agentGuid + " from host: " + register.hostName + "/" + register.hostIp + ":" + register.port);
         AgentConfirmation confirmation = agentService.registerAgent(register);
         return confirmation;
     }
 
-    /** change current agent */
-    @PostMapping("/agent")
-    public AgentConfirmation changeAgent(@RequestBody AgentRegister register) {
-        return agentService.registerAgent(register);
+    /** ping from agent */
+    @PostMapping(value = "/agent", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public AgentPingResponse pingAgent(@RequestBody AgentPing pingObject) {
+        return agentService.pingAgent(pingObject);
     }
 
     /** delete agent by id */

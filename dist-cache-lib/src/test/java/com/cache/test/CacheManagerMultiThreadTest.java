@@ -2,9 +2,8 @@ package com.cache.test;
 
 import com.cache.DistCacheFactory;
 import com.cache.api.Cache;
-import com.cache.api.CacheConfig;
 import com.cache.api.CacheMode;
-import com.cache.api.CacheUtils;
+import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

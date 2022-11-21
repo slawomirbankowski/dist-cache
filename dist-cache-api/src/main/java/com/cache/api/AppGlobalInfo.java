@@ -2,6 +2,7 @@ package com.cache.api;
 
 import java.time.LocalDateTime;
 
+/** global information about dist-cache application */
 public class AppGlobalInfo {
     private LocalDateTime localDateTime = LocalDateTime.now();
     private LocalDateTime createdDate;

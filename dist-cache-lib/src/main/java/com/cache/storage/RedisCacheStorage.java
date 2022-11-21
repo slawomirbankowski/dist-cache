@@ -49,10 +49,8 @@ public class RedisCacheStorage extends CacheStorageBase {
     public List<CacheObjectInfo> getValues(String containsStr) {
         return new LinkedList<CacheObjectInfo>();
     }
-
     /** clear caches with given clear cache */
     public int clearCaches(int clearMode) {
-
         return 1;
     }
     /** clear cache contains given partial key */

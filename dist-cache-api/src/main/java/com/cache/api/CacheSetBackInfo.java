@@ -6,6 +6,7 @@ import java.util.List;
  * this cache is representing internal cache with object stored */
 public class CacheSetBackInfo {
 
+    /** info about previos objects in cache */
     private List<CacheObjectInfo> prevObjects;
     private CacheObjectInfo currentObject;
 

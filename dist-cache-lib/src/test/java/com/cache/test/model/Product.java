@@ -1,9 +1,6 @@
 package com.cache.test.model;
 
-import com.cache.api.Cache;
-import com.cache.api.CacheUtils;
-
-import java.time.LocalDateTime;
+import com.cache.utils.CacheUtils;
 
 public class Product extends BaseTable {
 

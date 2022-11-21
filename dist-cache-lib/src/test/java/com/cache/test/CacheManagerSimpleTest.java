@@ -2,6 +2,7 @@ package com.cache.test;
 
 import com.cache.DistCacheFactory;
 import com.cache.api.*;
+import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -17,6 +17,16 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     // end::actuator[]
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-parent:2.4.0'
+    // TODO: check what versions of Swagger/SpringFor are compliant with current Spring Boot
+    //implementation 'io.swagger:swagger-annotations:2.0.0-rc2'
+    //implementation 'io.swagger:swagger-core:2.0.0-rc2'
+    //implementation 'io.swagger:swagger-models:2.0.0-rc2'
+    //implementation 'io.springfox:springfox-swagger2:3.0.0'
+    //implementation 'io.springfox:springfox-boot-starter:3.0.0'
+    //implementation 'io.springfox:springfox-swagger-ui:2.9.2'
+    //implementation 'org.springdoc:springdoc-openapi-ui:1.6.9'
+
     // tag::tests[]
     testImplementation('org.springframework.boot:spring-boot-starter-test')
     // end::tests[]

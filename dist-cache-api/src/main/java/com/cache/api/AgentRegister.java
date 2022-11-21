@@ -10,7 +10,8 @@ public class AgentRegister {
     /** secret of this agent */
     public String agentSecret;
     /** host for socket/direct connections */
-    public String host;
+    public String hostName;
+    public String hostIp;
     /** port for socket/direct connections */
     public int port;
     /** create date of this agent */
@@ -23,10 +24,12 @@ public class AgentRegister {
     public AgentRegister() {
     }
 
-    public AgentRegister(String agentGuid, String agentSecret, String host, int port, LocalDateTime createDate, List<StorageInfo> storages, List<AgentSimplified> agents) {
+    public AgentRegister(String agentGuid, String agentSecret, String hostName, String hostIp, int port,
+                         LocalDateTime createDate, List<StorageInfo> storages, List<AgentSimplified> agents) {
         this.agentGuid = agentGuid;
         this.agentSecret = agentSecret;
-        this.host = host;
+        this.hostName = hostName;
+        this.hostIp = hostIp;
         this.port = port;
         this.createDate = createDate;
         this.storages = storages;
@@ -35,7 +38,7 @@ public class AgentRegister {
 
     public AgentSimplified toSimplified() {
         // TODO: get simplified object of agent with only the most important items
-        return new AgentSimplified(agentGuid, host, port, createDate);
+        return new AgentSimplified(agentGuid, hostName, hostIp, port, createDate);
     }
 
     public String getAgentGuid() {
@@ -44,9 +47,13 @@ public class AgentRegister {
     public String getAgentSecret() {
         return agentSecret;
     }
-    public String getHost() {
-        return host;
+    public String getHostName() {
+        return hostName;
     }
+    public String getHostIp() {
+        return hostIp;
+    }
+
     public int getPort() {
         return port;
     }

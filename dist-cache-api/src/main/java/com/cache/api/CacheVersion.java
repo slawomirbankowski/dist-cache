@@ -1,8 +1,6 @@
 package com.cache.api;
 
-import java.time.LocalDateTime;
-
-/** simple info about object in cache */
+/** information about version of dist-cache application OR any other dist-cache component */
 public class CacheVersion {
     private String version;
     private String[] apiVersions;

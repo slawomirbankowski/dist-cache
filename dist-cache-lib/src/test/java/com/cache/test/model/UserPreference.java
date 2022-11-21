@@ -1,8 +1,6 @@
 package com.cache.test.model;
 
-import com.cache.api.CacheUtils;
-
-import java.time.LocalDateTime;
+import com.cache.utils.CacheUtils;
 
 // user selection of favourite products
 public class UserPreference extends BaseTable {

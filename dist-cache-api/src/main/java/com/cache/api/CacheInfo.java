@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** simple info about object in cache */
+/** simple info about cache - this is to be returned in dist-cache application */
 public class CacheInfo {
 
     private String cacheManagerGuid;

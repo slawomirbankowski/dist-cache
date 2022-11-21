@@ -2,7 +2,7 @@ package com.cache.api;
 
 import java.time.LocalDateTime;
 
-/** factory to create configuration for cache  */
+/** event from cache - full format with parent object, method, type and parameters  */
 public class CacheEvent {
 
     /** date and time of event */

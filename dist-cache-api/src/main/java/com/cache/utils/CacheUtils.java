@@ -1,8 +1,13 @@
-package com.cache.api;
+package com.cache.utils;
+
+import com.cache.api.AppGlobalInfo;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,6 +37,8 @@ public class CacheUtils {
             return "localhost";
         }
     }
+
+
     public static String getCurrentHostAddress() {
         try {
             return java.net.InetAddress.getLocalHost().getHostAddress();
@@ -55,7 +62,11 @@ public class CacheUtils {
     public static String generateCacheGuid() {
         return "CACHE_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + cacheGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
-    private static AtomicLong storageGuidSeq = new AtomicLong();
+    private static final AtomicLong connectorGuidSeq = new AtomicLong();
+    public static String generateConnectorGuid(String connectorClass) {
+        return "CONNECTOR_H" + getCurrentHostName() + "_CL" + connectorClass + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + connectorGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+    private static final AtomicLong storageGuidSeq = new AtomicLong();
     public static String generateStorageGuid(String className) {
         return "STORAGE_H" + getCurrentHostName() + "_S" + className + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
@@ -77,6 +88,22 @@ public class CacheUtils {
     }
 
 
+    public static String formatDateAsYYYYMMDDHHmmss(LocalDateTime ldt) {
+        return ldt.format(formatFull);
+    }
+    public static String formatDateAsYYYYMMDDHHmmss(java.util.Date date) {
+        return dateToLocalDateTime(date).format(formatFull);
+    }
+    /** convert Date to LocalDateTime*/
+    public static LocalDateTime dateToLocalDateTime(java.util.Date date) {
+        return Instant.ofEpochMilli(date.getTime())
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+    }
+    /** convert LocalDateTime to Date */
+    public static java.util.Date localDateTimeToDate(LocalDateTime ldt) {
+        return new java.util.Date(ldt.toInstant(ZoneOffset.UTC).toEpochMilli());
+    }
     /** sleep for given time in milliseconds, catch exception */
     public static void sleep(long timeMs) {
         try {
@@ -113,6 +140,42 @@ public class CacheUtils {
         } catch (Exception ex) {
             return defaultValue;
         }
+    }
+
+    public static String bytesToBase64(byte[] bytes) {
+        return new String(Base64.getEncoder().encode(bytes));
+    }
+    public static String stringToBase64(String str) {
+        return bytesToBase64(str.getBytes());
+    }
+    public static String base64ToString(String base64) {
+        try {
+            return new String(Base64.getDecoder().decode(base64));
+        } catch (Exception ex) {
+            return "";
+        }
+    }
+    public static String baseToString(String str) {
+        return str;
+    }
+    /** convert String to HEX String */
+    public static String stringToHex(String str) {
+        return bytesToHex(str.getBytes());
+    }
+    public static String hexToString(String hex) {
+
+
+        return hex;
+    }
+    /** */
+    public static String bytesToHex(byte[] hash) {
+        StringBuilder hexString = new StringBuilder(2 * hash.length);
+        for (int i=0; i<hash.length; i++) {
+            String hex = Integer.toHexString(0xff & hash[i]);
+            if (hex.length() == 1) hexString.append('0');
+            hexString.append(hex);
+        }
+        return hexString.toString();
     }
     /** calculate estimate size of given object,
      * works only with lists, maps, sets, collections */

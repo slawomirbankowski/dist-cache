@@ -1,7 +1,7 @@
 package com.cache.app.controllers;
 
 import com.cache.api.AppGlobalInfo;
-import com.cache.api.CacheUtils;
+import com.cache.utils.CacheUtils;
 import com.cache.api.CacheVersion;
 import com.cache.app.services.CacheService;
 import org.slf4j.Logger;
@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
 
+/** Controller exposing management endpoints like /ping /version /info /beans */
 @RestController
 @RequestMapping(value = "/api", produces = MediaType.APPLICATION_JSON_VALUE)
 public class ManagementController {
