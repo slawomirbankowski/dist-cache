@@ -5,6 +5,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 /**  serializable version of cache object - contains simple values for all important fields */
 public class CacheObjectSerialized implements Serializable {
@@ -20,7 +21,7 @@ public class CacheObjectSerialized implements Serializable {
     private long usages;
     private long refreshes;
     /** mode of keeping item in cache */
-    private int mode;
+    private CacheMode.Mode mode;
     private long timeToLiveMs;
     private int priority;
     private boolean addToInternal;
@@ -39,14 +40,14 @@ public class CacheObjectSerialized implements Serializable {
         this.acquireTimeMs = 0;
         this.usages = 0;
         this.refreshes = 0;
-        this.mode = 0;
+        this.mode = CacheMode.Mode.TTL;
         this.timeToLiveMs = 0;
         this.priority = 0;
         this.addToInternal = false;
         this.addToExternal = false;
         this.groups = null;
     }
-    public CacheObjectSerialized(long objectSeq, long createdTimeMs, long lastUseTime, long lastRefreshTime, String key, byte[] objectInCache, int objSize, long acquireTimeMs, long usages, long refreshes, int mode, long timeToLiveMs, int priority, boolean addToInternal, boolean addToExternal, Set<String> groups) {
+    public CacheObjectSerialized(long objectSeq, long createdTimeMs, long lastUseTime, long lastRefreshTime, String key, byte[] objectInCache, int objSize, long acquireTimeMs, long usages, long refreshes, CacheMode.Mode mode, long timeToLiveMs, int priority, boolean addToInternal, boolean addToExternal, Set<String> groups) {
         this.objectSeq = objectSeq;
         this.createdTimeMs = createdTimeMs;
         this.lastUseTime = lastUseTime;
@@ -95,7 +96,7 @@ public class CacheObjectSerialized implements Serializable {
     public long getRefreshes() {
         return refreshes;
     }
-    public int getMode() {
+    public CacheMode.Mode getMode() {
         return mode;
     }
     public long getTimeToLiveMs() {
@@ -116,12 +117,7 @@ public class CacheObjectSerialized implements Serializable {
 
     public CacheObject toCacheObject(CacheSerializer serializer) {
         Object obj = "";
-        CacheableMethod mta = new CacheableMethod() {
-            @Override
-            public Object get(String key) {
-                return obj;
-            }
-        };
+        Function<String, ?> mta = (key) -> obj;
         CacheMode cm = new CacheMode(mode, timeToLiveMs, addToInternal, addToExternal, priority);
         return new CacheObject(objectSeq, createdTimeMs, lastUseTime, lastRefreshTime, key,
                 obj, mta, objSize, acquireTimeMs, usages, refreshes, cm, groups);

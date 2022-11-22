@@ -51,7 +51,7 @@ public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
         return new LinkedList<CacheObjectInfo>();
     }
     /** clear caches with given clear cache */
-    public int clearCaches(int clearMode) {
+    public int clearCache(int clearMode) {
 
         return 1;
     }

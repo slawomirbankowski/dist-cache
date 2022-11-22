@@ -90,7 +90,7 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
         }
     }
     /** clear caches with given clear cache method */
-    public int clearCaches(int clearMode) {
+    public int clearCache(int clearMode) {
         // TODO: implement clearing caches with given mode
         return 0;
     }

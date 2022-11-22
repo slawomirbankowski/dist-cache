@@ -8,9 +8,22 @@ import java.util.HashMap;
  * priority is a number from 0 to 9 to decide in which order objects should be removed if there are too many items in cache
  * */
 public class CacheMode {
+    public enum Mode {
+        /** time-to-live - object is removed from cache after given milliseconds */
+        TTL,
+        /** object is kept in cache till cleared by clear method */
+        KEEP,
+        /** like TTL, but timer is reset on every use */
+        TTL_RENEW,
+        /** object is automatically refreshed on a fixed rate, using the function given on insertion time */
+        REFRESH,
+        /** when cache size limit is reached and a new object is inserted, another object
+         * with the lowest priority will be removed */
+        PRIORITY
+    }
 
     /** mode of keeping item in cache */
-    private final int mode;
+    private final Mode mode;
     /** time to live milliseconds */
     private final long timeToLiveMs;
     /** priority in cache */
@@ -20,54 +33,45 @@ public class CacheMode {
     /** */
     private final boolean addToExternal;
 
-    public CacheMode(int m, long timeToLiveMs, boolean addToInternal, boolean addToExternal, int priority) {
+    public CacheMode(Mode m, long timeToLiveMs, boolean addToInternal, boolean addToExternal, int priority) {
         this.mode = m;
         this.timeToLiveMs = timeToLiveMs;
         this.addToInternal = addToInternal;
         this.addToExternal = addToExternal;
         this.priority = priority;
     }
-    public CacheMode(int m, long timeToLiveMs, boolean addToInternal, boolean addToExternal) {
+    public CacheMode(Mode m, long timeToLiveMs, boolean addToInternal, boolean addToExternal) {
         this.mode = m;
         this.timeToLiveMs = timeToLiveMs;
         this.addToInternal = addToInternal;
         this.addToExternal = addToExternal;
         this.priority = CachePriority.PRIORITY_MEDIUM;
     }
-    public CacheMode(int m, long timeToLiveMs) {
+    public CacheMode(Mode m, long timeToLiveMs) {
         this.mode = m;
         this.timeToLiveMs = timeToLiveMs;
         this.addToInternal = true;
         this.addToExternal = false;
         this.priority = CachePriority.PRIORITY_MEDIUM;
     }
-    public CacheMode(int cacheMode) {
+    public CacheMode(Mode cacheMode) {
         this(cacheMode, TIME_FOREVER, true, false);
     }
 
     /** get time to live in milliseconds */
     public long getTimeToLiveMs() { return timeToLiveMs; }
 
-    /** get mode as integer number
-     * MODE_TTL = 1
-     * MODE_KEEP = 2
-     * MODE_USER = 3
-     * MODE_REFRESH = 4
-     * MODE_PRIORITY = 5
-     * */
-    public int getMode() { return mode; }
+    public Mode getMode() { return this.mode; }
     /** get priority for this mode
      * priorities are defined in CachePriority class
      * default priority is PRIORITY_MEDIUM
      * */
     /** get priority of object with this mode assigned, priority is integer number from 1 (LOWEST) to 9 (HIGHEST)*/
     public int getPriority() { return priority; }
-    /** returns true if this mode is TTL */
-    public boolean isTtl() { return mode == MODE_TTL; }
-    /** returns true if this mode is REFRESH*/
-    public boolean isRefresh() { return mode == MODE_REFRESH; }
-    /** returns true if this mode is KEEP */
-    public boolean isKeep() { return mode == MODE_KEEP ; }
+
+    public boolean isTtl() { return mode == Mode.TTL; }
+    public boolean isRefresh() { return mode == Mode.KEEP; }
+    public boolean isKeep() { return mode == Mode.REFRESH; }
     public boolean isAddToInternal() {
         return addToInternal;
     }
@@ -108,31 +112,31 @@ public class CacheMode {
     public static long TIME_FOUR_WEEKS = 28 * 24 * 3600 * 1000L;
     public static long TIME_FOREVER = Long.MAX_VALUE;
 
-    public static CacheMode modeTtlTenSeconds = new CacheMode(MODE_TTL, TIME_TEN_SECONDS);
-    public static CacheMode modeTtlTwentySeconds = new CacheMode(MODE_TTL, TIME_TWENTY_SECONDS);
-    public static CacheMode modeTtlThirtySeconds = new CacheMode(MODE_TTL, TIME_THIRTY_SECONDS);
-    public static CacheMode modeTtlOneMinute = new CacheMode(MODE_TTL, TIME_ONE_MINUTE);
-    public static CacheMode modeTtlFiveMinutes = new CacheMode(MODE_TTL, TIME_FIVE_MINUTES);
-    public static CacheMode modeTtlTenMinutes = new CacheMode(MODE_TTL, TIME_TEN_MINUTES);
-    public static CacheMode modeTtlTwentyMinutes = new CacheMode(MODE_TTL, TIME_TWENTY_MINUTES);
-    public static CacheMode modeTtlThirtyMinutes = new CacheMode(MODE_TTL, TIME_THIRTY_MINUTES);
-    public static CacheMode modeTtlOneHour = new CacheMode(MODE_TTL, TIME_ONE_HOUR);
-    public static CacheMode modeTtlTwoHours = new CacheMode(MODE_TTL, TIME_TWO_HOURS);
-    public static CacheMode modeTtlThreeHours = new CacheMode(MODE_TTL, TIME_THREE_HOURS);
-    public static CacheMode modeTtlSixHours = new CacheMode(MODE_TTL, TIME_SIX_HOURS);
-    public static CacheMode modeTtlOneDay = new CacheMode(MODE_TTL, TIME_ONE_DAY);
-    public static CacheMode modeTtlOneWeek = new CacheMode(MODE_TTL, TIME_ONE_WEEK);
-    public static CacheMode modeTtlTwoWeeks = new CacheMode(MODE_TTL, TIME_TWO_WEEKS);
-    public static CacheMode modeTtlFourWeeks = new CacheMode(MODE_TTL, TIME_FOUR_WEEKS);
+    public static CacheMode modeTtlTenSeconds = new CacheMode(Mode.TTL, TIME_TEN_SECONDS);
+    public static CacheMode modeTtlTwentySeconds = new CacheMode(Mode.TTL, TIME_TWENTY_SECONDS);
+    public static CacheMode modeTtlThirtySeconds = new CacheMode(Mode.TTL, TIME_THIRTY_SECONDS);
+    public static CacheMode modeTtlOneMinute = new CacheMode(Mode.TTL, TIME_ONE_MINUTE);
+    public static CacheMode modeTtlFiveMinutes = new CacheMode(Mode.TTL, TIME_FIVE_MINUTES);
+    public static CacheMode modeTtlTenMinutes = new CacheMode(Mode.TTL, TIME_TEN_MINUTES);
+    public static CacheMode modeTtlTwentyMinutes = new CacheMode(Mode.TTL, TIME_TWENTY_MINUTES);
+    public static CacheMode modeTtlThirtyMinutes = new CacheMode(Mode.TTL, TIME_THIRTY_MINUTES);
+    public static CacheMode modeTtlOneHour = new CacheMode(Mode.TTL, TIME_ONE_HOUR);
+    public static CacheMode modeTtlTwoHours = new CacheMode(Mode.TTL, TIME_TWO_HOURS);
+    public static CacheMode modeTtlThreeHours = new CacheMode(Mode.TTL, TIME_THREE_HOURS);
+    public static CacheMode modeTtlSixHours = new CacheMode(Mode.TTL, TIME_SIX_HOURS);
+    public static CacheMode modeTtlOneDay = new CacheMode(Mode.TTL, TIME_ONE_DAY);
+    public static CacheMode modeTtlOneWeek = new CacheMode(Mode.TTL, TIME_ONE_WEEK);
+    public static CacheMode modeTtlTwoWeeks = new CacheMode(Mode.TTL, TIME_TWO_WEEKS);
+    public static CacheMode modeTtlFourWeeks = new CacheMode(Mode.TTL, TIME_FOUR_WEEKS);
 
-    public static CacheMode modeKeep = new CacheMode(MODE_KEEP, TIME_FOREVER);
-    public static CacheMode modeInternalOnly = new CacheMode(MODE_KEEP, TIME_FOREVER);
-    public static CacheMode modeRefreshTenSeconds = new CacheMode(MODE_REFRESH, TIME_TEN_SECONDS);
-    public static CacheMode modeRefreshOneMinute = new CacheMode(MODE_REFRESH, TIME_ONE_MINUTE);
-    public static CacheMode modeRefreshOneHour = new CacheMode(MODE_REFRESH, TIME_ONE_HOUR);
-    public static CacheMode modeRefreshSixHours = new CacheMode(MODE_REFRESH, TIME_SIX_HOURS);
+    public static CacheMode modeKeep = new CacheMode(Mode.KEEP, TIME_FOREVER);
+    public static CacheMode modeInternalOnly = new CacheMode(Mode.KEEP, TIME_FOREVER);
+    public static CacheMode modeRefreshTenSeconds = new CacheMode(Mode.REFRESH, TIME_TEN_SECONDS);
+    public static CacheMode modeRefreshOneMinute = new CacheMode(Mode.REFRESH, TIME_ONE_MINUTE);
+    public static CacheMode modeRefreshOneHour = new CacheMode(Mode.REFRESH, TIME_ONE_HOUR);
+    public static CacheMode modeRefreshSixHours = new CacheMode(Mode.REFRESH, TIME_SIX_HOURS);
 
-    public static CacheMode modePriority = new CacheMode(MODE_PRIORITY, TIME_FOREVER);
+    public static CacheMode modePriority = new CacheMode(Mode.PRIORITY, TIME_FOREVER);
 
     /** already parsed modes for simplicity and velocity of parsing */
     private static HashMap<String, CacheMode> parsedModes = new HashMap<>();
