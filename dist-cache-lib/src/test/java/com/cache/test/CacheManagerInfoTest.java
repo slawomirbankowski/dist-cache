@@ -27,12 +27,12 @@ public class CacheManagerInfoTest {
             // get 30 times the same value
             String currKey = "key" + CacheUtils.randomInt(10);
             String v = cache.withCache(currKey, key -> {
-                CacheUtils.sleep(10+CacheUtils.randomInt(10));
+                CacheUtils.sleep(10);
                 return "value ";
             }, CacheMode.modeTtlFiveMinutes);
         }
         List<CacheObjectInfo> objs = cache.getCacheValues("");
-        assertEquals(cache.getCacheValues("").size(), 1);
+        assertEquals(cache.getCacheValues("").size(), 10);
         objs.stream().forEach(x -> {
             log.info("OBJ IN CACHE: " + x);
         });

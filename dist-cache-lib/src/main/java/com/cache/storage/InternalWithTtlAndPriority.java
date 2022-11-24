@@ -1,5 +1,6 @@
 package com.cache.storage;
 
+import com.cache.api.CacheConfig;
 import com.cache.api.CacheObject;
 import com.cache.api.CacheObjectInfo;
 import com.cache.api.StorageInitializeParameter;
@@ -30,11 +31,11 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
   private Map<String, CacheObject> byKey;
   private NavigableMap<Integer, LinkedList<String>> byPriority;
 
-  public InternalWithTtlAndPriority(StorageInitializeParameter p, int maxObjectCount, int maxItemCount) {
+  public InternalWithTtlAndPriority(StorageInitializeParameter p) {
     super(p);
-    if (maxObjectCount <= 0) throw new IllegalArgumentException("maxSize must be positive");
-    this.maxObjectCount = maxObjectCount;
-    this.maxItemCount = maxItemCount;
+    this.maxObjectCount = p.cacheCfg.getPropertyAsInt(CacheConfig.CACHE_MAX_LOCAL_OBJECTS, CacheConfig.CACHE_MAX_LOCAL_OBJECTS_VALUE);
+    //if (maxObjectCount <= 0) throw new IllegalArgumentException("maxSize must be positive");
+    this.maxItemCount = p.cacheCfg.getPropertyAsInt(CacheConfig.CACHE_MAX_LOCAL_ITEMS, CacheConfig.CACHE_MAX_LOCAL_ITEMS_VALUE);
     this.byPriority = new TreeMap<>();
     this.byKey = new HashMap<>();
   }

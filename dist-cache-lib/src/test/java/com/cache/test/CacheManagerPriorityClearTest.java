@@ -1,7 +1,8 @@
 package com.cache.test;
 
 import com.cache.DistCacheFactory;
-import com.cache.api.*;
+import com.cache.api.Cache;
+import com.cache.api.CacheMode;
 import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -11,21 +12,19 @@ import java.util.LinkedList;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class CacheManagerPerformanceTest {
-    private static final Logger log = LoggerFactory.getLogger(CacheManagerPerformanceTest.class);
+public class CacheManagerPriorityClearTest {
+    private static final Logger log = LoggerFactory.getLogger(CacheManagerPriorityClearTest.class);
 
     @Test
     public void performanceTest() {
         log.info("START------");
         Cache cache = DistCacheFactory.buildEmptyFactory()
                 .withName("GlobalCacheTest")
-                .withStoragePriorityQueue()
+                .withStorageHashMap()
                 .withObjectTimeToLive(CacheMode.TIME_ONE_HOUR)
-                .withMaxObjectAndItems(100, 1000)
+                .withMaxObjectAndItems(500, 3000)
                 .createInstance();
-
         log.info("Cache storages: " + cache.getStorageKeys());
-        log.info("!!!!!!!!!!!!!!!!!! OBJECTS " + cache.getObjectsCount());
         LinkedList<Object[]> testResults = new LinkedList<>();
         // run 50 tests and 500 random keys get
         // each key is taking 10ms
@@ -43,9 +42,6 @@ public class CacheManagerPerformanceTest {
             long totalTime = System.currentTimeMillis() - startTime;
             testResults.add(new Object[] { test, totalTime, cache.getObjectsCount() });
         }
-        log.info("!!!!!!!!!!!!!!!!!! OBJECTS AFTER " + cache.getObjectsCount());
-        CacheUtils.sleep(10000);
-        log.info("!!!!!!!!!!!!!!!!!! OBJECTS AFTER 10 seconds " + cache.getObjectsCount());
         assertTrue(testResults.size()==50, "There should be 50 test results");
         // show all test results
         testResults.stream().forEach(tr -> {

@@ -136,7 +136,15 @@ public class CacheMode {
     public static CacheMode modeRefreshOneHour = new CacheMode(Mode.REFRESH, TIME_ONE_HOUR);
     public static CacheMode modeRefreshSixHours = new CacheMode(Mode.REFRESH, TIME_SIX_HOURS);
 
-    public static CacheMode modePriority = new CacheMode(Mode.PRIORITY, TIME_FOREVER);
+    public static CacheMode modePriorityVeryLow = new CacheMode(Mode.PRIORITY, TIME_FOREVER, true, false, CachePriority.PRIORITY_VERY_LOW);
+    public static CacheMode modePriorityLow = new CacheMode(Mode.PRIORITY, TIME_FOREVER, true, false, CachePriority.PRIORITY_LOW);
+    public static CacheMode modePriorityMedium = new CacheMode(Mode.PRIORITY, TIME_FOREVER, true, false, CachePriority.PRIORITY_MEDIUM);
+    public static CacheMode modePriorityHigh = new CacheMode(Mode.PRIORITY, TIME_FOREVER, true, false, CachePriority.PRIORITY_HIGH);
+    public static CacheMode modePriorityVeryHigh = new CacheMode(Mode.PRIORITY, TIME_FOREVER, true, false, CachePriority.PRIORITY_VERY_HIGH);
+
+    public static CacheMode modePriority(int priority) {
+        return new CacheMode(Mode.PRIORITY, TIME_FOREVER, true, false, priority);
+    }
 
     /** already parsed modes for simplicity and velocity of parsing */
     private static HashMap<String, CacheMode> parsedModes = new HashMap<>();
