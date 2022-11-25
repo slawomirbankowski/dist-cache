@@ -50,10 +50,11 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
     var itemCount = CacheUtils.itemCount(o);
 
     withWriteLock(() -> {
-      if (!willFit(itemCount)) removeOverLimit(itemCount);
+      var overLimit = this.overLimit(itemCount);
+      if (overLimit.isOverLimit()) removeOverLimit(overLimit);
 
       byKey.put(o.getKey(), o);
-      byPriority.computeIfAbsent(o.getPriority(), __ -> new LinkedList<>()).addLast(o.getKey());
+      byPriority.computeIfAbsent(o.getPriority(), __ -> new LinkedList<>()).addFirst(o.getKey());
 
       this.itemCount.addAndGet(itemCount);
       objCount.incrementAndGet();
@@ -159,27 +160,35 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
     return true;
   }
 
-  private boolean willFit(int itemCount) {
-    return objCount.get() < maxObjectCount && (this.itemCount.get() + itemCount) < maxItemCount;
+  private OverLimit overLimit(int itemCount) {
+    return new OverLimit(
+        objCount.get() < maxObjectCount ? 0 : 1,
+        Math.max(this.itemCount.get() + itemCount - maxItemCount, 0)
+    );
   }
 
-  private void removeOverLimit(int itemCount) {
+  private void removeOverLimit(OverLimit overLimit) {
+    log.info("Removing {}/{} objects/items over item limit", overLimit.objects, overLimit.items);
     withWriteLock(() -> {
-      if (itemCount == 1) {
+      if (overLimit.items <= 1) {
         var keys = byPriority.firstEntry().getValue();
         var keyToRemove = keys.pollLast();
         while (keys.peekLast() != null && keys.peekLast().equals(keyToRemove)) keys.pollLast();
-        byKey.remove(keyToRemove);
+        var removed = byKey.remove(keyToRemove);
+        if (removed != null) {
+          this.objCount.decrementAndGet();
+          this.itemCount.addAndGet(-CacheUtils.itemCount(removed));
+        }
       } else {
         var keysToRemove = new HashSet<String>();
 
         var removedSoFar = 0;
-        while (removedSoFar < itemCount) {
+        while (removedSoFar < overLimit.items) {
           var currentEntry = byPriority.firstEntry();
           if (currentEntry == null) break;
           var currentKey = currentEntry.getKey();
           var currentObjects = currentEntry.getValue();
-          while (removedSoFar < itemCount) {
+          while (removedSoFar < overLimit.items) {
             var keyToRemove = currentObjects.pollLast();
             if (keyToRemove == null) {
               byPriority.remove(currentKey);
@@ -192,8 +201,6 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
           }
         }
         removeObjectsByKeys(List.copyOf(keysToRemove));
-        objCount.addAndGet(-keysToRemove.size());
-        this.itemCount.addAndGet(-removedSoFar);
       }
     });
   }
@@ -224,5 +231,19 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
       op.run();
       return null;
     });
+  }
+
+  private static class OverLimit {
+    final int objects;
+    final int items;
+
+    OverLimit(int objects, int items) {
+      this.objects = objects;
+      this.items = items;
+    }
+
+    boolean isOverLimit() {
+      return objects > 0 || items > 0;
+    }
   }
 }
