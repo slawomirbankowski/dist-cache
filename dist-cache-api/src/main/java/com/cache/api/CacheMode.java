@@ -70,8 +70,8 @@ public class CacheMode {
     public int getPriority() { return priority; }
 
     public boolean isTtl() { return mode == Mode.TTL; }
-    public boolean isRefresh() { return mode == Mode.KEEP; }
-    public boolean isKeep() { return mode == Mode.REFRESH; }
+    public boolean isRefresh() { return mode == Mode.REFRESH; }
+    public boolean isKeep() { return mode == Mode.KEEP; }
     public boolean isAddToInternal() {
         return addToInternal;
     }

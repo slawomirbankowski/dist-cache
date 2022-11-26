@@ -55,7 +55,7 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
                 .collect(Collectors.toList());
     }
     public void onTimeClean(long checkSeq) {
-        log.debug("CLEARING objects in cache HashMap, check: " + checkSeq + ", size: " + localCache.size() + ", max:" + maxObjects);
+        log.info("CLEARING objects in cache HashMap, check: " + checkSeq + ", size: " + localCache.size() + ", max:" + maxObjects);
         // TODO: no need to perform this every single time
         List<String> oldKeys = localCache.values()
                 .stream()

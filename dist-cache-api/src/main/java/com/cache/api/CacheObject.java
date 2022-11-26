@@ -167,10 +167,13 @@ public class CacheObject {
      * 0 => no need to refresh object
      * */
     public int refreshIfNeeded() {
-        if (shouldBeRefreshed()) {
+        boolean sbr = shouldBeRefreshed();
+        //System.out.println("Should be refreshed: " + sbr + ", key=" + key + ", lastRefreshTime=" + lastRefreshTime + ", isRefresh=" + mode.isRefresh());
+        if (sbr) {
             lastRefreshTime = System.currentTimeMillis();
             if (methodToAcquire != null) {
                 try {
+                    System.out.println("Refresh object for key: " + key);
                     long startAckTime = System.currentTimeMillis();
                     refreshes.incrementAndGet();
                     objectInCache = methodToAcquire.apply(getKey());

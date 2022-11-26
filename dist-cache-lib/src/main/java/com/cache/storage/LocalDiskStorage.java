@@ -3,6 +3,8 @@ package com.cache.storage;
 import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
 import com.cache.utils.CacheUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
@@ -12,6 +14,7 @@ import java.util.*;
  * */
 public class LocalDiskStorage extends CacheStorageBase {
 
+    protected static final Logger log = LoggerFactory.getLogger(LocalDiskStorage.class);
     private String filePrefixName;
     /** TODO: init local disk storage */
     public LocalDiskStorage(StorageInitializeParameter p) {
@@ -34,6 +37,7 @@ public class LocalDiskStorage extends CacheStorageBase {
             java.io.ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f));
             CacheObject co = (CacheObject)ois.readObject();
             ois.close();
+
             return Optional.of(co);
         } catch (Exception ex) {
             initParams.cache.addIssue("LocalDiskStorage.getObject", ex);
@@ -43,12 +47,14 @@ public class LocalDiskStorage extends CacheStorageBase {
     /** write object to local disk to be read later */
     public Optional<CacheObject> setObject(CacheObject o) {
         try {
+            o.getKey();
             String expireDateString = CacheUtils.formatDateAsYYYYMMDDHHmmss(new java.util.Date(System.currentTimeMillis() + o.timeToLive()));
             String cacheObjectFileName = filePrefixName + ".EXPDATE" + expireDateString + "." + CacheUtils.stringToHex(o.getKey()) + ".cache";
             // create temporary file with content - object
             java.io.File f = new File(cacheObjectFileName);
             java.io.ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(f));
             // TODO: serialize somehow this object to be written to Disk
+
             oos.writeObject(o);
             oos.close();
         } catch (Exception ex) {
