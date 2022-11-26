@@ -5,6 +5,7 @@ import com.cache.api.CacheObject;
 import com.cache.api.CacheObjectInfo;
 import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
+import com.cache.util.measure.TimedResult;
 import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,6 @@ import java.util.stream.Collectors;
 public class InternalWithTtlAndPriority extends CacheStorageBase {
   private static final Logger log = LoggerFactory.getLogger(InternalWithTtlAndPriority.class);
 
-  private static final float QUEUE_OVERLOAD = 1.1f;
 
   private final int maxObjectCount;
   private final int maxItemCount;
@@ -34,7 +34,6 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
   public InternalWithTtlAndPriority(StorageInitializeParameter p) {
     super(p);
     this.maxObjectCount = p.cacheCfg.getPropertyAsInt(CacheConfig.CACHE_MAX_LOCAL_OBJECTS, CacheConfig.CACHE_MAX_LOCAL_OBJECTS_VALUE);
-    //if (maxObjectCount <= 0) throw new IllegalArgumentException("maxSize must be positive");
     this.maxItemCount = p.cacheCfg.getPropertyAsInt(CacheConfig.CACHE_MAX_LOCAL_ITEMS, CacheConfig.CACHE_MAX_LOCAL_ITEMS_VALUE);
     this.byPriority = new TreeMap<>();
     this.byKey = new HashMap<>();
@@ -50,12 +49,13 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
     var itemCount = CacheUtils.itemCount(o);
 
     withWriteLock(() -> {
+      log.trace("Set object {} with {} items, thread {} got the lock", o.getKey(), itemCount, Thread.currentThread().getId());
       var overLimit = this.overLimit(itemCount);
       if (overLimit.isOverLimit()) removeOverLimit(overLimit);
 
       byKey.put(o.getKey(), o);
       byPriority.computeIfAbsent(o.getPriority(), __ -> new LinkedList<>()).addFirst(o.getKey());
-
+      log.trace("Object {} added successfully", o.getKey());
       this.itemCount.addAndGet(itemCount);
       objCount.incrementAndGet();
     });
@@ -94,8 +94,12 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
 
   @Override
   public Set<String> getKeys(String containsStr) {
+    if (containsStr == null) return Collections.emptySet();
     rwLock.readLock().lock();
-    var res = Collections.unmodifiableSet(byKey.keySet());
+    var res = new HashSet<String>();
+    byKey.forEach((k, v) -> {
+      if (k.contains(containsStr)) res.add(k);
+    });
     rwLock.readLock().unlock();
     return res;
   }
@@ -117,42 +121,72 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
       var sum = byKey.size() + byPriority.size();
       byKey = new HashMap<>();
       byPriority = new TreeMap<>();
+      this.objCount.set(0);
+      this.itemCount.set(0);
       return sum;
     });
   }
 
   @Override
   public int clearCacheContains(String str) {
-    return withWriteLock(() ->
-        byKey.keySet().stream()
-            .filter(k -> k.contains(str))
-            .map(k -> {
-              byKey.remove(k);
-              return 1;
-            })
-            .reduce(0, Integer::sum)
-    );
+    log.trace("clearCacheContains({})", str);
+    var counters = new int[]{0, 0};
+    withWriteLock(() -> {
+      var keysToDelete = byKey.keySet().stream()
+          .filter(k -> k.contains(str))
+          .collect(Collectors.toList());
+      keysToDelete.forEach(k -> {
+        var removed = byKey.remove(k);
+        counters[0] += 1;
+        counters[1] += CacheUtils.itemCount(removed);
+      });
+      log.debug("removed {} objects and {} items", counters[0], counters[1]);
+      this.objCount.addAndGet(-counters[0]);
+      this.itemCount.addAndGet(-counters[1]);
+    });
+
+    return counters[0];
   }
 
   @Override
   public void onTimeClean(long checkSeq) {
-    log.debug("Running mark and sweep");
-    var candidates = withReadLock(() ->
-        byKey.values().stream().filter(CacheObject::isOutdated).map(CacheObject::getKey).collect(Collectors.toSet()));
-    log.debug("Collected {} candidates for removal", candidates.size());
+    var counters = new int[]{0, 0};
+    var timers = new long[]{0, 0};
+    log.trace("Running mark and sweep");
+    var candidates = withReadLock(() -> {
+      var t0 = System.nanoTime();
+      var res = byKey.values().stream().filter(CacheObject::isOutdated).map(CacheObject::getKey).collect(Collectors.toSet());
+      timers[0] = System.nanoTime() - t0;
+      return res;
+    });
 
-    candidates.forEach(c -> {
-      log.debug("Attempt to remove candidate {}", c);
-      withWriteLock(() -> {
+    log.debug("Collected {} candidates for removal in {}", candidates.size(), TimedResult.prettyNs(timers[0]));
+
+    withWriteLock(() -> {
+      var t0 = System.nanoTime();
+      var prioritiesToRemove = new HashSet<Integer>();
+      byPriority.forEach((priority, keys) -> {
+        keys.removeAll(candidates);
+        if (keys.isEmpty()) prioritiesToRemove.add(priority);
+      });
+      prioritiesToRemove.forEach(byPriority::remove);
+
+      candidates.forEach(c -> {
         var co = byKey.get(c);
         if (co != null && co.isOutdated()) {
-          log.debug("Removing outdated object {}", c);
+          counters[0] += 1;
+          counters[1] += CacheUtils.itemCount(co);
           removeObjectByKey(co.getKey());
         } else {
           log.debug("Candidate {} not found, or it has been renewed in the meantime", c);
         }
       });
+      timers[1] = System.nanoTime() - t0;
+      this.objCount.addAndGet(-counters[0]);
+      this.itemCount.addAndGet(-counters[1]);
     });
+    log.debug("Removed {}/{} objects/items in {} during sweep",
+        counters[0], counters[1], TimedResult.prettyNs(timers[1]));
   }
 
   @Override
@@ -167,18 +201,41 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
     );
   }
 
+  /**
+   * !!! Run inside a write lock !!!
+   * @return oldest key of lowest priority
+   */
+  private String pollMinPriority() {
+    if (!rwLock.isWriteLockedByCurrentThread()) throw new IllegalStateException("Run only inside a write lock");
+    var minEntry = byPriority.firstEntry();
+    var keys = minEntry.getValue();
+    var candidate = keys.pollLast();
+    while (candidate == null || !byKey.containsKey(candidate)) {
+      if (candidate == null) {
+        byPriority.pollFirstEntry();
+        minEntry = byPriority.firstEntry();
+        keys = minEntry.getValue();
+      }
+      candidate = keys.pollLast();
+    }
+    while (keys.peekLast() != null && keys.peekLast().equals(candidate)) keys.pollLast();
+
+    return candidate;
+  }
+
   private void removeOverLimit(OverLimit overLimit) {
-    log.info("Removing {}/{} objects/items over item limit", overLimit.objects, overLimit.items);
+    log.trace("Removing {}/{} objects/items over item limit", overLimit.objects, overLimit.items);
     withWriteLock(() -> {
       if (overLimit.items <= 1) {
-        var keys = byPriority.firstEntry().getValue();
-        var keyToRemove = keys.pollLast();
-        while (keys.peekLast() != null && keys.peekLast().equals(keyToRemove)) keys.pollLast();
+        var keyToRemove = pollMinPriority();
+        if (keyToRemove == null) return; // no more keys in byPriority
         var removed = byKey.remove(keyToRemove);
+
         if (removed != null) {
           this.objCount.decrementAndGet();
           this.itemCount.addAndGet(-CacheUtils.itemCount(removed));
         }
+        if (byPriority.firstEntry().getValue().isEmpty()) byPriority.pollFirstEntry();
       } else {
         var keysToRemove = new HashSet<String>();
 
@@ -203,6 +260,7 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
         removeObjectsByKeys(List.copyOf(keysToRemove));
       }
     });
+    log.trace("After removing items over the limit. Obj count: {}, item count: {}", this.getObjectsCount(), this.getItemsCount());
   }
 
   private <T> T withReadLock(Supplier<T> op) {
@@ -221,6 +279,7 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
 
   private <T> T withWriteLock(Supplier<T> op) {
     rwLock.writeLock().lock();
+
     var res = op.get();
     rwLock.writeLock().unlock();
     return res;

@@ -88,16 +88,6 @@ public class CacheUtils {
         return LocalDateTime.now().format(formatFull);
     }
 
-    public static int itemCount(CacheObject o) {
-        if (o == null) return 0;
-        var size = o.getSize();
-        if (size != 1) return size;
-        var obj = o.getValue();
-        if (obj instanceof Collection) return ((Collection) obj).size();
-        else if (obj.getClass().isArray()) return Array.getLength(obj);
-        else return 1;
-    }
-
     public static String formatDateAsYYYYMMDDHHmmss(LocalDateTime ldt) {
         return ldt.format(formatFull);
     }
@@ -190,22 +180,19 @@ public class CacheUtils {
     /** calculate estimate size of given object,
      * works only with lists, maps, sets, collections */
     public static int estimateSize(Object obj) {
-        try {
-            if (obj instanceof List<?>) {
-                return ((List)obj).size();
-            } else if (obj instanceof Map<?,?>) {
-                return ((Map)obj).size();
-            } else if (obj instanceof Set<?>) {
-                return ((Set)obj).size();
-            } else if (obj instanceof Collection<?>) {
-                return ((Collection)obj).size();
-            } else {
-                return 1;
-            }
-        } catch (Exception ex) {
-            return 1;
-        }
+        if (obj == null) return 0;
+        else if (obj instanceof Collection) return ((Collection) obj).size();
+        else if (obj.getClass().isArray()) return Array.getLength(obj);
+        else return 1;
     }
+
+    public static int itemCount(CacheObject o) {
+        if (o == null) return 0;
+        var size = o.getSize();
+        if (size != 1) return size;
+        return estimateSize(o.getValue());
+    }
+
     /** get global info about this app */
     public static AppGlobalInfo getInfo() {
         var runTime = java.lang.Runtime.getRuntime();
