@@ -8,46 +8,47 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class CacheManagerMultiThreadTest {
-    private static final Logger log = LoggerFactory.getLogger(CacheManagerMultiThreadTest.class);
+public class CacheManagerPriorityMultiThreadTest {
+    private static final Logger log = LoggerFactory.getLogger(CacheManagerPriorityMultiThreadTest.class);
 
     @Test
     public void testMultiThread() {
         log.info("START------");
         Cache cache = DistCacheFactory.buildEmptyFactory()
                 .withName("GlobalCacheTest")
-                .withStorageHashMap()
+                .withStoragePriorityQueue()
                 .withObjectTimeToLive(CacheMode.TIME_ONE_HOUR)
-                .withMaxObjectAndItems(1000, 3000)
+                .withMaxObjectAndItems(100, 1000)
                 .createInstance();
         log.info("Cache storages: " + cache.getStorageKeys());
         int maxThreads = 10;
-        ReadingWritingThread[] threaads = new ReadingWritingThread[maxThreads];
+        log.info("CURRENT OBJECTS BEFORE: " + cache.getObjectsCount());
+        ReadingWritingPriorityThread[] threaads = new ReadingWritingPriorityThread[maxThreads];
         for (int th=0; th<maxThreads; th++) {
-            ReadingWritingThread thread = new ReadingWritingThread();
+            ReadingWritingPriorityThread thread = new ReadingWritingPriorityThread();
             thread.cache = cache;
+            thread.maxKeys = 200;
             thread.start();
             threaads[th] = thread;
         }
+        log.info("CURRENT OBJECTS AFTER INSERTING: " + cache.getObjectsCount());
         // test should take 10 seconds
-        CacheUtils.sleep(10000);
+        CacheUtils.sleep(20000);
         for (int th=0; th<maxThreads; th++) {
             threaads[th].working = false;
         }
-        assertTrue(cache.getCacheValues("").size() > 100);
+        log.info("CURRENT OBJECTS AFTER 10 seconds: " + cache.getObjectsCount());
+        assertTrue(cache.getObjectsCount() <= 1000);
         // wait 1 second to finish all tests
         CacheUtils.sleep(1000);
         cache.close();
         log.info("END-----");
     }
-
 }
-
-class ReadingWritingThread extends Thread {
-    private static final Logger log = LoggerFactory.getLogger(ReadingWritingThread.class);
+class ReadingWritingPriorityThread extends Thread {
+    private static final Logger log = LoggerFactory.getLogger(ReadingWritingPriorityThread.class);
     public Cache cache;
     public int maxKeys = 500;
     public boolean working = true;
@@ -56,15 +57,15 @@ class ReadingWritingThread extends Thread {
         while (working) {
             try {
                 long startTime = System.currentTimeMillis();
-
                 for (int i=0; i<50; i++) {
                     String key = "key" + CacheUtils.randomInt(maxKeys);
+                    int priority = CacheUtils.randomInt(10);
                     String v = cache.withCache(key, k -> {
                         CacheUtils.sleep(1);
                         return "value for " + k;
-                    }, CacheMode.modeTtlOneHour);
-                    String keyToClear = "key" + CacheUtils.randomInt(5000);
-                    cache.clearCacheContains(keyToClear);
+                    }, CacheMode.modePriority(priority));
+                    //String keyToClear = "key" + CacheUtils.randomInt(5000);
+                    //cache.clearCacheContains(keyToClear);
                 }
                 long totalTime = System.currentTimeMillis() - startTime;
             } catch (Exception ex) {

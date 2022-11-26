@@ -27,7 +27,7 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
     }
     /** add item into cache  */
     public Optional<CacheObject> setObject(CacheObject o) {
-        log.info("Set new item for cache, key: " + o.getKey());
+        log.trace("Set new item for cache, key: " + o.getKey());
         CacheObject prev = localCache.put(o.getKey(), o);
         if (prev != null) {
             prev.releaseObject();

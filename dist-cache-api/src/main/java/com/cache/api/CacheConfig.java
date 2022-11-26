@@ -136,7 +136,7 @@ public class CacheConfig {
     /** names of storages and class names for these storages in package com.cache.storage */
     public static String CACHE_STORAGE_VALUE_HASHMAP = "InternalHashMapCacheStorage";
     public static String CACHE_STORAGE_VALUE_WEAKHASHMAP = "InternalWeakHashMapCacheStorage";
-    public static String CACHE_STORAGE_VALUE_PRIORITYQUEUE = "InternalWeakHashMapCacheStorage";
+    public static String CACHE_STORAGE_VALUE_PRIORITYQUEUE = "InternalWithTtlAndPriority";
     public static String CACHE_STORAGE_VALUE_REDIS = "RedisCacheStorage";
     public static String CACHE_STORAGE_VALUE_KAFKA = "KafkaStorage";
     public static String CACHE_STORAGE_VALUE_LOCAL_DISK = "LocalDiskStorage";

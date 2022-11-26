@@ -124,7 +124,7 @@ public class CacheObject {
     }
 
     public boolean isOutdated() {
-        return this.timeToLive() > 0;
+        return this.timeToLive() <= 0;
     }
 
     public int getPriority() {
