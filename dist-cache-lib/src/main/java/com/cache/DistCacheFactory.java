@@ -168,6 +168,13 @@ public class DistCacheFactory {
         props.setProperty(CacheConfig.JDBC_PASS, pass);
         return this;
     }
+
+    public DistCacheFactory withStorageLocalDisk(String basePath) {
+        String existingProps = ""+props.getProperty(CacheConfig.CACHE_STORAGES);
+        props.setProperty(CacheConfig.CACHE_STORAGES, existingProps + "," + CacheConfig.CACHE_STORAGE_VALUE_LOCAL_DISK);
+        props.setProperty(CacheConfig.LOCAL_DISK_PREFIX_PATH, basePath);
+        return this;
+    }
     public DistCacheFactory withJdbc(String url, String driver, String user, String pass) {
         props.setProperty(CacheConfig.JDBC_URL, url);
         props.setProperty(CacheConfig.JDBC_DRIVER, driver);

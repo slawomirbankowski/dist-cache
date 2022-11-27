@@ -1,21 +1,24 @@
 package com.cache.storage;
 
-import com.cache.api.*;
+import com.cache.api.CacheObject;
+import com.cache.api.CacheObjectInfo;
+import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 /** cache with internal HashMap */
-public class InternalHashMapCacheStorage extends CacheStorageBase {
+public class InternalHashTableCacheStorage extends CacheStorageBase {
 
     /** objects in cache */
-    private final java.util.concurrent.ConcurrentHashMap<String, CacheObject> localCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final  Map<String, CacheObject> localCache;
 
-    public InternalHashMapCacheStorage(StorageInitializeParameter p) {
+    public InternalHashTableCacheStorage(StorageInitializeParameter p) {
         super(p);
+        localCache = Collections.synchronizedMap(new java.util.Hashtable<>((int)maxObjects));
     }
-    /** HashMap is internal storage */
+    /** Hashtable is internal storage */
     public boolean isInternal() { return true; }
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
