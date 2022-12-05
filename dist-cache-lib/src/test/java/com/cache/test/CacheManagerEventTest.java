@@ -1,7 +1,8 @@
 package com.cache.test;
 
-import com.cache.DistCacheFactory;
+import com.cache.DistFactory;
 import com.cache.api.*;
+import com.cache.interfaces.Cache;
 import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -20,7 +21,7 @@ public class CacheManagerEventTest {
         log.info("START------");
         AtomicLong cleanEvents = new AtomicLong();
         AtomicLong storageEvents = new AtomicLong();
-        Cache cache = DistCacheFactory.buildDefaultFactory()
+        Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withStorageHashMap()
                 .withObjectTimeToLive(CacheMode.TIME_TEN_SECONDS)
@@ -42,7 +43,7 @@ public class CacheManagerEventTest {
                 .withTimer(1000L, 1000L)
                 .withMaxEvents(100)
                 .withMaxObjectAndItems(30, 100)
-                .createInstance();
+                .createCacheInstance();
         CacheUtils.sleep(15000);
         assertTrue(storageEvents.get() >= 1, "There should be 1 event for storage");
         assertTrue(cleanEvents.get() >= 13, "There should be at least 13 events for clean");

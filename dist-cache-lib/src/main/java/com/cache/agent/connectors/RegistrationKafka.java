@@ -2,8 +2,7 @@ package com.cache.agent.connectors;
 
 import com.cache.agent.AgentInstance;
 import com.cache.api.*;
-import com.cache.base.CacheBase;
-import com.cache.base.ConnectorBase;
+import com.cache.base.RegistrationBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,21 +10,21 @@ import java.util.List;
 
 /** *
  *
- * TODO: implement global agent storage in Kafka
+ * TODO: implement global agent registration in Kafka
  *
  */
-public class ConnectorKafka extends ConnectorBase {
+public class RegistrationKafka extends RegistrationBase {
 
     /** local logger for this class*/
-    protected static final Logger log = LoggerFactory.getLogger(ConnectorKafka.class);
+    protected static final Logger log = LoggerFactory.getLogger(RegistrationKafka.class);
 
-    public ConnectorKafka(AgentInstance parentAgent) {
+    public RegistrationKafka(AgentInstance parentAgent) {
         super(parentAgent);
     }
     /** run for initialization in classes */
     @Override
     protected void onInitialize() {
-        var kafkaBrokers = parentAgent.getParentCache().getCacheConfig().getProperty(CacheConfig.KAFKA_BROKERS);
+        var kafkaBrokers = parentAgent.getConfig().getProperty(DistConfig.KAFKA_BROKERS);
         try {
             log.info("Register to Kafka: " + kafkaBrokers);
             // TODO: register to Kafka, push agent info, read other agents
@@ -41,6 +40,9 @@ public class ConnectorKafka extends ConnectorBase {
     protected AgentConfirmation onAgentRegister(AgentRegister register) {
         return null;
     }
+    protected AgentConfirmation onAgentUnregister(String agentGuid) {
+        return new AgentConfirmation(agentGuid, true, false, 0, List.of());
+    }
     @Override
     protected AgentPingResponse onAgentPing(AgentPing ping) {
         return null;
@@ -48,6 +50,11 @@ public class ConnectorKafka extends ConnectorBase {
     /** get list of agents from connector */
     @Override
     protected List<AgentSimplified> onGetAgents() {
+        return null;
+    }
+
+    /** get list of active agents */
+    public List<AgentSimplified> getAgentsActive() {
         return null;
     }
 

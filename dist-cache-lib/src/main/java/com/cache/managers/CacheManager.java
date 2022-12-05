@@ -5,7 +5,7 @@ import com.cache.api.*;
 import com.cache.base.CacheBase;
 import com.cache.base.CachePolicyBase;
 import com.cache.base.CacheStorageBase;
-import com.cache.utils.CacheUtils;
+import com.cache.interfaces.Agent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,7 @@ public class CacheManager extends CacheBase {
      * agent can connect to different cache managers in the same group
      * to cooperate as distributed cache
      *  */
-    private AgentInstance agent = new AgentInstance(this);
+    private AgentInstance agent;
     /** all storages to store cache objects - there could be internal storages,
      * Elasticsearch, Redis, local disk, JDBC database with indexed table, and many others */
     private final Map<String, CacheStorageBase> storages = new HashMap<>();
@@ -39,17 +39,9 @@ public class CacheManager extends CacheBase {
     /** initialize current manager with properties
      * this is creating storages, connecting to storages
      * creating cache policy, create agent and connecting to other cache agents */
-    public CacheManager(CacheConfig cacheCfg) {
+    public CacheManager(AgentInstance agent, DistConfig cacheCfg) {
         super(cacheCfg);
-        // TODO: finishing initialization - to be done, creating agent, storages, policies
-        initializeStorages();
-        initializeAgent();
-        initializePolicies();
-        initializeTimer();
-        addEvent(new CacheEvent(this, "CacheManager", CacheEvent.EVENT_CACHE_START));
-    }
-    public CacheManager(CacheConfig cacheCfg, Map<String, Function<CacheEvent, String>> callbacksMethods) {
-        super(cacheCfg, callbacksMethods);
+        this.agent = agent;
         // TODO: finishing initialization - to be done, creating agent, storages, policies
         initializeStorages();
         initializeAgent();
@@ -63,6 +55,10 @@ public class CacheManager extends CacheBase {
                 .map(CacheStorageBase::getStorageInfo)
                 .collect(Collectors.toList());
     }
+    /** get agent for communication with other services in distributed environment */
+    public Agent getAgent() {
+        return agent;
+    }
     /** get number of storages */
     public int getStoragesCount() {
         return storages.size();
@@ -71,8 +67,8 @@ public class CacheManager extends CacheBase {
     /** initialize all storages from configuration */
     private void initializeStorages() {
         addEvent(new CacheEvent(this, "initializeStorages", CacheEvent.EVENT_INITIALIZE_STORAGES));
-        StorageInitializeParameter initParams = new StorageInitializeParameter(cacheCfg, this);
-        String cacheStorageList = ""+cacheCfg.getProperty(CacheConfig.CACHE_STORAGES);
+        StorageInitializeParameter initParams = new StorageInitializeParameter(this);
+        String cacheStorageList = ""+cacheCfg.getProperty(DistConfig.CACHE_STORAGES);
         log.info("Initializing cache storages: " + cacheStorageList);
         Arrays.stream(cacheStorageList.split(","))
                 .distinct()
@@ -105,7 +101,8 @@ public class CacheManager extends CacheBase {
     /** initialize Agent to communicate with other CacheManagers */
     protected void initializeAgent() {
         addEvent(new CacheEvent(this, "initializeAgent", CacheEvent.EVENT_INITIALIZE_AGENT));
-        agent.initializeAgent();
+        agent.registerService(this);
+
     }
 
     /** initialize policies */
@@ -113,11 +110,12 @@ public class CacheManager extends CacheBase {
         addEvent(new CacheEvent(this, "initializePolicies", CacheEvent.EVENT_INITIALIZE_POLICIES));
     }
 
+    /** */
     protected void initializeTimer() {
         addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMERS));
         // initialization for clean
-        long cleanDelayMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_DELAY, CacheConfig.CACHE_TIMER_DELAY_VALUE);
-        long cleanPeriodMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_PERIOD, CacheConfig.CACHE_TIMER_PERIOD_VALUE);
+        long cleanDelayMs = cacheCfg.getPropertyAsLong(DistConfig.CACHE_TIMER_DELAY, DistConfig.CACHE_TIMER_DELAY_VALUE);
+        long cleanPeriodMs = cacheCfg.getPropertyAsLong(DistConfig.CACHE_TIMER_PERIOD, DistConfig.CACHE_TIMER_PERIOD_VALUE);
         log.info("Scheduling clean timer task for cache: " + getCacheGuid());
         TimerTask onTimeCleanTask = new TimerTask() {
             @Override
@@ -133,27 +131,10 @@ public class CacheManager extends CacheBase {
         timer.scheduleAtFixedRate(onTimeCleanTask, cleanDelayMs, cleanPeriodMs);
         addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMER_CLEAN));
 
-        // initialization for communicate
-        long communicateDelayMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_COMMUNICATE_DELAY, CacheConfig.CACHE_TIMER_COMMUNICATE_DELAY_VALUE);
-        long communicatePeriodMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_COMMUNICATE_DELAY, CacheConfig.CACHE_TIMER_COMMUNICATE_DELAY_VALUE);
-        log.info("Scheduling communicating timer task for cache: " + getCacheGuid());
-        TimerTask onTimeCommunicateTask = new TimerTask() {
-            @Override
-            public void run() {
-                try {
-                    onTimeCommunicate();
-                } catch (Exception ex) {
-                    // TODO: mark exception
-                    addIssue("initializeTimer:communicate", ex);
-                }
-            }
-        };
-        timerTasks.add(onTimeCommunicateTask);
-        timer.scheduleAtFixedRate(onTimeCommunicateTask, communicateDelayMs, communicatePeriodMs);
         addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMER_COMMUNICATE));
         // initialization for
-        long ratioDelayMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_RATIO_DELAY, CacheConfig.CACHE_TIMER_RATIO_DELAY_VALUE);
-        long ratioPeriodMs = cacheCfg.getPropertyAsLong(CacheConfig.CACHE_TIMER_RATIO_DELAY, CacheConfig.CACHE_TIMER_RATIO_DELAY_VALUE);
+        long ratioDelayMs = cacheCfg.getPropertyAsLong(DistConfig.CACHE_TIMER_RATIO_DELAY, DistConfig.CACHE_TIMER_RATIO_DELAY_VALUE);
+        long ratioPeriodMs = cacheCfg.getPropertyAsLong(DistConfig.CACHE_TIMER_RATIO_DELAY, DistConfig.CACHE_TIMER_RATIO_DELAY_VALUE);
         log.info("Scheduling ratio timer task for cache: " + getCacheGuid());
         TimerTask onTimeHitRatioTask = new TimerTask() {
             @Override
@@ -184,10 +165,7 @@ public class CacheManager extends CacheBase {
             }
             storages.clear();
         }
-        log.info("Clearing events");
-        events.clear();
-        log.info("Clearing issues");
-        issues.clear();
+        agent.close();
         addEvent(new CacheEvent(this, "onClose", CacheEvent.EVENT_CLOSE_END));
     }
 
@@ -195,7 +173,7 @@ public class CacheManager extends CacheBase {
     private List<CacheObject> setItemInternal(CacheObject co) {
         addedItemsSequence.incrementAndGet();
         return storages.values().stream()
-                .filter(CacheStorageBase::isInternal)
+                //.filter(CacheStorageBase::isInternal)
                 .flatMap(storage -> storage.setObject(co).stream())
                 .collect(Collectors.toList());
     }
@@ -208,7 +186,7 @@ public class CacheManager extends CacheBase {
         hitRatio.miss(); // hit ratio - add miss event
         T objFromMethod = acquireMethod.apply(key);
         long acquireTimeMs = System.currentTimeMillis()-startActTime; // this is time of getting this object from method
-        log.trace("===> Got object from external method/supplier, time: " + acquireTimeMs);
+        log.debug("===> Got object from external method/supplier, time: " + acquireTimeMs);
         CacheObject co = new CacheObject(key, objFromMethod, acquireTimeMs, acquireMethod, mode, groups);
         // TODO: need to set object in internal caches
         setItemInternal(co);
@@ -290,11 +268,7 @@ public class CacheManager extends CacheBase {
         addEvent(new CacheEvent(this, "onTimeClean", CacheEvent.EVENT_TIMER_CLEAN));
         storages.values().stream().forEach(x -> x.onTimeClean(checkSeq));
     }
-    /** executed every 1 minute to communicate to application and all agents */
-    public void onTimeCommunicate() {
-        addEvent(new CacheEvent(this, "onTimeClean", CacheEvent.EVENT_TIMER_COMMUNICATE));
-        agent.onTimeCommunicate();
-    }
+
     public void onTimeRatio() {
         //addEvent(new CacheEvent(this, "onTimeClean", CacheEvent.EVENT_TIMER_COMMUNICATE));
 

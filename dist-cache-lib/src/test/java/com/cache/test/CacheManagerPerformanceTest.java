@@ -1,7 +1,8 @@
 package com.cache.test;
 
-import com.cache.DistCacheFactory;
+import com.cache.DistFactory;
 import com.cache.api.*;
+import com.cache.interfaces.Cache;
 import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -17,12 +18,12 @@ public class CacheManagerPerformanceTest {
     @Test
     public void performanceTest() {
         log.info("START------");
-        Cache cache = DistCacheFactory.buildEmptyFactory()
+        Cache cache = DistFactory.buildEmptyFactory()
                 .withName("GlobalCacheTest")
                 .withStoragePriorityQueue()
                 .withObjectTimeToLive(CacheMode.TIME_ONE_HOUR)
                 .withMaxObjectAndItems(100, 1000)
-                .createInstance();
+                .createCacheInstance();
 
         log.info("Cache storages: " + cache.getStorageKeys());
         log.info("!!!!!!!!!!!!!!!!!! OBJECTS " + cache.getObjectsCount());

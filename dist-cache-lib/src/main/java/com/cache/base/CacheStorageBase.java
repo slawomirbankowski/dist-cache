@@ -1,6 +1,7 @@
 package com.cache.base;
 
 import com.cache.api.*;
+import com.cache.interfaces.CacheSerializer;
 import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,8 @@ public abstract class CacheStorageBase {
     /** maximum number of objects in cache,
      * this is not ceil that is strict but above that more clearing will be done */
     protected final long maxObjects;
+    /** serializer dedicated for this cache storage */
+    protected final CacheSerializer cacheSerializer;
     /** initialization parameters for subclasses */
     protected StorageInitializeParameter initParams;
 
@@ -34,13 +37,14 @@ public abstract class CacheStorageBase {
     public CacheStorageBase(StorageInitializeParameter p) {
         this.initParams = p;
         this.storageUid = CacheUtils.generateStorageGuid(getClass().getSimpleName());
-        maxObjects = initParams.cacheCfg.getPropertyAsLong(CacheConfig.CACHE_MAX_LOCAL_OBJECTS, 1000);
-        maxItems = initParams.cacheCfg.getPropertyAsLong(CacheConfig.CACHE_MAX_LOCAL_ITEMS, 1000);
+        this.cacheSerializer = p.cache.getCacheSerializer();
+        this.maxObjects = initParams.cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_OBJECTS, 1000);
+        this.maxItems = initParams.cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_ITEMS, 1000);
     }
 
     /** get unique storage ID */
     public String getStorageUid() { return storageUid; }
-
+    public String getCacheUid() { return initParams.cache.getCacheGuid(); }
     /** get information about this storage */
     public StorageInfo getStorageInfo() {
         return new StorageInfo(storageUid, storageCreatedDate, this.getClass().getName(),

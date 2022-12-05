@@ -1,7 +1,7 @@
 package com.cache.test;
 
-import com.cache.DistCacheFactory;
-import com.cache.api.Cache;
+import com.cache.DistFactory;
+import com.cache.interfaces.Cache;
 import com.cache.api.CacheMode;
 import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
@@ -18,12 +18,12 @@ public class CacheManagerPriorityClearTest {
     @Test
     public void performanceTest() {
         log.info("START------");
-        Cache cache = DistCacheFactory.buildEmptyFactory()
+        Cache cache = DistFactory.buildEmptyFactory()
                 .withName("GlobalCacheTest")
                 .withStorageHashMap()
                 .withObjectTimeToLive(CacheMode.TIME_ONE_HOUR)
                 .withMaxObjectAndItems(500, 3000)
-                .createInstance();
+                .createCacheInstance();
         log.info("Cache storages: " + cache.getStorageKeys());
         LinkedList<Object[]> testResults = new LinkedList<>();
         // run 50 tests and 500 random keys get

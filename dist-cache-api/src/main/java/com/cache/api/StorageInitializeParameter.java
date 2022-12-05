@@ -1,16 +1,13 @@
 package com.cache.api;
 
-import java.util.Properties;
+import com.cache.interfaces.Cache;
 
 /** initialization parameter(s) for cache Storage */
 public class StorageInitializeParameter {
     /** parent cache object */
     public Cache cache;
-    /** properties */
-    public CacheConfig cacheCfg;
 
-    public StorageInitializeParameter(CacheConfig cfg, Cache cache) {
-        this.cacheCfg = cfg;
+    public StorageInitializeParameter(Cache cache) {
         this.cache = cache;
     }
 

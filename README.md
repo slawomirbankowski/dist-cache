@@ -31,8 +31,17 @@ Cache could be used as:
 - code to be included "as it is"
 
 To be added: 
-- hit ratio of cache usage
+- hit ratio of cache usage - advanced possibilities to check what is percentage of hit/miss for cache object usage
+- cache blacklist - initial list of keys that should NOT be stored in cache
+- cache key encoder for secrets - when key contains secret or password, this part must be encoded with base643 or he
 - cache re-set while working
-- cache blacklist
+- Integrate Swagger or any other REST Doc API into dist-cache-app
+- Security to Spring application for REST endpoints
+- Application version - currently there is no versioning of this app, there should be semantic versioning
+- Gradle task to build docker image after build of app jar file
+- Implement Redis storage - external storage based on Redis
+- Implement AgentInstance with grid of agents registering to JDBC/App and getting list of other agents to communicate directly
+- Implement JdbcStorage to have storage in JDBC database
+- Implement LocalDiskStorage to have storage for big objects in LocalDisk
 - cache object group and mode, acquire time, refresh time, methods to get next value for model
-- cache key for secrets
+

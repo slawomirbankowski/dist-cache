@@ -2,11 +2,15 @@ package com.cache.base;
 
 import com.cache.api.*;
 import com.cache.encoders.KeyEncoderNone;
+import com.cache.interfaces.Cache;
+import com.cache.interfaces.CacheKeyEncoder;
+import com.cache.interfaces.CacheSerializer;
+import com.cache.serializers.Base64Serializer;
+import com.cache.utils.CacheHitRatio;
 import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,39 +38,43 @@ public abstract class CacheBase implements Cache {
     /** if cache has been already closed */
     protected boolean isClosed = false;
     /** cache properties to initialize all storages, agent, policies, */
-    protected CacheConfig cacheCfg = null;
+    protected DistConfig cacheCfg = null;
     /**default mode for cache objects added without mode */
     protected CacheMode defaultMode = CacheMode.modeTtlTenSeconds;
-    /** queue of issues reported when using cache */
-    protected final Queue<CacheIssue> issues = new LinkedList<>();
-    /** queue of events that would be added to callback methods */
-    protected final Queue<CacheEvent> events = new LinkedList<>();
-    /** callbacks - methods to be called when given event is happening
-     * only one callback per event type is allowed */
-    protected HashMap<String, Function<CacheEvent, String>> callbacks = new HashMap<>();
+
     /** key encoder to hide passwords and secrets in keys */
     protected CacheKeyEncoder keyEncoder;
 
     public CacheBase() {
-        this(CacheConfig.buildEmptyConfig(), new HashMap<>());
-    }
-    public CacheBase(CacheConfig cfg) {
-        this(cfg, new HashMap<>());
+        this(DistConfig.buildEmptyConfig());
     }
     /** initialize current manager with properties
      * this is creating storages, connecting to storages
      * creating cache policy, create agent and connecting to other cache agents */
-    public CacheBase(CacheConfig cfg, Map<String, Function<CacheEvent, String>> callbacksMethods) {
+    public CacheBase(DistConfig cfg) {
         this.cacheCfg = cfg;
         // add all callback functions
-        callbacksMethods.entrySet().stream().forEach(cb -> callbacks.put(cb.getKey(), cb.getValue()));
         initializeEncoder();
         log.info("--------> Creating new cache with GUID: " + cacheManagerGuid + ", CONFIG: " + cfg.getConfigGuid() + ", properties: " + cfg.getProperties().size());
     }
 
     /** get configuration for cache */
-    public CacheConfig getCacheConfig() {
+    public DistConfig getConfig() {
         return cacheCfg;
+    }
+
+    /** get type of service: cache, measure, report, */
+    public String getServiceType() {
+        return "";
+    }
+    /** get unique ID of this service */
+    public String getServiceUid() {
+        return cacheManagerGuid;
+    }
+
+    /** get default serialized for this cache */
+    public CacheSerializer getCacheSerializer() {
+        return new Base64Serializer();
     }
     /** get value of cache configuration */
     public String getConfigValue(String cfgName) {
@@ -88,8 +96,9 @@ public abstract class CacheBase implements Cache {
     /** get info about cache */
     public CacheInfo getCacheInfo() {
         return new CacheInfo(cacheManagerGuid, createdDateTime, checkSequence.get(),
-            addedItemsSequence.get(), isClosed, issues.size(),
-            events.size(), getItemsCount(), getObjectsCount(), getStoragesInfo());
+            addedItemsSequence.get(), isClosed,
+            getAgent().getIssues().size(), getAgent().getEvents().size(),
+            getItemsCount(), getObjectsCount(), getStoragesInfo());
     }
     /** initialize key encoder to encode secrets */
     private void initializeEncoder() {
@@ -100,12 +109,7 @@ public abstract class CacheBase implements Cache {
      * issue could be Exception, Error, problem with connecting to storage,
      * internal error, not consistent state that is unknown and could be used by parent manager */
     public void addIssue(CacheIssue issue) {
-        synchronized (issues) {
-            issues.add(issue);
-            while (issues.size() > cacheCfg.getPropertyAsLong(CacheConfig.CACHE_ISSUES_MAX_COUNT, CacheConfig.CACHE_ISSUES_MAX_COUNT_VALUE)) {
-                issues.poll();
-            }
-        }
+        getAgent().addIssue(issue);
     }
     /** add issue with method and exception */
     public void addIssue(String methodName, Exception ex) {
@@ -114,34 +118,26 @@ public abstract class CacheBase implements Cache {
     /** add new event and distribute it to callback methods,
      * event could be useful information about change of cache status, new connection, refresh of cache, clean */
     protected void addEvent(CacheEvent event) {
-        synchronized (events) {
-            events.add(event);
-            while (events.size() > cacheCfg.getPropertyAsLong(CacheConfig.CACHE_EVENTS_MAX_COUNT, CacheConfig.CACHE_EVENTS_MAX_COUNT_VALUE)) {
-                events.poll();
-            }
-        }
-        Function<CacheEvent, String> callback = callbacks.get(event.getEventType());
-        if (callback != null) {
-            try {
-                callback.apply(event);
-            } catch (Exception ex) {
-                log.warn("Exception while running callback for event " + event.getEventType());
-            }
-        }
+        getAgent().addEvent(event);
     }
     /** set new callback method for events for given type */
     public void setCallback(String eventType, Function<CacheEvent, String> callback) {
-        log.info("Set callback method for events" + eventType);
-        callbacks.put(eventType, callback);
+        getAgent().setCallback(eventType, callback);
     }
-
+    /** set object to cache */
+    public CacheSetBack setCacheObject(String key, Object value, CacheMode mode) {
+        return setCacheObject(key, value, mode, Collections.emptySet());
+    }
+    public CacheSetBack setCacheObject(String key, Object value) {
+        return setCacheObject(key, value, CacheMode.modeKeep, Collections.emptySet());
+    }
     /** get all recent issues with cache */
     public Queue<CacheIssue> getIssues() {
-        return issues;
+        return getAgent().getIssues();
     }
     /** get all recent events added to cache */
     public Queue<CacheEvent> getEvents() {
-        return events;
+        return getAgent().getEvents();
     }
 
     public <T> T withCache(String key, Supplier<? extends T> supplier) {

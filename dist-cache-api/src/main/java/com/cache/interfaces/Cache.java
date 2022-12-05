@@ -1,21 +1,25 @@
-package com.cache.api;
+package com.cache.interfaces;
 
-import java.lang.reflect.Method;
+import com.cache.api.*;
+
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 /** base interface for cache that is allowing to operate on cache objects */
-public interface Cache {
+public interface Cache extends DistService {
 
     /** get unique ID of this cache */
     String getCacheGuid();
     /** get date and time of creation for this cache */
     LocalDateTime getCreatedDateTime();
-
+    /** get agent for communication with other services in distributed environment */
+    Agent getAgent();
     /** get configuration for cache */
-    CacheConfig getCacheConfig();
+    DistConfig getConfig();
+    /** get default serialized for this cache */
+    CacheSerializer getCacheSerializer();
     /** check if cache has been already closed and deinitialized */
     boolean getClosed();
     /** get information about all storages in this cache */
@@ -58,6 +62,8 @@ public interface Cache {
     String getCacheObjectAsString(String key);
     /** get item from cache if exists or None */
     CacheSetBack setCacheObject(String key, Object value, CacheMode mode, Set<String> groups);
+    CacheSetBack setCacheObject(String key, Object value, CacheMode mode);
+    CacheSetBack setCacheObject(String key, Object value);
     /** get all recent issues with cache,
      * issues might be caused by internal Exception, connection problems, incorrect usage
      * only last X issues are stored in cache */

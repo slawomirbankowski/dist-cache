@@ -17,14 +17,22 @@ public class DistCacheApp {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(DistCacheApp.class);
+    private static String[] commandLineArguments;
+
+    public static String[] getCommandLineArguments() {
+        return commandLineArguments;
+    }
     public static void main(String[] args) {
+        commandLineArguments = args;
         log.info("STARTING DistCache REST application on host: " + CacheUtils.getCurrentHostName() + "/" + CacheUtils.getCurrentHostAddress() + ", GUID: " + CacheUtils.getCacheGuid());
         SpringApplication.run(DistCacheApp.class, args);
     }
     @Bean
     public CommandLineRunner commandLineRunner(ApplicationContext ctx) {
         return args -> {
-            log.info("");
+            //ctx.getApplicationName();
+            //ctx.getDisplayName();
+            //log.info("");
             /*
             String[] beanNames = ctx.getBeanDefinitionNames();
             Arrays.sort(beanNames);

@@ -1,7 +1,9 @@
 package com.cache.test;
 
-import com.cache.DistCacheFactory;
+import com.cache.DistFactory;
 import com.cache.api.*;
+import com.cache.interfaces.Agent;
+import com.cache.interfaces.Cache;
 import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,20 +16,31 @@ import static org.junit.jupiter.api.Assertions.*;
 public class CacheManagerCleanTest {
     private static final Logger log = LoggerFactory.getLogger(CacheManagerCleanTest.class);
 
-    public static void main(String[] args) {
-
-    }
-
     @Test
     public void cleanTest() {
         log.info("START ------ clean test");
-        Cache cache = DistCacheFactory.buildDefaultFactory()
+        Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withStorageHashMap()
                 .withObjectTimeToLive(CacheMode.TIME_FIVE_SECONDS)
                 .withTimer(1000L, 1000L)
                 .withMaxObjectAndItems(30, 100)
-                .createInstance();
+                .createCacheInstance();
+
+        cache.getAgent();
+
+        Agent agent = DistFactory.buildDefaultFactory()
+                .withName("GlobalCacheTest")
+                .withStorageHashMap()
+                .withObjectTimeToLive(CacheMode.TIME_FIVE_SECONDS)
+                .withTimer(1000L, 1000L)
+                .withMaxObjectAndItems(30, 100)
+                .createAgentInstance();
+
+
+        //agent.createCacheService();
+        //agent.createFlowService();
+
         assertNotNull(cache, "Created cache should not be null");
         // key_keep should be still kept in
         cache.withCache("key_keep", key -> "value", CacheMode.modeKeep);

@@ -110,6 +110,7 @@ public class CacheMode {
     public static long TIME_ONE_WEEK = 7 * 24 * 3600 * 1000L;
     public static long TIME_TWO_WEEKS = 14 * 24 * 3600 * 1000L;
     public static long TIME_FOUR_WEEKS = 28 * 24 * 3600 * 1000L;
+    public static long TIME_ONE_YEAR = 365 * 24 * 3600 * 1000L;
     public static long TIME_FOREVER = Long.MAX_VALUE;
 
     public static CacheMode modeTtlTenSeconds = new CacheMode(Mode.TTL, TIME_TEN_SECONDS);

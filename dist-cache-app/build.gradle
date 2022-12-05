@@ -18,6 +18,10 @@ dependencies {
     // end::actuator[]
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-parent:2.4.0'
+    implementation 'org.springframework:spring-context-support:5.3.21'
+    implementation 'org.postgresql:postgresql:42.5.1'
+    implementation 'com.microsoft.sqlserver:mssql-jdbc:12.1.0.jre11-preview'
+
     // TODO: check what versions of Swagger/SpringFor are compliant with current Spring Boot
     //implementation 'io.swagger:swagger-annotations:2.0.0-rc2'
     //implementation 'io.swagger:swagger-core:2.0.0-rc2'
@@ -29,5 +33,30 @@ dependencies {
 
     // tag::tests[]
     testImplementation('org.springframework.boot:spring-boot-starter-test')
+    testImplementation(platform('org.junit:junit-bom:5.9.1'))
+    testImplementation('org.junit.jupiter:junit-jupiter')
+    testImplementation 'org.mockito:mockito-core:4.8.0'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+    testImplementation 'ch.qos.logback:logback-classic:1.4.4'
     // end::tests[]
+}
+
+
+def testLoggingConf = {
+    testLogging {
+        showStandardStreams = true
+        events "started", "passed", "skipped", "failed"
+        exceptionFormat "short"
+
+        info {
+            showStandardStreams = true
+            events "started", "passed", "skipped", "failed"
+            exceptionFormat "short"
+        }
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    configure testLoggingConf
 }

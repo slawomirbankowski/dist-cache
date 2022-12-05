@@ -1,6 +1,6 @@
 package com.cache.encoders;
 
-import com.cache.api.CacheKeyEncoder;
+import com.cache.interfaces.CacheKeyEncoder;
 
 import java.util.Base64;
 

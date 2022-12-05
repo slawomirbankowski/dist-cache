@@ -1,8 +1,6 @@
 package com.cache.serializers;
 
-import com.cache.api.CacheSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.cache.interfaces.CacheSerializer;
 
 /** serializer and deserializer using String - assuming everything is String */
 public class StringSerializer implements CacheSerializer {

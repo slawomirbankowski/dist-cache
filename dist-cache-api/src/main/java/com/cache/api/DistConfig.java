@@ -6,23 +6,24 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
-/** configuration for cache - this is keeping parameters in Properties format */
-public class CacheConfig {
+/** configuration for distributed system - this is keeping parameters in Properties format */
+public class DistConfig {
 
-    /** build empty CacheConfig with no values */
-    public static CacheConfig buildEmptyConfig() {
-        return new CacheConfig(new Properties());
+    /** build empty DistConfig with no values */
+    public static DistConfig buildEmptyConfig() {
+        return new DistConfig(new Properties());
     }
-    public static CacheConfig buildConfig(Properties initialProperties) {
-        return new CacheConfig(initialProperties);
+    public static DistConfig buildConfig(Properties initialProperties) {
+        return new DistConfig(initialProperties);
     }
     /** GUID for configuration */
     private final String configGuid = CacheUtils.generateConfigGuid();
     /** all properties to be used for DistCache initialization */
     private Properties props = null;
 
-    public CacheConfig(Properties p) {
+    public DistConfig(Properties p) {
         this.props = p;
     }
 
@@ -46,6 +47,8 @@ public class CacheConfig {
     public String getProperty(String name) {
         return props.getProperty(name);
     }
+
+    /** configuration contains property for given name */
     public boolean hasProperty(String name) {
         return props.containsKey(name);
     }
@@ -70,15 +73,18 @@ public class CacheConfig {
 
     /** name of group - all caches connecting together should be having the same group
      * name of group could be like GlobalAppCache */
-    public static String CACHE_GROUP = "CACHE_GROUP";
-    /** name of cache - local instance
+    public static String DIST_GROUP = "CACHE_GROUP";
+    /** name of Distributed system - local instance
      * name should be unique */
-    public static String CACHE_NAME = "CACHE_NAME";
-    public static String CACHE_NAME_VALUE_DEFAULT = "Cache";
+    public static String DIST_NAME = "DIST_NAME";
+    public static String DIST_NAME_VALUE_DEFAULT = "DistSystem";
+
     /** port of cache for extending and distributed join */
-    public static String CACHE_PORT = "CACHE_PORT";
+    public static String AGENT_SOCKET_PORT = "AGENT_SOCKET_PORT";
     /** */
-    public static int CACHE_PORT_VALUE_DEFAULT = 9999;
+    public static int AGENT_SOCKET_PORT_DEFAULT_VALUE = 9901;
+    /** sequencer for default agent port */
+    public static final AtomicInteger AGENT_SOCKET_PORT_VALUE_SEQ = new AtomicInteger(9901);
 
     /** delay of timer run to clear storages - value in milliseconds */
     public static String CACHE_TIMER_DELAY = "CACHE_TIMER_DELAY";
@@ -105,6 +111,7 @@ public class CacheConfig {
      * Cache Standalone App is registering and unregistering all cache agents with managers
      * that are working in cluster */
     public static String CACHE_APPLICATION_URL = "CACHE_APPLICATION_URL";
+    public static String CACHE_APPLICATION_URL_DEFAULT_VALUE = "http://localhost:8085/api";
     /** maximum number of local objects */
     public static String CACHE_MAX_LOCAL_OBJECTS = "CACHE_MAX_LOCAL_OBJECTS";
     public static int CACHE_MAX_LOCAL_OBJECTS_VALUE = 1000;
@@ -143,13 +150,24 @@ public class CacheConfig {
     public static String CACHE_STORAGE_VALUE_ELASTICSEARCH = "ElasticsearchCacheStorage";
     public static String CACHE_STORAGE_VALUE_JDBC = "JdbcStorage";
 
-    /** JDBC connection */
+    /** settings for JDBC storage */
+    public static String CACHE_STORAGE_JDBC_URL = "CACHE_STORAGE_JDBC_URL";
+    public static String CACHE_STORAGE_JDBC_DRIVER = "CACHE_STORAGE_JDBC_DRIVER";
+    public static String CACHE_STORAGE_JDBC_USER = "CACHE_STORAGE_JDBC_USER";
+    public static String CACHE_STORAGE_JDBC_PASS = "CACHE_STORAGE_JDBC_PASS";
+    public static String CACHE_STORAGE_JDBC_DIALECT = "CACHE_STORAGE_JDBC_DIALECT";
+    public static String CACHE_STORAGE_JDBC_INIT_CONNECTIONS = "CACHE_STORAGE_JDBC_INIT_CONNECTIONS";
+    public static String CACHE_STORAGE_JDBC_MAX_ACTIVE_CONNECTIONS = "CACHE_STORAGE_JDBC_MAX_ACTIVE_CONNECTIONS";
+
+    /** JDBC connection for agent registration */
     public static String JDBC_URL = "JDBC_URL";
     public static String JDBC_DRIVER = "JDBC_DRIVER";
     public static String JDBC_USER = "JDBC_USER";
     public static String JDBC_PASS = "JDBC_PASS";
+    public static String JDBC_DIALECT = "JDBC_DIALECT";
     public static String JDBC_INIT_CONNECTIONS = "JDBC_INIT_CONNECTIONS";
     public static String JDBC_MAX_ACTIVE_CONNECTIONS = "JDBC_MAX_ACTIVE_CONNECTIONS";
+
     /** elasticsearch URL */
     public static String ELASTICSEARCH_URL = "ELASTICSEARCH_URL";
     public static String ELASTICSEARCH_USER = "ELASTICSEARCH_USER";

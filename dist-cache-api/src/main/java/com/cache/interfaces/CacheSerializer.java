@@ -1,4 +1,4 @@
-package com.cache.api;
+package com.cache.interfaces;
 
 /** interface for cache serializers to serialize data for external cache storages */
 public interface CacheSerializer {

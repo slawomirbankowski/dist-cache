@@ -1,8 +1,7 @@
 package com.cache.test;
 
-import com.cache.DistCacheFactory;
-import com.cache.api.Cache;
-import com.cache.api.CacheConfig;
+import com.cache.DistFactory;
+import com.cache.interfaces.Cache;
 import com.cache.test.dao.DatabaseCacheDao;
 import com.cache.test.dao.DatabaseDao;
 import org.junit.jupiter.api.Test;
@@ -15,15 +14,14 @@ public class CacheManagerFullModelTest {
     @Test
     public void fullDaoModelTest() {
         log.info("START------");
-        Cache cache = DistCacheFactory.buildDefaultFactory()
+        Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
-                .withPort(9999)
                 .withCacheApp("https://localhost:9999/")
                 .withServers("localhost:9095")
                 .withStorageHashMap()
                 //.withStorageKafka("")
                 .withMaxObjectAndItems(100, 20000)
-                .createInstance();
+                .createCacheInstance();
 
         log.info("Initialize DAO to keep objects");
         DatabaseDao dao = new DatabaseDao();
