@@ -1,7 +1,7 @@
 package com.cache.test;
 
-import com.cache.DistCacheFactory;
-import com.cache.api.CacheConfig;
+import com.cache.DistFactory;
+import com.cache.api.DistConfig;
 import com.cache.api.CacheMode;
 import com.cache.api.CacheObject;
 import com.cache.api.StorageInitializeParameter;
@@ -140,11 +140,11 @@ public class TestInternalTtlPriority {
 
   private InternalWithTtlAndPriority makeStorage(int maxObjects, int maxItems) {
     var props = new Properties();
-    props.put(CacheConfig.CACHE_MAX_LOCAL_OBJECTS, "" + maxObjects);
-    props.put(CacheConfig.CACHE_MAX_LOCAL_ITEMS, "" + maxItems);
-    var cc = new CacheConfig(props);
-    var cache = DistCacheFactory.createInstance(props);
-    var sip = new StorageInitializeParameter(cc, cache);
+    props.put(DistConfig.CACHE_MAX_LOCAL_OBJECTS, "" + maxObjects);
+    props.put(DistConfig.CACHE_MAX_LOCAL_ITEMS, "" + maxItems);
+    var cc = new DistConfig(props);
+    var cache = DistFactory.createCacheInstance(props);
+    var sip = new StorageInitializeParameter(cache);
     return new InternalWithTtlAndPriority(sip);
   }
 

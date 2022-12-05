@@ -1,7 +1,8 @@
 package com.cache.test;
 
-import com.cache.DistCacheFactory;
+import com.cache.DistFactory;
 import com.cache.api.*;
+import com.cache.interfaces.Cache;
 import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -13,17 +14,17 @@ public class CacheManagerDistributeTest {
     @Test
     public void distributeAgentsTest() {
         log.info("START------");
-        Cache cache = DistCacheFactory.buildDefaultFactory()
+        Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest") // set friendly cache name
-                .withDefaultPort() // open TCP port for listening to commands and external cache agents
+                .withDefaultSocketPort() // open TCP port for listening to commands and external cache agents
                 .withCacheApp("https://localhost:8080/") // connect to cache standalone application to synchronize cache agents
                 .withServers("localhost:9095") // try to connect to cache agents
-                .withStorageKafka("") // connect to Kafka brokers as storage
-                .withStorageElasticsearch("", "", "") // connect to Elasticsearch storage
+                //.withStorageKafka("") // connect to Kafka brokers as storage
+                //.withStorageElasticsearch("", "", "") // connect to Elasticsearch storage
                 .withStorageHashMap() // add storage build of HashMap manager by cache
                 .withObjectTimeToLive(100000) // set default time to live objects in cache for 100 seconds
                 .withMaxObjectAndItems(30, 100) // set maximum number of objects to 30 and items to 100
-                .createInstance();
+                .createCacheInstance();
 
         log.info("Cache storages: " + cache.getStorageKeys());
 

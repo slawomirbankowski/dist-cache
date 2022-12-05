@@ -16,10 +16,11 @@ public class LocalDiskStorage extends CacheStorageBase {
 
     protected static final Logger log = LoggerFactory.getLogger(LocalDiskStorage.class);
     private String filePrefixName;
+
     /** TODO: init local disk storage */
     public LocalDiskStorage(StorageInitializeParameter p) {
         super(p);
-        filePrefixName = initParams.cacheCfg.getProperty(CacheConfig.LOCAL_DISK_PREFIX_PATH, "/tmp/");
+        filePrefixName = initParams.cache.getConfig().getProperty(DistConfig.LOCAL_DISK_PREFIX_PATH, "/tmp/");
     }
     /** Local Disk is external storage */
     public  boolean isInternal() { return false; }
@@ -31,13 +32,11 @@ public class LocalDiskStorage extends CacheStorageBase {
     public Optional<CacheObject> getObject(String key) {
         // try to read object from disk
         try {
-
             String cacheObjectFileName = filePrefixName + CacheUtils.stringToHex(key) + ".cache";
             java.io.File f = new File(cacheObjectFileName);
             java.io.ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f));
             CacheObject co = (CacheObject)ois.readObject();
             ois.close();
-
             return Optional.of(co);
         } catch (Exception ex) {
             initParams.cache.addIssue("LocalDiskStorage.getObject", ex);

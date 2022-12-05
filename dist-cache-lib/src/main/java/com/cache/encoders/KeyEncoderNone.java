@@ -1,6 +1,6 @@
 package com.cache.encoders;
 
-import com.cache.api.CacheKeyEncoder;
+import com.cache.interfaces.CacheKeyEncoder;
 
 /** no encoding */
 public class KeyEncoderNone implements CacheKeyEncoder {

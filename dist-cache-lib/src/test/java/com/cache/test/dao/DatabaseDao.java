@@ -1,6 +1,5 @@
 package com.cache.test.dao;
 
-import com.cache.api.Cache;
 import com.cache.test.model.*;
 
 public class DatabaseDao {

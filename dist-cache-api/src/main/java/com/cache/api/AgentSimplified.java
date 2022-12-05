@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 /** simplified agent information about GUID, host, port and create date */
 public class AgentSimplified {
+    // TODO: refactor this to hide fields
     public String agentGuid;
     public String hostName;
     public String hostIp;
@@ -43,5 +44,10 @@ public class AgentSimplified {
 
     public LocalDateTime getCreateDate() {
         return createDate;
+    }
+
+    public void update(AgentSimplified newAgent) {
+
+
     }
 }

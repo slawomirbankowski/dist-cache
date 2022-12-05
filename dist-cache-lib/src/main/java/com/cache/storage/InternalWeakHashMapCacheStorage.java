@@ -10,7 +10,7 @@ import java.util.*;
 /** cache with internal WeakHashMap */
 public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
 
-    /** */
+    /** weak hash map */
     private WeakHashMap<String, CacheObject> localCache = new WeakHashMap<>();
     /** WeakHashMap is internal storage */
     public  boolean isInternal() { return true; }

@@ -4,6 +4,7 @@ import com.cache.api.AppGlobalInfo;
 import com.cache.api.CacheObject;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /** Utilities for dist-cache - different static methods to be used in projects */
 public class CacheUtils {
@@ -70,6 +72,9 @@ public class CacheUtils {
     private static final AtomicLong storageGuidSeq = new AtomicLong();
     public static String generateStorageGuid(String className) {
         return "STORAGE_H" + getCurrentHostName() + "_S" + className + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+    public static String generateAgentGuid() {
+        return "AGENT_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
     /** initialized random object to generate random values globally */
     private static final Random rndObj = new Random();
@@ -163,9 +168,29 @@ public class CacheUtils {
         return bytesToHex(str.getBytes());
     }
     public static String hexToString(String hex) {
-
-
+        // TODO: finish implementation
         return hex;
+    }
+    public static Object[] getValuesForFields(Object obj, Field[] fields) {
+        return Arrays.stream(fields).map(f -> {
+            try {
+                f.setAccessible(true);
+                Object value = f.get(obj);
+                f.setAccessible(false);
+                return value;
+            } catch (IllegalAccessException ex) {
+                return null;
+            }
+        }).collect(Collectors.toList()).toArray();
+    }
+
+    public static String serializeTable(Object[] o) {
+        StringBuilder b = new StringBuilder();
+        for (int i=0; i<o.length; i++) {
+            b.append(o[i]);
+            b.append(" ; ");
+        }
+        return b.toString();
     }
     /** */
     public static String bytesToHex(byte[] hash) {

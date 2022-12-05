@@ -1,4 +1,4 @@
-package com.cache.api;
+package com.cache.interfaces;
 
 /** interface to encode key
  * encoding key is when key could be very long or there might be secrets, passwords, private keys as part of key */

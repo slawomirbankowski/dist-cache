@@ -16,8 +16,7 @@ public class AgentRegister {
     public int port;
     /** create date of this agent */
     public LocalDateTime createDate;
-    /** list of storages */
-    public List<StorageInfo> storages;
+
     /** other agents that this agent is already connected to */
     public List<AgentSimplified> agents;
 
@@ -25,14 +24,13 @@ public class AgentRegister {
     }
 
     public AgentRegister(String agentGuid, String agentSecret, String hostName, String hostIp, int port,
-                         LocalDateTime createDate, List<StorageInfo> storages, List<AgentSimplified> agents) {
+                         LocalDateTime createDate, List<AgentSimplified> agents) {
         this.agentGuid = agentGuid;
         this.agentSecret = agentSecret;
         this.hostName = hostName;
         this.hostIp = hostIp;
         this.port = port;
         this.createDate = createDate;
-        this.storages = storages;
         this.agents = agents;
     }
 
@@ -59,9 +57,6 @@ public class AgentRegister {
     }
     public LocalDateTime getCreateDate() {
         return createDate;
-    }
-    public List<StorageInfo> getStorages() {
-        return storages;
     }
     public List<AgentSimplified> getAgents() {
         return agents;

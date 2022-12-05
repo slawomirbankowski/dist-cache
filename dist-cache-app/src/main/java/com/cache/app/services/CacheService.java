@@ -1,10 +1,14 @@
 package com.cache.app.services;
 
-import com.cache.DistCacheFactory;
+import com.cache.DistFactory;
 import com.cache.api.*;
+import com.cache.app.DistCacheApp;
+import com.cache.interfaces.Cache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
@@ -20,11 +24,16 @@ public class CacheService {
     /** list of local caches */
     private final HashMap<String, Cache> caches = new HashMap<>();
 
+    @Autowired
+    protected SpringApplication springApp;
+
     /** create cache service with initialization of default cache */
     public CacheService() {
-        CacheConfig cfg = DistCacheFactory.buildDefaultFactory()
-                .withDefaultPort() // TODO: change this to port from configuration
-                .withCacheApp("http://localhost:8080/api") // TODO: change to real URL of the current application
+        DistConfig cfg = DistFactory.buildDefaultFactory()
+                .withDefaultSocketPort()
+                .withEnvironmentVariables()
+                .withCommonProperties()
+                .withCommandLineArguments(DistCacheApp.getCommandLineArguments())
                 .extractCacheConfig();
         initializeCache(new CacheRegister("default", cfg.getHashMap()));
     }
@@ -35,7 +44,7 @@ public class CacheService {
             Cache currentCache = caches.get(register.cacheGuid);
             if (currentCache == null) {
                 log.info("New cache to be created for guid: " + register.cacheGuid);
-                Cache cache = DistCacheFactory.buildEmptyFactory().withMap(register.properties).createInstance();
+                Cache cache = DistFactory.buildEmptyFactory().withMap(register.properties).createCacheInstance();
                 caches.put(register.cacheGuid, cache);
                 return cache.getCacheInfo();
             } else {

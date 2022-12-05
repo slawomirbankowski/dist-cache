@@ -1,15 +1,12 @@
 package com.cache.test;
 
-import com.cache.DistCacheFactory;
-import com.cache.api.Cache;
+import com.cache.DistFactory;
+import com.cache.interfaces.Cache;
 import com.cache.api.CacheMode;
-import com.cache.api.CacheObjectInfo;
 import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,7 +16,7 @@ public class CacheManagerKeepTest {
     @Test
     public void modeKeepTest() {
         log.info("START ------ clean test");
-        Cache cache = DistCacheFactory.buildDefaultFactory()
+        Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withStorageHashMap()
                 //.withStoragePriorityQueue()
@@ -27,7 +24,7 @@ public class CacheManagerKeepTest {
                 .withObjectTimeToLive(CacheMode.TIME_FIVE_SECONDS)
                 .withTimer(CacheMode.TIME_FIVE_SECONDS, CacheMode.TIME_FIVE_SECONDS)
                 .withMaxObjectAndItems(30, 100)
-                .createInstance();
+                .createCacheInstance();
 
         assertNotNull(cache, "Created cache should not be null");
         assertEquals(cache.getObjectsCount(), 0, "There should be no objects in cache");

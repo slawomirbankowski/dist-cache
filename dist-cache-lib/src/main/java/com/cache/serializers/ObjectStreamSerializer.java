@@ -1,6 +1,6 @@
 package com.cache.serializers;
 
-import com.cache.api.CacheSerializer;
+import com.cache.interfaces.CacheSerializer;
 
 import java.io.*;
 import java.util.Base64;

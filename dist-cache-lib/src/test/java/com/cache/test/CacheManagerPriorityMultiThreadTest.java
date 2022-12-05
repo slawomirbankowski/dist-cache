@@ -1,7 +1,7 @@
 package com.cache.test;
 
-import com.cache.DistCacheFactory;
-import com.cache.api.Cache;
+import com.cache.DistFactory;
+import com.cache.interfaces.Cache;
 import com.cache.api.CacheMode;
 import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
@@ -16,12 +16,12 @@ public class CacheManagerPriorityMultiThreadTest {
     @Test
     public void testMultiThread() {
         log.info("START------");
-        Cache cache = DistCacheFactory.buildEmptyFactory()
+        Cache cache = DistFactory.buildEmptyFactory()
                 .withName("GlobalCacheTest")
                 .withStoragePriorityQueue()
                 .withObjectTimeToLive(CacheMode.TIME_ONE_HOUR)
                 .withMaxObjectAndItems(100, 1000)
-                .createInstance();
+                .createCacheInstance();
         log.info("Cache storages: " + cache.getStorageKeys());
         int maxThreads = 10;
         log.info("CURRENT OBJECTS BEFORE: " + cache.getObjectsCount());

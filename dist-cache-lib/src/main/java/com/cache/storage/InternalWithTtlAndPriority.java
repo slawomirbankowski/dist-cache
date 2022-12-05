@@ -1,6 +1,6 @@
 package com.cache.storage;
 
-import com.cache.api.CacheConfig;
+import com.cache.api.DistConfig;
 import com.cache.api.CacheObject;
 import com.cache.api.CacheObjectInfo;
 import com.cache.api.StorageInitializeParameter;
@@ -33,8 +33,8 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
 
   public InternalWithTtlAndPriority(StorageInitializeParameter p) {
     super(p);
-    this.maxObjectCount = p.cacheCfg.getPropertyAsInt(CacheConfig.CACHE_MAX_LOCAL_OBJECTS, CacheConfig.CACHE_MAX_LOCAL_OBJECTS_VALUE);
-    this.maxItemCount = p.cacheCfg.getPropertyAsInt(CacheConfig.CACHE_MAX_LOCAL_ITEMS, CacheConfig.CACHE_MAX_LOCAL_ITEMS_VALUE);
+    this.maxObjectCount = p.cache.getConfig().getPropertyAsInt(DistConfig.CACHE_MAX_LOCAL_OBJECTS, DistConfig.CACHE_MAX_LOCAL_OBJECTS_VALUE);
+    this.maxItemCount = p.cache.getConfig().getPropertyAsInt(DistConfig.CACHE_MAX_LOCAL_ITEMS, DistConfig.CACHE_MAX_LOCAL_ITEMS_VALUE);
     this.byPriority = new TreeMap<>();
     this.byKey = new HashMap<>();
   }

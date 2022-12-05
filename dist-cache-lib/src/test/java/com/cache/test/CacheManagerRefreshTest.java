@@ -1,7 +1,7 @@
 package com.cache.test;
 
-import com.cache.DistCacheFactory;
-import com.cache.api.Cache;
+import com.cache.DistFactory;
+import com.cache.interfaces.Cache;
 import com.cache.api.CacheMode;
 import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
@@ -19,13 +19,13 @@ public class CacheManagerRefreshTest {
     @Test
     public void modeRefreshTest() {
         log.info("START ------ clean test");
-        Cache cache = DistCacheFactory.buildDefaultFactory()
+        Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withStorageHashMap()
                 .withObjectTimeToLive(CacheMode.TIME_FIVE_SECONDS)
                 .withTimer(1000, 1000)
                 .withMaxObjectAndItems(30, 100)
-                .createInstance();
+                .createCacheInstance();
         assertNotNull(cache, "Created cache should not be null");
         assertEquals(cache.getObjectsCount(), 0, "There should be no objects in cache");
         for (int i=0; i<10; i++) {

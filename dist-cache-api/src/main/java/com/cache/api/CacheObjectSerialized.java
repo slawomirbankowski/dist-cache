@@ -1,5 +1,9 @@
 package com.cache.api;
 
+import com.cache.interfaces.CacheSerializer;
+import com.cache.utils.AdvancedMap;
+import com.cache.utils.CacheUtils;
+
 import java.io.Serializable;
 import java.util.Base64;
 import java.util.HashMap;
@@ -16,6 +20,7 @@ public class CacheObjectSerialized implements Serializable {
     private long lastRefreshTime;
     private String key;
     private byte[] objectInCache;
+    private String objectClassName;
     private int objSize = 1;
     private long acquireTimeMs;
     private long usages;
@@ -36,6 +41,7 @@ public class CacheObjectSerialized implements Serializable {
         this.lastRefreshTime = 0;
         this.key = "";
         this.objectInCache = null;
+        this.objectClassName = "";
         this.objSize = 0;
         this.acquireTimeMs = 0;
         this.usages = 0;
@@ -47,13 +53,16 @@ public class CacheObjectSerialized implements Serializable {
         this.addToExternal = false;
         this.groups = null;
     }
-    public CacheObjectSerialized(long objectSeq, long createdTimeMs, long lastUseTime, long lastRefreshTime, String key, byte[] objectInCache, int objSize, long acquireTimeMs, long usages, long refreshes, CacheMode.Mode mode, long timeToLiveMs, int priority, boolean addToInternal, boolean addToExternal, Set<String> groups) {
+    public CacheObjectSerialized(long objectSeq, long createdTimeMs, long lastUseTime, long lastRefreshTime, String key,
+                                 byte[] objectInCache, String objectClassName,
+                                 int objSize, long acquireTimeMs, long usages, long refreshes, CacheMode.Mode mode, long timeToLiveMs, int priority, boolean addToInternal, boolean addToExternal, Set<String> groups) {
         this.objectSeq = objectSeq;
         this.createdTimeMs = createdTimeMs;
         this.lastUseTime = lastUseTime;
         this.lastRefreshTime = lastRefreshTime;
         this.key = key;
         this.objectInCache = objectInCache;
+        this.objectClassName = objectClassName;
         this.objSize = objSize;
         this.acquireTimeMs = acquireTimeMs;
         this.usages = usages;
@@ -84,6 +93,13 @@ public class CacheObjectSerialized implements Serializable {
     public byte[] getObjectInCache() {
         return objectInCache;
     }
+    public String getObjectInCacheAsString() {
+        return CacheUtils.bytesToBase64(objectInCache);
+    }
+    public String getObjectClassName() {
+        return objectClassName;
+    }
+
     public int getObjSize() {
         return objSize;
     }
@@ -100,7 +116,11 @@ public class CacheObjectSerialized implements Serializable {
         return mode;
     }
     public long getTimeToLiveMs() {
-        return timeToLiveMs;
+        if (mode == CacheMode.Mode.KEEP) {
+            return CacheMode.TIME_ONE_YEAR;
+        } else {
+            return timeToLiveMs;
+        }
     }
     public int getPriority() {
         return priority;
@@ -116,7 +136,7 @@ public class CacheObjectSerialized implements Serializable {
     }
 
     public CacheObject toCacheObject(CacheSerializer serializer) {
-        Object obj = "";
+        Object obj = serializer.deserialize(objectInCache);
         Function<String, ?> mta = (key) -> obj;
         CacheMode cm = new CacheMode(mode, timeToLiveMs, addToInternal, addToExternal, priority);
         return new CacheObject(objectSeq, createdTimeMs, lastUseTime, lastRefreshTime, key,
@@ -144,5 +164,29 @@ public class CacheObjectSerialized implements Serializable {
         return map;
     }
 
+    /** create instance of class from row map */
+    public static CacheObjectSerialized fromMap(Map<String, Object> map) {
+        AdvancedMap amap = AdvancedMap.fromMap(map);
+        byte[] objectInCache = CacheUtils.base64ToString(amap.getString("cachevalue", "")).getBytes();
+        CacheObjectSerialized cos = new CacheObjectSerialized(amap.getLong("objectseq", 0L),
+                amap.getLong("createdtimems", 0L),
+                amap.getLong("lastUseTime", 0L),
+                amap.getLong("lastRefreshTime", 0L),
+                amap.getString("cachekey", ""),
+                objectInCache,
+                amap.getString("objclassname", ""),
+                amap.getInt("objsize", 1),
+                amap.getLong("acquiretimems", 0L),
+                amap.getLong("usages", 0L),
+                amap.getLong("refreshes", 0L),
+                CacheMode.Mode.TTL,
+                amap.getLong("timetolivems", 0L),
+                amap.getInt("cachepriority", 0), true, false,
+                amap.getWithSplit("groupslist", ","));
+        return cos;
+    }
 
+    public String toString() {
+        return "key=" + key + ", seq=" + objectSeq+ ", objSize="+ objSize+ ", acquireTimeMs="+ acquireTimeMs+ ", priority=" +priority + "";
+    }
 }

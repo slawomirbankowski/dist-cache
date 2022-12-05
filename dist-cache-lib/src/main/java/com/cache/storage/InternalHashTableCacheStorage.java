@@ -34,21 +34,21 @@ public class InternalHashTableCacheStorage extends CacheStorageBase {
         CacheObject prev = localCache.put(o.getKey(), o);
         if (prev != null) {
             prev.releaseObject();
+            return Optional.of(prev);
+        } else {
+            return Optional.empty();
         }
-        // TODO: need to dispose object after removing from cache - this would be based on policy
-        return Optional.empty();
     }
     /** get number of items in cache */
     public int getItemsCount() {
-        // TODO: calculate number of items
-        return localCache.size();
+        return localCache.values().stream().mapToInt(o -> o.getSize()).sum();
     }
     /** get number of objects in this cache */
     public int getObjectsCount() { return localCache.size(); }
 
     /** get keys for all cache items */
     public Set<String> getKeys(String containsStr) {
-        return localCache.keySet();
+        return localCache.keySet().stream().filter(x -> x.contains(containsStr)).collect(Collectors.toSet());
     }
     /** get info values */
     public List<CacheObjectInfo> getValues(String containsStr) {
@@ -58,7 +58,7 @@ public class InternalHashTableCacheStorage extends CacheStorageBase {
                 .collect(Collectors.toList());
     }
     public void onTimeClean(long checkSeq) {
-        log.info("CLEARING objects in cache HashMap, check: " + checkSeq + ", size: " + localCache.size() + ", max:" + maxObjects);
+        log.trace("CLEARING objects in cache HashMap, check: " + checkSeq + ", size: " + localCache.size() + ", max:" + maxObjects);
         // TODO: no need to perform this every single time
         List<String> oldKeys = localCache.values()
                 .stream()

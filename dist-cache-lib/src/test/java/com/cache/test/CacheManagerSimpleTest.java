@@ -1,7 +1,8 @@
 package com.cache.test;
 
-import com.cache.DistCacheFactory;
+import com.cache.DistFactory;
 import com.cache.api.*;
+import com.cache.interfaces.Cache;
 import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -15,19 +16,19 @@ public class CacheManagerSimpleTest {
     @Test
     public void simpleTest() {
         log.info("START------");
-        Cache cache = DistCacheFactory.buildDefaultFactory()
+        Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withStorageHashMap()
                 .withMaxObjectAndItems(30, 100)
-                .createInstance();
+                .createCacheInstance();
         assertNotNull(cache, "Created cache should not be null");
-        assertNotNull( cache.getCacheConfig().getConfigGuid(), "Config GUID should not be null");
+        assertNotNull( cache.getConfig().getConfigGuid(), "Config GUID should not be null");
         assertNotNull( cache.getCacheGuid(), "Cache GUID should not be null");
         assertEquals(cache.getObjectsCount(), 0, "There should be 0 objects in cache");
         assertEquals(cache.getItemsCount(), 0, "There should be 0 objects in cache");
         assertEquals(cache.getClosed(), false, "Cache should not be closed");
         assertEquals(cache.getStorageKeys().size(), 1, "There should be 1 storage in cache");
-        log.info("Config GUID: " + cache.getCacheConfig().getConfigGuid());
+        log.info("Config GUID: " + cache.getConfig().getConfigGuid());
         log.info("Cache GUID: " + cache.getCacheGuid());
         log.info("Cache createdDateTime: " + cache.getCreatedDateTime());
         log.info("Cache getObjectsCount: " + cache.getObjectsCount());

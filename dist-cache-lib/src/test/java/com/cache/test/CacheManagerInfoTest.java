@@ -1,7 +1,8 @@
 package com.cache.test;
 
-import com.cache.DistCacheFactory;
+import com.cache.DistFactory;
 import com.cache.api.*;
+import com.cache.interfaces.Cache;
 import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -17,11 +18,11 @@ public class CacheManagerInfoTest {
     @Test
     public void infoTest() {
         log.info("START------");
-        Cache cache = DistCacheFactory.buildDefaultFactory()
+        Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withStorageHashMap()
                 .withMaxObjectAndItems(30, 100)
-                .createInstance();
+                .createCacheInstance();
         assertNotNull(cache, "Created cache should not be null");
         for (int i=0; i<50; i++) {
             // get 30 times the same value

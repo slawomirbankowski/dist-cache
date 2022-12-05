@@ -1,5 +1,6 @@
 package com.cache.api;
 
+import com.cache.interfaces.CacheSerializer;
 import com.cache.utils.CacheUtils;
 
 import java.io.*;
@@ -8,11 +9,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /** class to be put to cache - it contains object caches AND many other statistics
  * this cache is representing internal cache with object stored */
 public class CacheObject {
+
 
     /** sequence of object in this JVM */
     public static AtomicLong globalObjectSeq = new AtomicLong();
@@ -35,11 +36,11 @@ public class CacheObject {
     private long acquireTimeMs;
 
     /** counter of usages for current object in cache */
-    private AtomicLong usages = new AtomicLong();
+    private final AtomicLong usages = new AtomicLong();
     /** counter for refreshes */
-    private AtomicLong refreshes = new AtomicLong();
+    private final AtomicLong refreshes = new AtomicLong();
     /** cache mode */
-    private CacheMode mode;
+    private final CacheMode mode;
     /** set of groups to identify cache with, these groups are helpful with clearing caches */
     private Set<String> groups;
 
@@ -61,7 +62,6 @@ public class CacheObject {
         this.mode = mode;
         this.groups = groups;
     }
-
     /** creates new object in memory */
     public CacheObject(String key, Object o, long acqTimeMs, Function<String, ?> method, CacheMode mode, Set<String> groups) {
         this.key = key;
@@ -73,6 +73,7 @@ public class CacheObject {
         this.groups = groups;
         calculateSize();
     }
+
     /** creates new object in memory */
     public CacheObject(String key, Object o, long acqTimeMs, CacheMode mode, Set<String> groups) {
         this(key, o, acqTimeMs, k -> o, mode, groups);
@@ -121,6 +122,7 @@ public class CacheObject {
     /** release action for this cache object - by default there is no action for releasing
      * GC should normally dispose this object */
     public void releaseObject() {
+        // TODO: check via reflection if there is any method like close() or dispose() and run it
     }
 
     public boolean isOutdated() {
@@ -148,6 +150,7 @@ public class CacheObject {
     public long liveTime() {
         return System.currentTimeMillis() - createdTimeMs;
     }
+    /** calculate current time to live for this object */
     public long timeToLive() {
         return mode.getTimeToLiveMs() - (System.currentTimeMillis() - createdTimeMs);
     }
@@ -168,12 +171,11 @@ public class CacheObject {
      * */
     public int refreshIfNeeded() {
         boolean sbr = shouldBeRefreshed();
-        //System.out.println("Should be refreshed: " + sbr + ", key=" + key + ", lastRefreshTime=" + lastRefreshTime + ", isRefresh=" + mode.isRefresh());
+        //log.debug("Should be refreshed: " + sbr + ", key=" + key + ", lastRefreshTime=" + lastRefreshTime + ", isRefresh=" + mode.isRefresh());
         if (sbr) {
             lastRefreshTime = System.currentTimeMillis();
             if (methodToAcquire != null) {
                 try {
-                    System.out.println("Refresh object for key: " + key);
                     long startAckTime = System.currentTimeMillis();
                     refreshes.incrementAndGet();
                     objectInCache = methodToAcquire.apply(getKey());
@@ -199,7 +201,8 @@ public class CacheObject {
     /** get map with current values */
     public CacheObjectSerialized serializedFullCacheObject(CacheSerializer serializer) {
         byte[] serializedObj = serializeObjectInCache(serializer);
-        return new CacheObjectSerialized(objectSeq, createdTimeMs, lastUseTime, lastRefreshTime, key, serializedObj,
+        return new CacheObjectSerialized(objectSeq, createdTimeMs, lastUseTime, lastRefreshTime, key,
+                serializedObj, objectInCache.getClass().getName(),
                 objSize, acquireTimeMs, usages.get(), refreshes.get(),
                 mode.getMode(), mode.getTimeToLiveMs(), mode.getPriority(), mode.isAddToInternal(), mode.isAddToExternal(),
                 groups);
