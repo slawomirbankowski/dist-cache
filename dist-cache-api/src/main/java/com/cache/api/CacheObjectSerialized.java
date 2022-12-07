@@ -1,11 +1,9 @@
 package com.cache.api;
 
-import com.cache.interfaces.CacheSerializer;
+import com.cache.interfaces.DistSerializer;
 import com.cache.utils.AdvancedMap;
-import com.cache.utils.CacheUtils;
 
 import java.io.Serializable;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -19,7 +17,7 @@ public class CacheObjectSerialized implements Serializable {
     private long lastUseTime;
     private long lastRefreshTime;
     private String key;
-    private byte[] objectInCache;
+    private String objectInCache;
     private String objectClassName;
     private int objSize = 1;
     private long acquireTimeMs;
@@ -54,7 +52,7 @@ public class CacheObjectSerialized implements Serializable {
         this.groups = null;
     }
     public CacheObjectSerialized(long objectSeq, long createdTimeMs, long lastUseTime, long lastRefreshTime, String key,
-                                 byte[] objectInCache, String objectClassName,
+                                 String objectInCache, String objectClassName,
                                  int objSize, long acquireTimeMs, long usages, long refreshes, CacheMode.Mode mode, long timeToLiveMs, int priority, boolean addToInternal, boolean addToExternal, Set<String> groups) {
         this.objectSeq = objectSeq;
         this.createdTimeMs = createdTimeMs;
@@ -90,12 +88,10 @@ public class CacheObjectSerialized implements Serializable {
     public String getKey() {
         return key;
     }
-    public byte[] getObjectInCache() {
+    public String getObjectInCache() {
         return objectInCache;
     }
-    public String getObjectInCacheAsString() {
-        return CacheUtils.bytesToBase64(objectInCache);
-    }
+
     public String getObjectClassName() {
         return objectClassName;
     }
@@ -135,22 +131,22 @@ public class CacheObjectSerialized implements Serializable {
         return groups;
     }
 
-    public CacheObject toCacheObject(CacheSerializer serializer) {
-        Object obj = serializer.deserialize(objectInCache);
+    public CacheObject toCacheObject(DistSerializer serializer) {
+        Object obj = serializer.deserializeFromString(objectClassName, objectInCache);
         Function<String, ?> mta = (key) -> obj;
         CacheMode cm = new CacheMode(mode, timeToLiveMs, addToInternal, addToExternal, priority);
         return new CacheObject(objectSeq, createdTimeMs, lastUseTime, lastRefreshTime, key,
                 obj, mta, objSize, acquireTimeMs, usages, refreshes, cm, groups);
     }
     /** get map with current values */
-    public Map<String, String> getSerializedMap(CacheSerializer serializer) {
+    public Map<String, String> getSerializedMap(DistSerializer serializer) {
         HashMap<String, String> map = new HashMap<>();
         map.put("objectSeq", ""+objectSeq);
         map.put("createdTimeMs", ""+createdTimeMs);
         map.put("lastUseTime", ""+lastUseTime);
         map.put("lastRefreshTime", ""+lastRefreshTime);
         map.put("key", key);
-        map.put("objectInCache", new String(Base64.getEncoder().encode(objectInCache)));
+        map.put("objectInCache", objectInCache);
         map.put("objSize", ""+objSize);
         map.put("acquireTimeMs", ""+acquireTimeMs);
         map.put("usages", ""+usages);
@@ -167,13 +163,13 @@ public class CacheObjectSerialized implements Serializable {
     /** create instance of class from row map */
     public static CacheObjectSerialized fromMap(Map<String, Object> map) {
         AdvancedMap amap = AdvancedMap.fromMap(map);
-        byte[] objectInCache = CacheUtils.base64ToString(amap.getString("cachevalue", "")).getBytes();
-        CacheObjectSerialized cos = new CacheObjectSerialized(amap.getLong("objectseq", 0L),
+        CacheObjectSerialized cos = new CacheObjectSerialized(
+                amap.getLong("objectseq", 0L),
                 amap.getLong("createdtimems", 0L),
                 amap.getLong("lastUseTime", 0L),
                 amap.getLong("lastRefreshTime", 0L),
                 amap.getString("cachekey", ""),
-                objectInCache,
+                amap.getString("cachevalue", ""),
                 amap.getString("objclassname", ""),
                 amap.getInt("objsize", 1),
                 amap.getLong("acquiretimems", 0L),

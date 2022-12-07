@@ -19,7 +19,7 @@ public interface Cache extends DistService {
     /** get configuration for cache */
     DistConfig getConfig();
     /** get default serialized for this cache */
-    CacheSerializer getCacheSerializer();
+    DistSerializer getCacheSerializer();
     /** check if cache has been already closed and deinitialized */
     boolean getClosed();
     /** get information about all storages in this cache */

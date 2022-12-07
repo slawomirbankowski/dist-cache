@@ -1,12 +1,12 @@
 package com.cache.serializers;
 
-import com.cache.interfaces.CacheSerializer;
+import com.cache.interfaces.DistSerializer;
 
 import java.io.*;
 import java.util.Base64;
 
-/** */
-public class ObjectStreamSerializer implements CacheSerializer {
+/** serialize of classes that implements Serializable interface, this is using ObjectOutputStream */
+public class ObjectStreamSerializer implements DistSerializer {
 
     @Override
     public byte[] serialize(Object obj) {
@@ -17,12 +17,12 @@ public class ObjectStreamSerializer implements CacheSerializer {
             oos.close();
             return baos.toByteArray();
         } catch (Exception ex) {
-            return null;
+            return new byte[0];
         }
     }
 
     @Override
-    public Object deserialize(byte[] b) {
+    public Object deserialize(String objectClassName, byte[] b) {
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(b);
             ObjectInputStream ois = new ObjectInputStream(bais);
@@ -30,7 +30,7 @@ public class ObjectStreamSerializer implements CacheSerializer {
             ois.close();
             return obj;
         } catch (Exception ex) {
-            return null;
+            return new byte[0];
         }
     }
 
@@ -39,7 +39,7 @@ public class ObjectStreamSerializer implements CacheSerializer {
         return new String(Base64.getEncoder().encode(serialize(obj)));
     }
     @Override
-    public Object deserializeFromString(String str) {
-        return deserialize(Base64.getDecoder().decode(str));
+    public Object deserializeFromString(String objectClassName, String str) {
+        return deserialize(objectClassName, Base64.getDecoder().decode(str));
     }
 }

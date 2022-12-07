@@ -1,7 +1,7 @@
 package com.cache.base;
 
 import com.cache.api.*;
-import com.cache.interfaces.CacheSerializer;
+import com.cache.interfaces.DistSerializer;
 import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +29,7 @@ public abstract class CacheStorageBase {
      * this is not ceil that is strict but above that more clearing will be done */
     protected final long maxObjects;
     /** serializer dedicated for this cache storage */
-    protected final CacheSerializer cacheSerializer;
+    protected final DistSerializer distSerializer;
     /** initialization parameters for subclasses */
     protected StorageInitializeParameter initParams;
 
@@ -37,7 +37,7 @@ public abstract class CacheStorageBase {
     public CacheStorageBase(StorageInitializeParameter p) {
         this.initParams = p;
         this.storageUid = CacheUtils.generateStorageGuid(getClass().getSimpleName());
-        this.cacheSerializer = p.cache.getCacheSerializer();
+        this.distSerializer = p.cache.getCacheSerializer();
         this.maxObjects = initParams.cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_OBJECTS, 1000);
         this.maxItems = initParams.cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_ITEMS, 1000);
     }

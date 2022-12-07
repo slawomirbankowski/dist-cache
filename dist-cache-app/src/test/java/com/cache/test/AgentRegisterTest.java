@@ -2,7 +2,6 @@ package com.cache.test;
 
 import com.cache.DistFactory;
 import com.cache.interfaces.Agent;
-import com.cache.interfaces.Cache;
 import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -20,24 +19,24 @@ public class AgentRegisterTest {
 
         Agent agent1 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
-                .withJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
+                .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "cache_password123")
                 //.withPort()
-                .withSocketPort(9901)
+                .withServerSocketPort(9901)
                 .createAgentInstance();
 
         Agent agent2 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
-                .withJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
+                .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "cache_password123")
-                .withSocketPort(9902)
+                .withServerSocketPort(9902)
                 .createAgentInstance();
 
         Agent agent3 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
-                .withJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
+                .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "cache_password123")
-                .withSocketPort(9903)
+                .withServerSocketPort(9903)
                 .createAgentInstance();
 
         assertNotNull(agent1, "Created agent1 should not be null");

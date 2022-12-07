@@ -5,15 +5,23 @@ import com.cache.interfaces.Agent;
 import com.cache.interfaces.Cache;
 import com.cache.api.DistConfig;
 import com.cache.api.CacheEvent;
+import com.cache.interfaces.DistSerializer;
 import com.cache.managers.CacheManager;
+import com.cache.serializers.ComplexSerializer;
 import com.cache.utils.CacheUtils;
+import com.cache.utils.CustomSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -98,7 +106,10 @@ public class DistFactory {
     private Properties props = new Properties();
     /** callbacks for events - methods (values) to call when there is event of given type (keys) */
     private final HashMap<String, Function<CacheEvent, String>> callbacks = new HashMap<>();
-
+    /** all serializers assigned to class name
+     * key = full name of class to be serialized
+     * value = serializer to do the work */
+    private final HashMap<String, DistSerializer> serializers = new HashMap<>();
 
     /** factory is just creating managers */
     private DistFactory() {
@@ -113,7 +124,7 @@ public class DistFactory {
         DistConfig config = new DistConfig(props);
         AgentInstance agent = new AgentInstance(config, callbacks);
         agent.initializeAgent();
-        Cache cache = new CacheManager(agent, config);
+        Cache cache = new CacheManager(agent, config, serializers);
         createdCaches.add(cache);
         // TODO: add measure service
         // TODO: add other services
@@ -127,30 +138,6 @@ public class DistFactory {
         return agent;
     }
 
-
-    /** add friendly name for this cache - it would be any name that would be visible in logs, via REST endpoints
-     * name should be unique, but it is not a must */
-    public DistFactory withName(String name) {
-        props.setProperty(DistConfig.DIST_NAME, name);
-        return this;
-    }
-    public DistFactory withNameDefault() {
-        return withName(DistConfig.DIST_NAME_VALUE_DEFAULT);
-    }
-    /** add comma-separated cache agent list */
-    public DistFactory withServers(String servs) {
-        props.setProperty(DistConfig.CACHE_SERVERS, servs);
-        return this;
-    }
-    /** define port on which agent will be listening */
-    public DistFactory withSocketPort(int port) {
-        props.setProperty(DistConfig.AGENT_SOCKET_PORT, ""+port);
-        return this;
-    }
-    /** define port to define value on which agent will be listening */
-    public DistFactory withDefaultSocketPort() {
-        return withSocketPort(DistConfig.AGENT_SOCKET_PORT_DEFAULT_VALUE);
-    }
     /** add all ENV variables to cache configuration */
     public DistFactory withEnvironmentVariables() {
         log.debug("Adding ENV variables " + System.getenv().size() + " to CacheConfig");
@@ -159,9 +146,81 @@ public class DistFactory {
         }
         return this;
     }
+    /** add new command line arguments to Dist properties */
     public DistFactory withCommandLineArguments(String[] args) {
         // TODO: read command-line arguments into map of properties to be added
         return this;
+    }
+    /** add friendly name for this cache - it would be any name that would be visible in logs, via REST endpoints
+     * name should be unique, but it is not a must */
+    public DistFactory withName(String name) {
+        props.setProperty(DistConfig.DIST_NAME, name);
+        return this;
+    }
+    /** add default name for Distributed system*/
+    public DistFactory withNameDefault() {
+        return withName(DistConfig.DIST_NAME_VALUE_DEFAULT);
+    }
+
+    /** add simple property */
+    public DistFactory withProperty(String name, String value) {
+        props.setProperty(name, value);
+        return this;
+    }
+    public DistFactory withProperties(Properties initialFactoryProperties) {
+        for (Map.Entry<Object, Object> e: initialFactoryProperties.entrySet()) {
+            props.setProperty(e.getKey().toString(), e.getValue().toString());
+        }
+        return this;
+    }
+    /** with map of properties */
+    public DistFactory withMap(Map<String, String> initialFactoryProperties) {
+        for (Map.Entry<String, String> e: initialFactoryProperties.entrySet()) {
+            props.setProperty(e.getKey(), e.getValue());
+        }
+        return this;
+    }
+    /** add JSON with properties */
+    public DistFactory withJson(String jsonDefinition) {
+        // TODO: parse JSON and add map to current properties
+
+        return this;
+    }
+    /** add properties from file with properties format */
+    public DistFactory withPropertiesFile(String propertiesFile) {
+        try {
+            Properties propFromFile = new Properties();
+            propFromFile.load(new java.io.FileReader(propertiesFile));
+            props.putAll(propFromFile);
+        } catch (FileNotFoundException ex) {
+            log.warn("Cannot find properties file for name: " + propertiesFile);
+        } catch (IOException ex) {
+            log.warn("Cannot read properties file: " + propertiesFile);
+        }
+        return this;
+    }
+    /** load properties from URL in properties format */
+    public DistFactory withPropertiesUrl(String urlWithProperties) {
+        try {
+            Properties propFromUrl = new Properties();
+            URL conn = new URL(urlWithProperties);
+            propFromUrl.load(conn.openConnection().getInputStream());
+            props.putAll(propFromUrl);
+        } catch (IOException ex) {
+            log.warn("Cannot read properties from URL: " + urlWithProperties);
+        }
+        return this;
+    }
+
+    /** define port on which agent will be listening */
+    public DistFactory withServerSocketPort(int port) {
+        props.setProperty(DistConfig.AGENT_SOCKET_PORT, ""+port);
+        return this;
+    }
+
+    /** define port to define value on which agent will be listening */
+    public DistFactory withServerSocketDefaultPort() {
+        return withServerSocketPort(DistConfig.AGENT_SOCKET_PORT_DEFAULT_VALUE);
     }
     /** add common properties for this cache/machine/agent/address/path */
     public DistFactory withCommonProperties() {
@@ -171,12 +230,15 @@ public class DistFactory {
         props.setProperty("CACHE_LOCATION_PATH", CacheUtils.getCurrentLocationPath());
         return this;
     }
+
+
     /** add storage with HashMap */
     public DistFactory withStorageHashMap() {
         String existingProps = ""+props.getProperty(DistConfig.CACHE_STORAGES);
         props.setProperty(DistConfig.CACHE_STORAGES, existingProps + "," + DistConfig.CACHE_STORAGE_VALUE_HASHMAP);
         return this;
     }
+    /**  */
     public DistFactory withStoragePriorityQueue() {
         String existingProps = ""+props.getProperty(DistConfig.CACHE_STORAGES);
         props.setProperty(DistConfig.CACHE_STORAGES, existingProps + "," + DistConfig.CACHE_STORAGE_VALUE_PRIORITYQUEUE);
@@ -195,6 +257,7 @@ public class DistFactory {
         props.setProperty(DistConfig.ELASTICSEARCH_PASS, pass);
         return this;
     }
+    /** add JDBC as external storage */
     public DistFactory withStorageJdbc(String url, String driver, String user, String pass) {
         String existingProps = ""+props.getProperty(DistConfig.CACHE_STORAGES);
         props.setProperty(DistConfig.CACHE_STORAGES, existingProps + "," + DistConfig.CACHE_STORAGE_VALUE_JDBC);
@@ -211,13 +274,7 @@ public class DistFactory {
         props.setProperty(DistConfig.LOCAL_DISK_PREFIX_PATH, basePath);
         return this;
     }
-    public DistFactory withJdbc(String url, String driver, String user, String pass) {
-        props.setProperty(DistConfig.JDBC_URL, url);
-        props.setProperty(DistConfig.JDBC_DRIVER, driver);
-        props.setProperty(DistConfig.JDBC_USER, user);
-        props.setProperty(DistConfig.JDBC_PASS, pass);
-        return this;
-    }
+    /** add storage as Redis*/
     public DistFactory withStorageRedis(String url, String port) {
         String existingProps = ""+props.getProperty(DistConfig.CACHE_STORAGES);
         props.setProperty(DistConfig.CACHE_STORAGES, existingProps + "," + DistConfig.CACHE_STORAGE_VALUE_REDIS);
@@ -225,38 +282,58 @@ public class DistFactory {
         props.setProperty(DistConfig.REDIS_PORT, port);
         return this;
     }
+
+
+    /** set default serializers */
+    public DistFactory withSerializerDefault() {
+        props.setProperty(DistConfig.SERIALIZER_DEFINITION, DistConfig.SERIALIZER_DEFINITION_SERIALIZABLE_VALUE);
+        serializers.putAll(ComplexSerializer.parseSerializers(DistConfig.SERIALIZER_DEFINITION_SERIALIZABLE_VALUE));
+        return this;
+    }
+    /** definition of serializer from String */
+    public DistFactory withSerializer(String serializerDefinition) {
+        serializers.putAll(ComplexSerializer.parseSerializers(serializerDefinition));
+        props.setProperty(DistConfig.SERIALIZER_DEFINITION, serializerDefinition);
+        return this;
+    }
+    /** add serializer to Dist system */
+    public DistFactory withSerializer(String className, DistSerializer ser) {
+        serializers.put(className, ser);
+        return this;
+    }
+    /** add custom serializations for this system */
+    public DistFactory withSerializerCustom(String className, Function<Object, String> serializeFunction, BiFunction<String, String, Object> deserializeFunction) {
+        serializers.put(className, new CustomSerializer(serializeFunction, deserializeFunction));
+        return this;
+    }
+
+    /** add registration method as JDBC */
+    public DistFactory withRegistrationJdbc(String url, String driver, String user, String pass) {
+        props.setProperty(DistConfig.JDBC_URL, url);
+        props.setProperty(DistConfig.JDBC_DRIVER, driver);
+        props.setProperty(DistConfig.JDBC_USER, user);
+        props.setProperty(DistConfig.JDBC_PASS, pass);
+        return this;
+    }
+    /** add storage Kafka */
     public DistFactory withStorageKafka(String brokers) {
         String existingProps = ""+props.getProperty(DistConfig.CACHE_STORAGES);
         props.setProperty(DistConfig.CACHE_STORAGES, existingProps + "," + DistConfig.CACHE_STORAGE_VALUE_KAFKA);
         props.setProperty(DistConfig.KAFKA_BROKERS, brokers);
         return this;
     }
-    /** add URL for Dist Cache standalone application */
-    public DistFactory withCacheApp(String cacheAppUrl) {
+    /** add URL for Dist standalone application */
+    public DistFactory withRegisterApplication(String cacheAppUrl) {
         props.setProperty(DistConfig.CACHE_APPLICATION_URL, cacheAppUrl);
         return this;
     }
-    /** */
-    public DistFactory withCacheAppDefaultUrl() {
+    /** add URL for Dist application */
+    public DistFactory withRegisterApplicationDefaultUrl() {
         props.setProperty(DistConfig.CACHE_APPLICATION_URL, DistConfig.CACHE_APPLICATION_URL_DEFAULT_VALUE);
         return this;
     }
-    public DistFactory withProperty(String name, String value) {
-        props.setProperty(name, value);
-        return this;
-    }
-    public DistFactory withProperties(Properties initialFactoryProperties) {
-        for (Map.Entry<Object, Object> e: initialFactoryProperties.entrySet()) {
-            props.setProperty(e.getKey().toString(), e.getValue().toString());
-        }
-        return this;
-    }
-    public DistFactory withMap(Map<String, String> initialFactoryProperties) {
-        for (Map.Entry<String, String> e: initialFactoryProperties.entrySet()) {
-            props.setProperty(e.getKey(), e.getValue());
-        }
-        return this;
-    }
+
+    /** CACHA setting - object TTL - time to live */
     public DistFactory withObjectTimeToLive(long timeToLiveMs) {
         props.setProperty(DistConfig.CACHE_TTL, ""+timeToLiveMs);
         return this;
@@ -288,8 +365,9 @@ public class DistFactory {
     }
     /** define internal timer delay and period time in milliseconds */
     public DistFactory withTimer(long delayMs, long periodMs) {
-        props.setProperty(DistConfig.CACHE_TIMER_DELAY, ""+delayMs);
-        props.setProperty(DistConfig.CACHE_TIMER_PERIOD, ""+periodMs);
+        props.setProperty(DistConfig.TIMER_DELAY, ""+delayMs);
+        props.setProperty(DistConfig.TIMER_PERIOD, ""+periodMs);
         return this;
     }
+
 }

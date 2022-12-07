@@ -1,9 +1,9 @@
 package com.cache.serializers;
 
-import com.cache.interfaces.CacheSerializer;
+import com.cache.interfaces.DistSerializer;
 
 /** serializer and deserializer using reflection - get all fields and get/set values as simple Strings */
-public class ReflectionSimpleSerializer implements CacheSerializer {
+public class ReflectionSimpleSerializer implements DistSerializer {
 
     @Override
     public byte[] serialize(Object obj) {
@@ -16,7 +16,7 @@ public class ReflectionSimpleSerializer implements CacheSerializer {
     }
 
     @Override
-    public Object deserialize(byte[] b) {
+    public Object deserialize(String objectClassName, byte[] b) {
 
 
         return null;
@@ -28,7 +28,7 @@ public class ReflectionSimpleSerializer implements CacheSerializer {
     }
 
     @Override
-    public Object deserializeFromString(String str) {
+    public Object deserializeFromString(String objectClassName, String str) {
         return null;
     }
 

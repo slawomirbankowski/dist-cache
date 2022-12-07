@@ -286,8 +286,8 @@ public class AgentInstance implements Agent {
     }
     private void setUpTimerToCommunicate() {
         // initialization for communicate
-        long communicateDelayMs = config.getPropertyAsLong(DistConfig.CACHE_TIMER_COMMUNICATE_DELAY, DistConfig.CACHE_TIMER_COMMUNICATE_DELAY_VALUE);
-        long communicatePeriodMs = config.getPropertyAsLong(DistConfig.CACHE_TIMER_COMMUNICATE_DELAY, DistConfig.CACHE_TIMER_COMMUNICATE_DELAY_VALUE);
+        long communicateDelayMs = config.getPropertyAsLong(DistConfig.TIMER_COMMUNICATE_DELAY, DistConfig.TIMER_COMMUNICATE_DELAY_VALUE);
+        long communicatePeriodMs = config.getPropertyAsLong(DistConfig.TIMER_COMMUNICATE_DELAY, DistConfig.TIMER_COMMUNICATE_DELAY_VALUE);
         log.info("Scheduling communicating timer task for agent: " + getAgentGuid());
         TimerTask onTimeCommunicateTask = new TimerTask() {
             @Override

@@ -76,11 +76,21 @@ public class CacheUtils {
     public static String generateAgentGuid() {
         return "AGENT_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
+    public static String generateServerGuid(String servType) {
+        return "SERVER_T" + servType + "_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
     /** initialized random object to generate random values globally */
     private static final Random rndObj = new Random();
 
     public static int randomInt(int n) {
         return rndObj.nextInt(n);
+    }
+    public static int[] randomTable(int s, int n) {
+        int[] t = new int[s];
+        for (int i=0; i<s; i++) {
+            t[i] = randomInt(n);
+        }
+        return t;
     }
     public static long randomLong() {
         return rndObj.nextLong();
@@ -147,6 +157,35 @@ public class CacheUtils {
         }
     }
 
+    /** split String into name1=value1;name2=value2;name3=value3 */
+    public static List<String[]> splitBySeparationEqual(String str, String splitChar, char equalsChar, boolean removeEmpty) {
+        LinkedList<String[]> splitedItems = new LinkedList<>();
+        String[] items = str.split(splitChar);
+        for (int i=0; i<items.length; i++) {
+            String equation = items[i];
+            String[] t = splitByChar(equation, equalsChar);
+            if (t.length == 2) {
+                if (!t[0].isEmpty() && !t[1].isEmpty()) {
+                    splitedItems.add(t);
+                }
+            }
+        }
+        return splitedItems;
+    }
+    public static String[] splitByChar(String str, char equalsChar) {
+        int pos = str.indexOf(equalsChar);
+        if (pos > 0) {
+            String firstPart = str.substring(0, pos);
+            String secondPart = str.substring(pos+1);
+            if (firstPart.isEmpty()) {
+                return new String[0];
+            } else {
+                return new String[] { firstPart, secondPart };
+            }
+        } else {
+            return new String[0];
+        }
+    }
     public static String bytesToBase64(byte[] bytes) {
         return new String(Base64.getEncoder().encode(bytes));
     }
@@ -189,6 +228,15 @@ public class CacheUtils {
         for (int i=0; i<o.length; i++) {
             b.append(o[i]);
             b.append(" ; ");
+        }
+        return b.toString();
+    }
+
+    public static String serializeBytes(byte[] o) {
+        StringBuilder b = new StringBuilder();
+        for (int i=0; i<o.length; i++) {
+            b.append(o[i]);
+            b.append(",");
         }
         return b.toString();
     }

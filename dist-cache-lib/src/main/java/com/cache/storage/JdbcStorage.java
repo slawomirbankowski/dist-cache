@@ -56,7 +56,7 @@ public class JdbcStorage extends CacheStorageBase {
     public Optional<CacheObject> getObject(String key) {
         //CacheObject.fromSerialized();
         var items = dao.executeSelectQuery(dialect.selectCacheItemsByKey,
-                new Object[] { key }, x -> CacheObjectSerialized.fromMap(x).toCacheObject(cacheSerializer));
+                new Object[] { key }, x -> CacheObjectSerialized.fromMap(x).toCacheObject(distSerializer));
         if (items.isEmpty()) {
             return Optional.empty();
         } else {
@@ -66,15 +66,12 @@ public class JdbcStorage extends CacheStorageBase {
 
     /** set object */
     public  Optional<CacheObject> setObject(CacheObject o) {
-        log.debug(" CACHE JDBC SET OBJECT !!!!!!!! ");
-        CacheObjectSerialized cos = o.serializedFullCacheObject(cacheSerializer);
-        // cachekey, cachevalue, objectclassname,
-        // inserteddate, cacheguid, lastusedate
-        // enddate,createdtimems,objectseq,objsize,acquiretimems,cachemode,cachepriority,groupslist
+        log.debug(" CACHE JDBC SET OBJECT");
+        CacheObjectSerialized cos = o.serializedFullCacheObject(distSerializer);
         var createDate = new java.util.Date();
         var endDate = new java.util.Date(createDate.getTime()+cos.getTimeToLiveMs());
         dao.executeUpdateQuery(dialect.insertUpdateCacheItem, new Object[] {
-                cos.getKey(), cos.getObjectInCacheAsString(), cos.getObjectClassName(),
+                cos.getKey(), cos.getObjectInCache(), cos.getObjectClassName(),
                 createDate, getCacheUid(), createDate,
                 endDate, cos.getCreatedTimeMs(), cos.getObjectSeq(), cos.getObjSize(), cos.getAcquireTimeMs(),
                 cos.getMode().ordinal(), cos.getPriority(), String.join(",", cos.getGroups())
@@ -92,9 +89,7 @@ public class JdbcStorage extends CacheStorageBase {
     }
     /** get number of items in cache */
     public int getItemsCount() {
-        dao.executeSelectQuerySingle("select sum(objsize) as cnt from distcacheitem").getIntOrZero("cnt");
-
-        return 0;
+        return dao.executeSelectQuerySingle("select sum(objsize) as cnt from distcacheitem").getIntOrZero("cnt");
     }
     /** get number of objects in this cache */
     public int getObjectsCount() {
@@ -121,7 +116,7 @@ public class JdbcStorage extends CacheStorageBase {
     }
     /** check cache every X seconds to clear TTL caches */
     public void onTimeClean(long checkSeq) {
-        dao.executeSelectQuery("delete from distcacheitem where enddate < now()", new Object[0]);
+        //dao.executeSelectQuery("delete from distcacheitem where enddate < now()", new Object[0]);
     }
     public void disposeStorage() {
         if (dao != null) {

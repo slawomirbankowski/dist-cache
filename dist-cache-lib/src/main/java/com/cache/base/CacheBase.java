@@ -4,8 +4,9 @@ import com.cache.api.*;
 import com.cache.encoders.KeyEncoderNone;
 import com.cache.interfaces.Cache;
 import com.cache.interfaces.CacheKeyEncoder;
-import com.cache.interfaces.CacheSerializer;
+import com.cache.interfaces.DistSerializer;
 import com.cache.serializers.Base64Serializer;
+import com.cache.serializers.ComplexSerializer;
 import com.cache.utils.CacheHitRatio;
 import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
@@ -35,6 +36,8 @@ public abstract class CacheBase implements Cache {
     protected AtomicLong addedItemsSequence = new AtomicLong();
     /** class to register hit/miss ratio with historical records */
     protected CacheHitRatio hitRatio = new CacheHitRatio();
+    /** serializer for serialization of cache objects to external storages */
+    protected DistSerializer serializer;
     /** if cache has been already closed */
     protected boolean isClosed = false;
     /** cache properties to initialize all storages, agent, policies, */
@@ -55,6 +58,7 @@ public abstract class CacheBase implements Cache {
         this.cacheCfg = cfg;
         // add all callback functions
         initializeEncoder();
+        initializeSerializer();
         log.info("--------> Creating new cache with GUID: " + cacheManagerGuid + ", CONFIG: " + cfg.getConfigGuid() + ", properties: " + cfg.getProperties().size());
     }
 
@@ -73,8 +77,8 @@ public abstract class CacheBase implements Cache {
     }
 
     /** get default serialized for this cache */
-    public CacheSerializer getCacheSerializer() {
-        return new Base64Serializer();
+    public DistSerializer getCacheSerializer() {
+        return serializer;
     }
     /** get value of cache configuration */
     public String getConfigValue(String cfgName) {
@@ -105,6 +109,14 @@ public abstract class CacheBase implements Cache {
         // TODO: initialize encoder for secrets and passwords in key
         keyEncoder = new KeyEncoderNone();
     }
+
+    /** initialize serializer used for serialization of an object into byte[] or String to be saved in external storages */
+    private void initializeSerializer() {
+        String serializerDef = cacheCfg.getProperty(DistConfig.SERIALIZER_DEFINITION, DistConfig.SERIALIZER_DEFINITION_SERIALIZABLE_VALUE);
+
+        //serializer = new ComplexSerializer(serializerDef);
+    }
+
     /** add issue to cache manager to be revoked by parent
      * issue could be Exception, Error, problem with connecting to storage,
      * internal error, not consistent state that is unknown and could be used by parent manager */

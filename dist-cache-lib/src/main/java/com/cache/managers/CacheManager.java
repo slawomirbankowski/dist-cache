@@ -6,6 +6,8 @@ import com.cache.base.CacheBase;
 import com.cache.base.CachePolicyBase;
 import com.cache.base.CacheStorageBase;
 import com.cache.interfaces.Agent;
+import com.cache.interfaces.DistSerializer;
+import com.cache.serializers.ComplexSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,9 +41,11 @@ public class CacheManager extends CacheBase {
     /** initialize current manager with properties
      * this is creating storages, connecting to storages
      * creating cache policy, create agent and connecting to other cache agents */
-    public CacheManager(AgentInstance agent, DistConfig cacheCfg) {
+    public CacheManager(AgentInstance agent, DistConfig cacheCfg, HashMap<String, DistSerializer> serializers) {
         super(cacheCfg);
         this.agent = agent;
+        this.serializer = ComplexSerializer.createSerializer(serializers);
+
         // TODO: finishing initialization - to be done, creating agent, storages, policies
         initializeStorages();
         initializeAgent();
@@ -114,8 +118,8 @@ public class CacheManager extends CacheBase {
     protected void initializeTimer() {
         addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMERS));
         // initialization for clean
-        long cleanDelayMs = cacheCfg.getPropertyAsLong(DistConfig.CACHE_TIMER_DELAY, DistConfig.CACHE_TIMER_DELAY_VALUE);
-        long cleanPeriodMs = cacheCfg.getPropertyAsLong(DistConfig.CACHE_TIMER_PERIOD, DistConfig.CACHE_TIMER_PERIOD_VALUE);
+        long cleanDelayMs = cacheCfg.getPropertyAsLong(DistConfig.TIMER_DELAY, DistConfig.TIMER_DELAY_VALUE);
+        long cleanPeriodMs = cacheCfg.getPropertyAsLong(DistConfig.TIMER_PERIOD, DistConfig.TIMER_PERIOD_VALUE);
         log.info("Scheduling clean timer task for cache: " + getCacheGuid());
         TimerTask onTimeCleanTask = new TimerTask() {
             @Override
@@ -130,11 +134,9 @@ public class CacheManager extends CacheBase {
         timerTasks.add(onTimeCleanTask);
         timer.scheduleAtFixedRate(onTimeCleanTask, cleanDelayMs, cleanPeriodMs);
         addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMER_CLEAN));
-
-        addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMER_COMMUNICATE));
         // initialization for
-        long ratioDelayMs = cacheCfg.getPropertyAsLong(DistConfig.CACHE_TIMER_RATIO_DELAY, DistConfig.CACHE_TIMER_RATIO_DELAY_VALUE);
-        long ratioPeriodMs = cacheCfg.getPropertyAsLong(DistConfig.CACHE_TIMER_RATIO_DELAY, DistConfig.CACHE_TIMER_RATIO_DELAY_VALUE);
+        long ratioDelayMs = cacheCfg.getPropertyAsLong(DistConfig.TIMER_RATIO_DELAY, DistConfig.TIMER_RATIO_DELAY_VALUE);
+        long ratioPeriodMs = cacheCfg.getPropertyAsLong(DistConfig.TIMER_RATIO_DELAY, DistConfig.TIMER_RATIO_DELAY_VALUE);
         log.info("Scheduling ratio timer task for cache: " + getCacheGuid());
         TimerTask onTimeHitRatioTask = new TimerTask() {
             @Override

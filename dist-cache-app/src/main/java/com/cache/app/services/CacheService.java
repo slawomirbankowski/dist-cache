@@ -30,7 +30,7 @@ public class CacheService {
     /** create cache service with initialization of default cache */
     public CacheService() {
         DistConfig cfg = DistFactory.buildDefaultFactory()
-                .withDefaultSocketPort()
+                .withServerSocketDefaultPort()
                 .withEnvironmentVariables()
                 .withCommonProperties()
                 .withCommandLineArguments(DistCacheApp.getCommandLineArguments())
