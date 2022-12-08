@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 public class CacheManagerFullModelTest {
     private static final Logger log = LoggerFactory.getLogger(CacheManagerFullModelTest.class);
 
-    @Test
+//    @Test
     public void fullDaoModelTest() {
         log.info("START------");
         Cache cache = DistFactory.buildDefaultFactory()
