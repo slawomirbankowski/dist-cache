@@ -186,7 +186,7 @@ public class CacheManager extends CacheBase {
         hitRatio.miss(); // hit ratio - add miss event
         T objFromMethod = acquireMethod.apply(key);
         long acquireTimeMs = System.currentTimeMillis()-startActTime; // this is time of getting this object from method
-        log.debug("===> Got object from external method/supplier, time: " + acquireTimeMs);
+        log.trace("Got object from external method/supplier, time: " + acquireTimeMs);
         CacheObject co = new CacheObject(key, objFromMethod, acquireTimeMs, acquireMethod, mode, groups);
         // TODO: need to set object in internal caches
         setItemInternal(co);
