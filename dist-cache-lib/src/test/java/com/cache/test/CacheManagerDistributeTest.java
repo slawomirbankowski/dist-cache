@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 public class CacheManagerDistributeTest {
     private static final Logger log = LoggerFactory.getLogger(CacheManagerDistributeTest.class);
 
-    @Test
+//    @Test
     public void distributeAgentsTest() {
         log.info("START------");
         Cache cache = DistFactory.buildDefaultFactory()
