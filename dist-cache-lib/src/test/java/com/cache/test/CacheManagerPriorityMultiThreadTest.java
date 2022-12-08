@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class CacheManagerPriorityMultiThreadTest {
     private static final Logger log = LoggerFactory.getLogger(CacheManagerPriorityMultiThreadTest.class);
 
-    @Test
+//    @Test
     public void testMultiThread() {
         log.info("START------");
         Cache cache = DistFactory.buildEmptyFactory()

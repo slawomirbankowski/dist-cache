@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class CacheManagerKeepTest {
     private static final Logger log = LoggerFactory.getLogger(CacheManagerKeepTest.class);
 
-    @Test
+//    @Test
     public void modeKeepTest() {
         log.info("START ------ clean test");
         Cache cache = DistFactory.buildDefaultFactory()

@@ -16,7 +16,7 @@ public class CacheManagerRefreshTest {
     private static final Logger log = LoggerFactory.getLogger(CacheManagerRefreshTest.class);
 
     AtomicLong seq = new AtomicLong();
-    @Test
+//    @Test
     public void modeRefreshTest() {
         log.info("START ------ clean test");
         Cache cache = DistFactory.buildDefaultFactory()

@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class CacheManagerEventTest {
     private static final Logger log = LoggerFactory.getLogger(CacheManagerEventTest.class);
 
-    @Test
+//    @Test
     public void eventsTest() {
         log.info("START------");
         AtomicLong cleanEvents = new AtomicLong();
