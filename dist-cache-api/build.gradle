@@ -10,17 +10,22 @@ apply plugin: 'maven-publish'
 sourceCompatibility = JavaVersion.VERSION_11
 
 publishing {
-    publications {
-        customLibrary(MavenPublication) {
-            groupId = 'com.dist'
-            artifactId = 'dist-cache-api'
-            version = '0.0.1'
-        }
-    }
     repositories {
         maven {
-            name = 'dist-cache'
-            url = layout.buildDirectory.dir("repo")
+            name = "GitHubPackages"
+            url = uri('https://maven.pkg.github.com/slawomirbankowski/dist-cache')
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+    publications {
+        gpr(MavenPublication) {
+            groupId = 'com.dist-cache'
+            artifactId = 'dist-cache-api'
+            version = '0.0.1-SNAPSHOT'
+            from(components.java)
         }
     }
 }
