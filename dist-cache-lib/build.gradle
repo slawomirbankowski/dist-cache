@@ -7,14 +7,6 @@ sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
     mavenCentral()
-    maven {
-        name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/slawomirbankowski/dist-cache")
-        credentials {
-            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-        }
-    }
 }
 
 group = 'com.distcache'
@@ -70,7 +62,7 @@ publishing {
         gpr(MavenPublication) {
             groupId = 'com.dist-cache'
             artifactId = 'dist-cache-lib'
-            version = '0.0.1-SNAPSHOT'
+            version = '0.0.1'
             from(components.java)
         }
     }
