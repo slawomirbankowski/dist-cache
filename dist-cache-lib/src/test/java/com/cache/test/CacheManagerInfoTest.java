@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class CacheManagerInfoTest {
     private static final Logger log = LoggerFactory.getLogger(CacheManagerInfoTest.class);
 
-    @Test
+//    @Test
     public void infoTest() {
         log.info("START------");
         Cache cache = DistFactory.buildDefaultFactory()
