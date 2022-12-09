@@ -3,9 +3,12 @@ package com.cache.agent.connectors;
 import com.cache.agent.AgentInstance;
 import com.cache.api.*;
 import com.cache.base.RegistrationBase;
+import com.cache.dtos.DistAgentRegisterRow;
+import com.cache.dtos.DistAgentServerRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /** *
@@ -47,12 +50,28 @@ public class RegistrationKafka extends RegistrationBase {
     protected AgentPingResponse onAgentPing(AgentPing ping) {
         return null;
     }
+    /** add issue for registration */
+    public void addIssue(DistIssue issue) {
+    }
+    /** register server for communication */
+    public void addServer(DistAgentServerRow serv) {
+    }
+    /** unregister server for communication */
+    public void unregisterServer(DistAgentServerRow serv) {
+    }
+    /** get all communication servers */
+    public  List<DistAgentServerRow> getServers() {
+        return new LinkedList<>();
+    }
     /** get list of agents from connector */
     @Override
     protected List<AgentSimplified> onGetAgents() {
         return null;
     }
-
+    /** get agents from registration services */
+    public List<DistAgentRegisterRow> getAgentsNow() {
+        return new LinkedList<>();
+    }
     /** get list of active agents */
     public List<AgentSimplified> getAgentsActive() {
         return null;

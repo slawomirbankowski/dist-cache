@@ -6,7 +6,7 @@ import com.cache.utils.CacheUtils;
 
 import java.util.Map;
 
-/** for for JDBC table distagentregister */
+/** row for JDBC table distagentregister */
 public class DistAgentRegisterRow {
 
     public String agentguid;

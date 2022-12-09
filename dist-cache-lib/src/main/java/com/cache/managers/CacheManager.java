@@ -6,6 +6,7 @@ import com.cache.base.CacheBase;
 import com.cache.base.CachePolicyBase;
 import com.cache.base.CacheStorageBase;
 import com.cache.interfaces.Agent;
+import com.cache.interfaces.DistMessage;
 import com.cache.interfaces.DistSerializer;
 import com.cache.serializers.ComplexSerializer;
 import org.slf4j.Logger;
@@ -170,7 +171,15 @@ public class CacheManager extends CacheBase {
         agent.close();
         addEvent(new CacheEvent(this, "onClose", CacheEvent.EVENT_CLOSE_END));
     }
+    /** process message, returns status */
+    public DistMessageStatus processMessage(DistMessage msg) {
+        // process message
+        msg.getService();
 
+
+
+        return new DistMessageStatus();
+    }
     /** set object in all or one internal caches */
     private List<CacheObject> setItemInternal(CacheObject co) {
         addedItemsSequence.incrementAndGet();

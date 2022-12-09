@@ -1,9 +1,11 @@
 package com.cache.storage;
 
 import com.cache.api.*;
-import com.cache.dtos.CacheRowJdbc;
+import com.cache.dtos.DistCacheItemRow;
 import com.cache.base.CacheStorageBase;
 import com.cache.base.DaoBase;
+import com.cache.jdbc.DialectQueries;
+import com.cache.jdbc.JdbcDialect;
 
 import java.util.*;
 
@@ -34,11 +36,11 @@ public class JdbcStorage extends CacheStorageBase {
     }
     /** */
     private void initializeConnectionAndCreateTables() {
-        var tables = dao.executeSelectQuery(dialect.selectCacheTables);
+        var tables = dao.executeSelectQuery(dialect.selectCacheTables());
         if (tables.size() == 0) {
             log.info("Creating distcacheitem TABLE and INDEX");
-            int ret = dao.executeAnyQuery(dialect.createDistCacheItemTable);
-            dao.executeAnyQuery(dialect.ddlCreateCacheItemIndex);
+            int ret = dao.executeAnyQuery(dialect.createDistCacheItemTable());
+            dao.executeAnyQuery(dialect.createCacheItemIndex());
             log.info("Created distcacheitem TABLE and INDEX: " + ret);
         }
     }
@@ -48,14 +50,15 @@ public class JdbcStorage extends CacheStorageBase {
 
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
-        var items = dao.executeSelectQuery(dialect.selectFindCacheItems, new Object[] { "%" + key + "%" }, x -> CacheRowJdbc.fromMap(x));
+        var items = dao.executeSelectQuery(dialect.selectFindCacheItems(),
+                new Object[] { "%" + key + "%" }, x -> DistCacheItemRow.fromMap(x));
         return !items.isEmpty();
     }
 
     /** get CacheObject item from JDBC */
     public Optional<CacheObject> getObject(String key) {
         //CacheObject.fromSerialized();
-        var items = dao.executeSelectQuery(dialect.selectCacheItemsByKey,
+        var items = dao.executeSelectQuery(dialect.selectCacheItemsByKey(),
                 new Object[] { key }, x -> CacheObjectSerialized.fromMap(x).toCacheObject(distSerializer));
         if (items.isEmpty()) {
             return Optional.empty();
@@ -70,7 +73,7 @@ public class JdbcStorage extends CacheStorageBase {
         CacheObjectSerialized cos = o.serializedFullCacheObject(distSerializer);
         var createDate = new java.util.Date();
         var endDate = new java.util.Date(createDate.getTime()+cos.getTimeToLiveMs());
-        dao.executeUpdateQuery(dialect.insertUpdateCacheItem, new Object[] {
+        dao.executeUpdateQuery(dialect.insertUpdateCacheItem(), new Object[] {
                 cos.getKey(), cos.getObjectInCache(), cos.getObjectClassName(),
                 createDate, getCacheUid(), createDate,
                 endDate, cos.getCreatedTimeMs(), cos.getObjectSeq(), cos.getObjSize(), cos.getAcquireTimeMs(),

@@ -25,6 +25,7 @@ public class DistConfig {
 
     public DistConfig(Properties p) {
         this.props = p;
+        props.setProperty("", configGuid);
     }
 
     /** get current properties */
@@ -70,7 +71,15 @@ public class DistConfig {
     public double getPropertyAsDouble(String name, double defaultValue) {
         return CacheUtils.parseDouble(getProperty(name), defaultValue);
     }
-
+    /** save to File */
+    public void saveToFile(String fileName) {
+        // TODO: save Properties into file for given name
+    }
+    /** save to JSON */
+    public String saveToJson() {
+        // TODO: save Properties to JSON
+        return "";
+    }
     /** name of group - all caches connecting together should be having the same group
      * name of group could be like GlobalAppCache */
     public static String DIST_GROUP = "CACHE_GROUP";

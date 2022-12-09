@@ -67,7 +67,7 @@ public interface Cache extends DistService {
     /** get all recent issues with cache,
      * issues might be caused by internal Exception, connection problems, incorrect usage
      * only last X issues are stored in cache */
-    Queue<CacheIssue> getIssues();
+    Queue<DistIssue> getIssues();
     /** add issue with method and exception */
     void addIssue(String methodName, Exception ex);
     /** get all recent events added to cache

@@ -3,11 +3,15 @@ package com.cache.agent.connectors;
 import com.cache.agent.AgentInstance;
 import com.cache.api.*;
 import com.cache.base.RegistrationBase;
+import com.cache.dtos.DistAgentRegisterRow;
+import com.cache.dtos.DistAgentServerRow;
 import com.cache.utils.HttpConnectionHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.LinkedList;
 import java.util.List;
 
 /** connector to global dist-cache application - central point with registering/unregistering agents  */
@@ -68,12 +72,30 @@ public class RegistrationApplication extends RegistrationBase {
 
         return null;
     }
+    /** add issue for registration */
+    public void addIssue(DistIssue issue) {
+    }
+    /** register server for communication */
+    public void addServer(DistAgentServerRow serv) {
+    }
+    /** unregister server for communication */
+    public void unregisterServer(DistAgentServerRow serv) {
+    }
+    /** get all communication servers */
+    public  List<DistAgentServerRow> getServers() {
+        return new LinkedList<>();
+    }
+
     /** get list of agents from connector */
     @Override
     protected List<AgentSimplified> onGetAgents() {
         applicationConn.callHttpGet("");
 
         return null;
+    }
+    /** get agents from registration services */
+    public List<DistAgentRegisterRow> getAgentsNow() {
+        return new LinkedList<>();
     }
     /** get list of active agents */
     public List<AgentSimplified> getAgentsActive() {

@@ -79,6 +79,9 @@ public class CacheUtils {
     public static String generateServerGuid(String servType) {
         return "SERVER_T" + servType + "_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
+    public static String generateClientGuid(String clientType) {
+        return "CLIENT_T" + clientType + "_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
     /** initialized random object to generate random values globally */
     private static final Random rndObj = new Random();
 

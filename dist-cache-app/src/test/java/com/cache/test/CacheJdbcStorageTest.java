@@ -28,8 +28,11 @@ public class CacheJdbcStorageTest {
                 .withStorageJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "cache_password123")
                 .withSerializerDefault()
+                .withSerializer("java.lang.String=StringSerializer,default=ObjectStreamSerializer")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "cache_password123")
+                .withRegisterApplication("")
+                .withRegisterApplicationDefaultUrl()
                 .withMaxObjectAndItems(30, 100)
                 .createCacheInstance();
         Object[] objs = new Object[] {

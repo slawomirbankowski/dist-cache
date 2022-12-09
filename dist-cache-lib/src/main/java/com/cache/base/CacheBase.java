@@ -5,8 +5,6 @@ import com.cache.encoders.KeyEncoderNone;
 import com.cache.interfaces.Cache;
 import com.cache.interfaces.CacheKeyEncoder;
 import com.cache.interfaces.DistSerializer;
-import com.cache.serializers.Base64Serializer;
-import com.cache.serializers.ComplexSerializer;
 import com.cache.utils.CacheHitRatio;
 import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
@@ -68,8 +66,8 @@ public abstract class CacheBase implements Cache {
     }
 
     /** get type of service: cache, measure, report, */
-    public String getServiceType() {
-        return "";
+    public DistServiceType getServiceType() {
+        return DistServiceType.cache;
     }
     /** get unique ID of this service */
     public String getServiceUid() {
@@ -120,12 +118,12 @@ public abstract class CacheBase implements Cache {
     /** add issue to cache manager to be revoked by parent
      * issue could be Exception, Error, problem with connecting to storage,
      * internal error, not consistent state that is unknown and could be used by parent manager */
-    public void addIssue(CacheIssue issue) {
+    public void addIssue(DistIssue issue) {
         getAgent().addIssue(issue);
     }
     /** add issue with method and exception */
     public void addIssue(String methodName, Exception ex) {
-        addIssue(new CacheIssue(this, methodName, ex));
+        addIssue(new DistIssue(this, methodName, ex));
     }
     /** add new event and distribute it to callback methods,
      * event could be useful information about change of cache status, new connection, refresh of cache, clean */
@@ -144,7 +142,7 @@ public abstract class CacheBase implements Cache {
         return setCacheObject(key, value, CacheMode.modeKeep, Collections.emptySet());
     }
     /** get all recent issues with cache */
-    public Queue<CacheIssue> getIssues() {
+    public Queue<DistIssue> getIssues() {
         return getAgent().getIssues();
     }
     /** get all recent events added to cache */

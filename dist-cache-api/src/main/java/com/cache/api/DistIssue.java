@@ -1,20 +1,20 @@
 package com.cache.api;
 
-/** internal issue in Cache - this is full version of object */
-public class CacheIssue {
+/** internal issue in Dist environment - this is full version of object */
+public class DistIssue {
 
     private final Object parent;
     private final String methodName;
     private final Exception ex;
     private final Object[] params;
 
-    public CacheIssue(Object parent, String methodName, Exception ex, Object... params) {
+    public DistIssue(Object parent, String methodName, Exception ex, Object... params) {
         this.parent = parent;
         this.methodName = methodName;
         this.ex = ex;
         this.params = params;
     }
-    public CacheIssue(Object parent, String methodName, Exception ex) {
+    public DistIssue(Object parent, String methodName, Exception ex) {
         this.parent = parent;
         this.methodName = methodName;
         this.ex = ex;
@@ -32,7 +32,13 @@ public class CacheIssue {
     public Exception getEx() {
         return ex;
     }
+    public String getExceptionMessage() {
+        return ""+ex.getMessage();
+    }
 
+    public String getExceptionSerialized() {
+        return "";
+    }
     public Object[] getParams() {
         return params;
     }

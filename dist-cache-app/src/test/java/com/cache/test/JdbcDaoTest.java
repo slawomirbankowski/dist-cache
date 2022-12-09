@@ -1,13 +1,9 @@
 package com.cache.test;
 
-import com.cache.dtos.CacheRowJdbc;
 import com.cache.base.DaoBase;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JdbcDaoTest {
     private static final Logger log = LoggerFactory.getLogger(JdbcDaoTest.class);
@@ -36,11 +32,6 @@ public class JdbcDaoTest {
         //dao.executeAnyQuery("create index idx_distcacheitem_tmp_cachekey on cacheitems_tmp(cachekey)");
         //dao.executeInsert(new CacheRowJdbc("key222", "value222"), "cacheitems_tmp");
 
-        var items = dao.executeSelectQuery("select * from cacheitems_tmp", x -> CacheRowJdbc.fromMap(x));
-        dao.executeSelectQuery("", new Object[] {"", "", ""});
-        for (CacheRowJdbc item: items) {
-            log.debug("----> key=" + item.cachekey);
-        }
         //dao.isConnected();
         //dao.executeUpdateQuery("insert into distcacheitems_tmp(cachekey,cachevalue,inserteddate) values (?,?,?)", new Object[] {"key1", "value111", new java.util.Date()});
         //dao.executeSelectQuery("select * from cacheitems");

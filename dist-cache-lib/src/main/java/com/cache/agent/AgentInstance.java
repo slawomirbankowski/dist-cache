@@ -1,5 +1,6 @@
 package com.cache.agent;
 
+import com.cache.agent.clients.SocketServerClient;
 import com.cache.agent.connectors.RegistrationApplication;
 import com.cache.agent.connectors.RegistrationElasticsearch;
 import com.cache.agent.connectors.RegistrationJdbc;
@@ -7,10 +8,11 @@ import com.cache.agent.connectors.RegistrationKafka;
 import com.cache.agent.servers.AgentServerSocket;
 import com.cache.api.*;
 import com.cache.base.RegistrationBase;
-import com.cache.interfaces.Agent;
-import com.cache.interfaces.AgentServer;
-import com.cache.interfaces.DistService;
+import com.cache.dtos.DistAgentRegisterRow;
+import com.cache.dtos.DistAgentServerRow;
+import com.cache.interfaces.*;
 import com.cache.utils.CacheUtils;
+import com.cache.utils.HashMapMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +23,7 @@ import java.util.stream.Collectors;
 
 /** agent class to be connected to dist-cache applications, Kafka, Elasticsearch or other global agent repository
  * Agent is also connecting directly to other agents */
-public class AgentInstance implements Agent {
+public class AgentInstance implements Agent, DistService {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentInstance.class);
@@ -43,6 +45,16 @@ public class AgentInstance implements Agent {
     private final HashMap<String, DistService> services = new HashMap<>();
     /** all servers for connections to other agents */
     private final HashMap<String, AgentServer> servers = new HashMap<>();
+    /** all rows of registered servers */
+    private final LinkedList<DistAgentServerRow> registeredServers = new LinkedList();
+    /** all servers for connections to other agents */
+    private final HashMap<String, DistAgentServerRow> agentServers = new HashMap<>();
+    /** map of map of clients connected to different agents
+     * key1 = agentGUID
+     * key2 = serverGUID
+     * value = client to transfer messages to this agent */
+    private final HashMapMap<String, String, AgentClient> serverConnectors = new HashMapMap<>();
+
     /* allows to perform ping, get current list of agents and unregister agent */
     private final HashMap<String, RegistrationBase> registrations = new HashMap<>();
     /** default working port for Socket server */
@@ -53,21 +65,33 @@ public class AgentInstance implements Agent {
      * only one callback per event type is allowed */
     protected HashMap<String, Function<CacheEvent, String>> callbacks = new HashMap<>();
     /** queue of issues reported when using cache */
-    protected final Queue<CacheIssue> issues = new LinkedList<>();
+    protected final Queue<DistIssue> issues = new LinkedList<>();
     /** queue of events that would be added to callback methods */
     protected final Queue<CacheEvent> events = new LinkedList<>();
 
     /** create new agent */
     public AgentInstance(DistConfig config, Map<String, Function<CacheEvent, String>> callbacksMethods) {
         this.config = config;
+        // self register of agent as service
+        services.put(DistServiceType.agent.name(), this);
         callbacksMethods.entrySet().stream().forEach(cb -> callbacks.put(cb.getKey(), cb.getValue()));
     }
+
+    /** get type of service: cache, measure, report, flow, space, ... */
+    public DistServiceType getServiceType() {
+        return DistServiceType.agent;
+    }
+    /** get unique ID of this service */
+    public String getServiceUid() {
+        return agentGuid;
+    }
+
     /** initialize agent - server, application, jdbc, kafka */
     public void initializeAgent() {
         log.info("Initializing agent for guid: " + agentGuid);
         workingPort = config.getPropertyAsInt(DistConfig.AGENT_SOCKET_PORT, DistConfig.AGENT_SOCKET_PORT_DEFAULT_VALUE);
-        openServers();
         createRegistrations();
+        openServers();
         registerToAll();
         setUpTimerToCommunicate();
     }
@@ -88,7 +112,10 @@ public class AgentInstance implements Agent {
     public List<AgentSimplified> getAgents() {
         return connectedAgents.values().stream().collect(Collectors.toList());
     }
-
+    /** get list of connected agents */
+    public List<DistAgentRegisterRow> getAgentsNow() {
+        return registrations.values().stream().flatMap(x -> x.getAgentsNow().stream()).collect(Collectors.toList());
+    }
     /** get secret generated or set for this agent */
     public String getAgentSecret() {
         return agentSecret;
@@ -110,28 +137,46 @@ public class AgentInstance implements Agent {
             services.put(service.toString(), service);
         }
     }
-    /** run by parent cache every 1 minute */
+    /** run by agent every 1 minute */
     public void onTimeCommunicate() {
         try {
-            log.info("Agent - Ping registration objects!!!!!!!");
+            System.out.println("Agent - Ping registration objects!!!!!!!");
             registrations.entrySet().stream().forEach(e -> {
                 e.getValue().agentPing(new AgentPing(this.agentGuid));
             });
-            log.info("Agent - check connected agents, current count: " + connectedAgents.size());
+            System.out.println("Agent - check connected agents, current count: " + connectedAgents.size());
             registrations.entrySet().stream().forEach(e -> {
                 List<AgentSimplified> activeAgents = e.getValue().getAgentsActive();
+                System.out.println("Agent - from register: " + e.getKey() +", GOT agents: " + activeAgents.size());
                 activeAgents.stream().forEach(ag -> {
                     AgentSimplified existingAgent = connectedAgents.get(ag.agentGuid);
                     if (existingAgent != null) {
                         existingAgent.update(ag);
-                        log.info("=====---->Existing agent update: " + ag.agentGuid);
+                        System.out.println("=====---->Existing agent update: " + ag.agentGuid);
                     } else {
-                        log.info("=====---->New agent add: " + ag.agentGuid);
+                        System.out.println("=====---->New agent add: " + ag.agentGuid);
                         connectedAgents.put(ag.agentGuid, ag);
                     }
                 });
-                log.info("=====----> New agents from registration: " + e.getKey() + ", count: " + activeAgents.size());
+                List<DistAgentServerRow> activeServers = e.getValue().getServers();
+                for (DistAgentServerRow srv: activeServers) {
+                    agentServers.putIfAbsent(srv.serverguid, srv);
+                }
+                agentServers.values().stream().forEach(srv -> {
+                    if (!srv.agentguid.equals(agentGuid)) {
+                        Optional<AgentClient> client = serverConnectors.getValue(srv.agentguid, srv.serverguid);
+                        if (client.isEmpty()) {
+                            System.out.println("=====----> Not yet client to agent: " + srv.agentguid + " to server: " + srv.serverguid + ", creating NEW ONE !!!!!!!!!");
+                            var createdClient = createClient(srv);
+                            if (createdClient.isPresent()) {
+                                serverConnectors.add(srv.agentguid, srv.serverguid, createdClient.get());
+                            }
+                        }
+                    }
+                });
+                System.out.println("=====----> New agents from registration: " + e.getKey() + ", agents: " + activeAgents.size());
             });
+            System.out.println("=====----> AGENT summary gor guid: " + agentGuid + ", registrations: " + registrations.size() + ", connected agents: " + connectedAgents.size() + ", servers: " + agentServers.size());
             // TODO: connect to all nearby agents, check statuses
 
             // TODO: implement communication of agent with other cache agents
@@ -141,6 +186,12 @@ public class AgentInstance implements Agent {
         }
     }
 
+    private Optional<AgentClient> createClient(DistAgentServerRow srv) {
+        if (srv.servertype.equals("socket")) {
+            return Optional.of(new SocketServerClient(this, srv));
+        }
+        return Optional.empty();
+    }
     /** close all items in this agent */
     public void close() {
         log.info("Closing agent: " + agentGuid);
@@ -152,6 +203,7 @@ public class AgentInstance implements Agent {
         servers.values().stream().forEach(serv -> {
             serv.close();
         });
+        serverConnectors.getAllValues().stream().forEach(cli -> cli.close());
         log.info("Clearing events in agent: " +agentGuid);
         events.clear();
         log.info("Clearing issues in agent: " +agentGuid);
@@ -160,9 +212,11 @@ public class AgentInstance implements Agent {
     /** add issue to cache manager to be revoked by parent
      * issue could be Exception, Error, problem with connecting to storage,
      * internal error, not consistent state that is unknown and could be used by parent manager */
-    public void addIssue(CacheIssue issue) {
+    public void addIssue(DistIssue issue) {
         synchronized (issues) {
             issues.add(issue);
+            // add issue for registration services
+            registrations.values().stream().forEach(reg -> reg.addIssue(issue));
             while (issues.size() > config.getPropertyAsLong(DistConfig.CACHE_ISSUES_MAX_COUNT, DistConfig.CACHE_ISSUES_MAX_COUNT_VALUE)) {
                 issues.poll();
             }
@@ -170,7 +224,7 @@ public class AgentInstance implements Agent {
     }
     /** add issue with method and exception */
     public void addIssue(String methodName, Exception ex) {
-        addIssue(new CacheIssue(this, methodName, ex));
+        addIssue(new DistIssue(this, methodName, ex));
     }
     /** add new event and distribute it to callback methods,
      * event could be useful information about change of cache status, new connection, refresh of cache, clean */
@@ -195,8 +249,12 @@ public class AgentInstance implements Agent {
         log.info("Set callback method for events" + eventType);
         callbacks.put(eventType, callback);
     }
+    /** get all servers from registration services */
+    public List<DistAgentServerRow> getServers() {
+        return registrations.values().stream().flatMap(reg -> reg.getServers().stream()).collect(Collectors.toList());
+    }
     /** get all recent issues with cache */
-    public Queue<CacheIssue> getIssues() {
+    public Queue<DistIssue> getIssues() {
         return issues;
     }
     /** get all recent events added to cache */
@@ -212,10 +270,16 @@ public class AgentInstance implements Agent {
             AgentServerSocket serv = new AgentServerSocket(this);
             serv.initializeServer(portNum);
             servers.put(serv.getServerGuid(), serv);
+            // register server for communication
+            var createdDate = new java.util.Date();
+            var hostName = CacheUtils.getCurrentHostName();
+            var hostIp = CacheUtils.getCurrentHostAddress();
+            var servDto = new DistAgentServerRow(agentGuid, serv.getServerGuid(), "socket", hostName, hostIp, portNum,
+                    "socket://" + hostName + ":" + portNum + "/", createdDate, 1, createdDate);
+            System.out.println("Registering server for GUID: " + servDto.serverguid +", registrations: " + registrations.size());
+            registrations.values().stream().forEach(reg -> reg.addServer(servDto));
+            registeredServers.add(servDto);
         }
-    }
-    private void createSocketServer() {
-
     }
     private void createRegistrations() {
         if (config.hasProperty(DistConfig.CACHE_APPLICATION_URL)) {
@@ -235,7 +299,7 @@ public class AgentInstance implements Agent {
     private void createAndAddRegistrations(String className) {
         synchronized (registrations) {
             createRegistrationForClass(className).stream().forEach(reg -> {
-                registrations.put(reg.toString(), reg);
+                registrations.put(reg.getRegisterGuid(), reg);
             });
         }
     }
@@ -278,6 +342,10 @@ public class AgentInstance implements Agent {
                 log.info("Unregistering this agent " +  agentGuid + " to all registrations: " + registrations.size());
                 registrations.values().stream().forEach(reg -> {
                     reg.agentUnregister();
+                    registeredServers.stream().forEach(srv -> {
+                        reg.unregisterServer(srv);
+                    });
+
                 });
             }
         } catch (Exception ex) {
@@ -303,5 +371,39 @@ public class AgentInstance implements Agent {
         timerTasks.add(onTimeCommunicateTask);
         timer.scheduleAtFixedRate(onTimeCommunicateTask, communicateDelayMs, communicatePeriodMs);
     }
+    /** receive message from connector or server, need to find service and process that message on service */
+    public DistMessageStatus receiveMessage(DistMessage msg) {
+        DistService serviceToProcessMessage =  services.get(msg.getService());
+        if (serviceToProcessMessage != null) {
+            return serviceToProcessMessage.processMessage(msg);
+        } else {
+            return new DistMessageStatus();
+        }
+    }
+    /** process message by this agent service, choose method and , returns status */
+    public DistMessageStatus processMessage(DistMessage msg) {
+        // TODO: process message in this agent, there could be many methods to process system agent messages
+        return new DistMessageStatus();
+    }
+    /** message send to agents, directed to services, selected method */
+    public DistMessageStatus sendMessage(DistMessage msg) {
+        // TODO: check destination by agent and tags
+        return new DistMessageStatus();
+    }
+    /** create broadcast message send to all clients */
+    public DistMessage createMessageBroadcast(DistServiceType service, String method, Object message) {
+        return new DistMessageAdvanced(agentGuid, "*", service, method, message, "");
+    }
+    /** */
+    public DistMessage createMessage(String sendTo, DistServiceType service, String method, Object message) {
+        return new DistMessageAdvanced(agentGuid, sendTo, service, method, message, "");
+    }
+    /** */
+    public DistMessage createMessage(String sendTo, DistServiceType service, String method, Object message, String tags) {
+        DistMessageAdvanced dist = new DistMessageAdvanced(agentGuid, sendTo, service, method, message, tags);
+        dist.getService();
+        return dist;
+    }
+
 
 }

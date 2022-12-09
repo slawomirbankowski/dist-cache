@@ -2,6 +2,8 @@ package com.cache.base;
 
 import com.cache.agent.AgentInstance;
 import com.cache.api.*;
+import com.cache.dtos.DistAgentRegisterRow;
+import com.cache.dtos.DistAgentServerRow;
 import com.cache.utils.CacheHitRatio;
 import com.cache.utils.CacheUtils;
 
@@ -82,7 +84,12 @@ public abstract class RegistrationBase {
         registerConfirmation = cfm;
         return cfm;
     }
-
+    /** add issue for registration */
+    public abstract void addIssue(DistIssue issue);
+    /** register server for communication */
+    public abstract void addServer(DistAgentServerRow serv);
+    /** unregister server for communication */
+    public abstract void unregisterServer(DistAgentServerRow serv);
     /** agent registration to be implemented in specific connector*/
     protected abstract AgentConfirmation onAgentRegister(AgentRegister register);
 
@@ -106,6 +113,12 @@ public abstract class RegistrationBase {
     public List<AgentSimplified> getAgents() {
         return onGetAgents();
     }
+    /** get agents from registration services */
+    public abstract List<DistAgentRegisterRow> getAgentsNow();
+
+    /** get all communication servers */
+    public abstract List<DistAgentServerRow> getServers();
+
     /** get list of agents from connector */
     protected abstract List<AgentSimplified> onGetAgents();
     /** get list of active agents from JDBC table */
