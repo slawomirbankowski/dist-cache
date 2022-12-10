@@ -114,7 +114,7 @@ public class DaoBase {
                     st.close();
                     return updCnt;
                 } catch (SQLException ex) {
-                    System.out.println("Exception while executing SQL: " + sql + ", reason: " + ex.getMessage());
+                    log.warn("Exception while executing SQL: " + sql + ", reason: " + ex.getMessage());
                     return -1;
                 }
             }, -1);
@@ -146,11 +146,11 @@ public class DaoBase {
                         }
                     }
                     st.close();
-                    System.out.println("------ Executed query: " +sql);
+                    log.info("------ Executed query: " +sql);
                     return trueCnt;
                 } catch (SQLException ex) {
                     log.warn("Cannot execute query, reason: " + ex.getMessage(), ex);
-                    System.out.println("Cannot execute query: " + sql + ", reason: " + ex.getMessage());
+
                     return -2;
                 }
             }, -1);

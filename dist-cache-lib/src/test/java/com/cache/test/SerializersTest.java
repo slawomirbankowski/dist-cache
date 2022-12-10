@@ -20,9 +20,9 @@ public class SerializersTest {
     public void serializerDefinitionTest() {
         log.info("START ------ serialization test for different objects and serializers");
         ComplexSerializer complexSerializer = ComplexSerializer.createComplexSerializer("java.lang.String=StringSerializer,default=ObjectStreamSerializer");
-        System.out.println("Serializer keys: " + complexSerializer.getSerializerKeys());
-        System.out.println("Serializer classes: " + complexSerializer.getSerializerClasses());
-        System.out.println("------------------------------------------------------");
+        log.info("Serializer keys: " + complexSerializer.getSerializerKeys());
+        log.info("Serializer classes: " + complexSerializer.getSerializerClasses());
+        log.info("------------------------------------------------------");
         log.info("END-----");
     }
 
@@ -32,7 +32,7 @@ public class SerializersTest {
         Object[] testObjs = new Object[] {
                 "abc",
                 "aaaabbbbbbccccccccccccccccccccddddddddddddddddddeeeeeeeeeeeeeee",
-                new SimpleObject("ooooooooooooooooooooo", 1111),
+                new BasicTestObject("ooooooooooooooooooooo", 1111),
                 new AtomicLong(110001101),
                 Map.of("kkkkkkkk", "vvvvvvvv"),
                 new HashMap<String, String>(),
@@ -50,25 +50,25 @@ public class SerializersTest {
             for (int i=0; i<testObjs.length; i++) {
                 Object obj = testObjs[i];
                 DistSerializer serializer = serializers[s];
-                System.out.println("------------------------------------------------------");
-                System.out.println("OBJ[" + i + "].serializer=" + serializer.getClass().getSimpleName());
-                System.out.println("OBJ[" + i + "].before=" + obj);
+                log.info("------------------------------------------------------");
+                log.info("OBJ[" + i + "].serializer=" + serializer.getClass().getSimpleName());
+                log.info("OBJ[" + i + "].before=" + obj);
                 try {
                     String objClassName = obj.getClass().getName();
-                    System.out.println("OBJ[" + i + "].class=" + objClassName);
+                    log.info("OBJ[" + i + "].class=" + objClassName);
                     String serialized = serializer.serializeToString(obj);
-                    System.out.println("OBJ[" + i + "].serialized=" + serialized);
+                    log.info("OBJ[" + i + "].serialized=" + serialized);
                     Object objDes = serializer.deserializeFromString(objClassName, serialized);
-                    System.out.println("OBJ[" + i + "].after=" + objDes);
-                    System.out.println("OBJ[" + i + "].class=" + objDes.getClass().getName());
-                    System.out.println("OBJ[" + i + "].equalsString=" + obj.toString().equals(objDes.toString()));
-                    System.out.println("OBJ[" + i + "].equalsType=" + objClassName.equals(objDes.getClass().getName()));
+                    log.info("OBJ[" + i + "].after=" + objDes);
+                    log.info("OBJ[" + i + "].class=" + objDes.getClass().getName());
+                    log.info("OBJ[" + i + "].equalsString=" + obj.toString().equals(objDes.toString()));
+                    log.info("OBJ[" + i + "].equalsType=" + objClassName.equals(objDes.getClass().getName()));
                 } catch (Exception ex) {
-                    System.out.println("OBJ[" + i + "].exception=" + ex.getMessage());
+                    log.info("OBJ[" + i + "].exception=" + ex.getMessage());
                 }
             }
         }
-        System.out.println("------------------------------------------------------");
+        log.info("------------------------------------------------------");
         log.info("END-----");
     }
 
@@ -76,7 +76,7 @@ public class SerializersTest {
     public void serializerClassesTest() {
         log.info("START ------ serialization test for different objects and serializers");
         ComplexSerializer complexSerializer = ComplexSerializer.createComplexSerializer("java.lang.String=StringSerializer,default=ObjectStreamSerializer");
-        System.out.println("------------------------------------------------------");
+        log.info("------------------------------------------------------");
         log.info("END-----");
     }
 

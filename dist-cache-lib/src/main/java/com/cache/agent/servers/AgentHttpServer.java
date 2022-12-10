@@ -24,13 +24,13 @@ public class AgentHttpServer {
         try {
             int httpPort = parentAgent.getConfig().getPropertyAsInt("AGENT_HTTP_PORT", 9941);
             this.parentAgent = parentAgent;
-            System.out.println("Starting new HTTP server at port:" + httpPort + ", agent: " + parentAgent.getAgentGuid());
+            log.info("Starting new HTTP server at port:" + httpPort + ", agent: " + parentAgent.getAgentGuid());
             httpServer = HttpServer.create(new InetSocketAddress(httpPort), 0);
             httpHandler = new AgentHttpHandler(parentAgent);
             httpServer.createContext("/", httpHandler);
             httpServer.setExecutor(null);
             httpServer.start();
-            System.out.println("Started HTTP server!!!");
+            log.info("Started HTTP server!!!");
         } catch (Exception ex) {
             log.info("Cannot start HTTP server, reason: " + ex.getMessage());
         }

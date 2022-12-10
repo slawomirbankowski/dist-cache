@@ -16,7 +16,6 @@ public class AgentRegisterSimpleTest {
     @Test
     public void agentRegisterSimpleTest() {
         log.info("START ------ agent register test test");
-
         Agent agent1 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
@@ -24,26 +23,16 @@ public class AgentRegisterSimpleTest {
                 .withServerSocketPort(9901)
                 .createAgentInstance();
 
-        Agent agent2 = DistFactory.buildEmptyFactory()
-                .withName("GlobalAgent")
-                .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
-                        "cache_user", "cache_password123")
-                .withServerSocketPort(9902)
-                .createAgentInstance();
-
         assertNotNull(agent1, "Created agent1 should not be null");
-        assertNotNull(agent1, "Created agent2 should not be null");
-        for (int i=0; i<3; i++) {
+
+        for (int i=0; i<2; i++) {
             log.info("SLEEPING");
             CacheUtils.sleep(60000);
-            System.out.println("-----> Agents1: " + agent1.getAgents().size() + ", servers: " + agent1.getServices().size());
-            System.out.println("-----> Agents2: " + agent2.getAgents().size() + ", servers: " + agent2.getServices().size());
+            log.info("-----> Agents1: " + agent1.getAgentRegistrations().getAgents().size() + ", servers: " + agent1.getAgentServices().getServices().size());
         }
         agent1.close();
-        agent2.close();
 
         assertTrue(agent1.isClosed(), "agent1 should be closed");
-        assertTrue(agent2.isClosed(), "agent2 should be closed");
         log.info("END-----");
     }
 }

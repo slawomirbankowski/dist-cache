@@ -48,33 +48,33 @@ public class AgentServerSocket implements AgentServer, Runnable {
         try {
             this.workingPort = workingPort;
             // open socket port
-            log.info("Starting socket for incoming connections from other clients on port " + workingPort);
+            log.info("Starting socket for incoming connections from other clients on port " + workingPort + ", server UID: " + serverGuid);
             // TODO: create SocketServer and thread for accepting sockets
             serverSocket = new java.net.ServerSocket(workingPort);
             serverSocket.setSoTimeout(2000);
-            System.out.println("Starting socket server on port: " + workingPort);
+            log.info("Starting socket server on port: " + workingPort);
             Thread mainThread = new Thread(this);
             mainThread.setDaemon(true);
             mainThread.start();
             threads.add(mainThread);
         } catch (Exception ex) {
-            System.out.println("Cannot run socket server on port: " + workingPort + ", reason: " + ex.getMessage());
+            log.warn("Cannot run socket server on port: " + workingPort + ", reason: " + ex.getMessage());
         }
     }
     /** run in separated thread to accept */
     public void run() {
-        System.out.print("......... Accepting connections on port " + workingPort);
+        log.info("......... Accepting connections on port " + workingPort);
         while (!closed) {
             try {
                 Socket socket = serverSocket.accept();
                 if (socket != null) {
-                    System.out.print("......... SERVER - New socket connected on port " + workingPort + ", creating client");
+                    log.info("......... SERVER - New socket connected on port " + workingPort + ", creating client");
                     SocketServerClient client = new SocketServerClient(parentAgent, socket);
                     clients.add(client);
                 }
             } catch (SocketTimeoutException ex) {
             } catch (Exception ex) {
-                System.out.println("!!!!! Unknown exception on Socket server wotking on port " + workingPort);
+                log.error("!!!!! Unknown exception on Socket server wotking on port " + workingPort);
             }
             CacheUtils.sleep(2000);
         }

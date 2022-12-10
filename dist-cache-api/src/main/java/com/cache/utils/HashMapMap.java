@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /** */
-public class HashMapMap<T, K, V> extends HashMap<T, Map<K, V>> {
+public class HashMapMap<T, K, V> extends java.util.concurrent.ConcurrentHashMap<T, Map<K, V>> {
 
     public void add(T key1, K key2, V value) {
         synchronized (this) {
@@ -17,7 +17,7 @@ public class HashMapMap<T, K, V> extends HashMap<T, Map<K, V>> {
     }
     /** get Map for key or empty if there is no map for this key */
     public Map<K, V> getOrEmpty(T key1) {
-        return getOrDefault(key1, new HashMap<>());
+        return getOrDefault(key1, new java.util.concurrent.ConcurrentHashMap<>());
     }
     /** get all values */
     public List<V> getValues(T key1) {
@@ -42,6 +42,10 @@ public class HashMapMap<T, K, V> extends HashMap<T, Map<K, V>> {
             return Optional.empty();
         }
         return Optional.of(value);
+    }
+    /** returns total size - sum of all sizes */
+    public int totalSize() {
+        return this.values().stream().mapToInt(x -> x.size()).sum();
     }
 
 }

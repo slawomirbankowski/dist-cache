@@ -20,7 +20,7 @@ public class SocketServerClient implements AgentClient, Runnable {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(SocketServerClient.class);
-    /** */
+    /** unique ID of this client */
     private final String clientGuid = CacheUtils.generateClientGuid("SocketServerClient");
     protected Socket socket;
     protected boolean isServer;
@@ -32,9 +32,9 @@ public class SocketServerClient implements AgentClient, Runnable {
     protected PrintWriter outSocket;
     protected Thread receivingThread;
     private boolean working = true;
-    protected int sleepThreadTime = 1000;
+    protected int sleepThreadTime = 1000; // TODO: change this to be configured
 
-    /** */
+    /** creates new socket client */
     public SocketServerClient(Agent parentAgent, Socket socket) {
         this.socket = socket;
         isServer = true;
@@ -42,6 +42,7 @@ public class SocketServerClient implements AgentClient, Runnable {
     }
     public SocketServerClient(Agent parentAgent, DistAgentServerRow srv) {
         try {
+            log.info("Creates new socket client for server: " + srv.servertype + ", host: " + srv.serverhost + ", port: " + srv.serverport);
             isServer = false;
             this.socket = new Socket(srv.serverhost, srv.serverport);
         } catch (Exception ex) {
@@ -55,7 +56,7 @@ public class SocketServerClient implements AgentClient, Runnable {
             socket.setSoTimeout(1000);
             host = socket.getInetAddress().getHostAddress();
             port = socket.getPort();
-            System.out.println("Initializing socket, server: " + isServer + ", host: " + host + ", port: " + port + ", GUID: " + clientGuid);
+            log.info("Initializing socket client, server: " + isServer + ", host: " + host + ", port: " + port + ", GUID: " + clientGuid);
             inSocket = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             outSocket = new PrintWriter(socket.getOutputStream(),true);
             working = true;
@@ -88,18 +89,18 @@ public class SocketServerClient implements AgentClient, Runnable {
     public void threadWork() {
         try {
             if (!working) {
-                log.info("Socket thread is not working, trying to reconnect");
+                log.warn("Socket thread is not working, trying to reconnect");
                 //reconnect();
                 return;
             }
             if (inSocket == null) {
-                log.info("inSocket is null, trying to reconnect");
+                log.warn("inSocket is null, trying to reconnect");
                 working = false;
                 //reconnect();
                 return;
             }
             String readLine = inSocket.readLine();
-            System.out.println("Socket read line: " +readLine);
+            log.info("Socket read line: " +readLine);
         }  catch (java.net.SocketTimeoutException ex) {
         }  catch (IOException ex) {
             working = false;
@@ -115,7 +116,7 @@ public class SocketServerClient implements AgentClient, Runnable {
     public void close() {
         try {
             working = false;
-            System.out.println("Closing socket for GUID: " + clientGuid);
+            log.info("Closing socket for GUID: " + clientGuid);
             if (inSocket != null)
                 inSocket.close();
             if (outSocket != null)
@@ -130,14 +131,13 @@ public class SocketServerClient implements AgentClient, Runnable {
 
     @Override
     public void run() {
-        System.out.println("Starting thread for socket client on port: " + port + ", GUID: " + clientGuid);
+        log.info("Starting thread for socket client on port: " + port + ", GUID: " + clientGuid);
         try {
             Thread.sleep(200);
         } catch (InterruptedException ex) {
-            log.info(" Plugin thread stopped before started ");
+            log.warn(" Plugin thread stopped before started for client: " + clientGuid);
         }
-        log.info(" Plugin thread begin ");
-        while (!working) {
+        while (working) {
             threadWork();
             try {
                 Thread.sleep(sleepThreadTime);

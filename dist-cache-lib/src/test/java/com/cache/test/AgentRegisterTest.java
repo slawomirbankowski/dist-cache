@@ -40,12 +40,16 @@ public class AgentRegisterTest {
 
         assertNotNull(agent1, "Created agent1 should not be null");
         assertNotNull(agent2, "Created agent2 should not be null");
+        assertNotNull(agent3, "Created agent2 should not be null");
         for (int i=0; i<5; i++) {
             log.info("SLEEPING");
             CacheUtils.sleep(60000);
-            System.out.println("-----> Agents1: " + agent1.getAgents().size());
-            System.out.println("-----> Agents2: " + agent2.getAgents().size());
+            log.info("-----> Agents1: " + agent1.getAgentRegistrations().getAgents().size() + ", servers: " + agent1.getAgentServices().getServices().size());
+
+            log.info("-----> Agents2: " + agent2.getAgentRegistrations().getAgents().size() + ", servers: " + agent2.getAgentServices().getServices().size());
+            log.info("-----> Agents3: " + agent3.getAgentRegistrations().getAgents().size() + ", servers: " + agent3.getAgentServices().getServices().size());
         }
+
         agent1.close();
         agent2.close();
         agent3.close();

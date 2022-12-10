@@ -99,7 +99,7 @@ public abstract class CacheBase implements Cache {
     public CacheInfo getCacheInfo() {
         return new CacheInfo(cacheManagerGuid, createdDateTime, checkSequence.get(),
             addedItemsSequence.get(), isClosed,
-            getAgent().getIssues().size(), getAgent().getEvents().size(),
+            getAgent().getAgentIssues().getIssues().size(), getAgent().getAgentEvents().getEvents().size(),
             getItemsCount(), getObjectsCount(), getStoragesInfo());
     }
     /** initialize key encoder to encode secrets */
@@ -119,7 +119,7 @@ public abstract class CacheBase implements Cache {
      * issue could be Exception, Error, problem with connecting to storage,
      * internal error, not consistent state that is unknown and could be used by parent manager */
     public void addIssue(DistIssue issue) {
-        getAgent().addIssue(issue);
+        getAgent().getAgentIssues().addIssue(issue);
     }
     /** add issue with method and exception */
     public void addIssue(String methodName, Exception ex) {
@@ -128,11 +128,11 @@ public abstract class CacheBase implements Cache {
     /** add new event and distribute it to callback methods,
      * event could be useful information about change of cache status, new connection, refresh of cache, clean */
     protected void addEvent(CacheEvent event) {
-        getAgent().addEvent(event);
+        getAgent().getAgentEvents().addEvent(event);
     }
     /** set new callback method for events for given type */
     public void setCallback(String eventType, Function<CacheEvent, String> callback) {
-        getAgent().setCallback(eventType, callback);
+        getAgent().getAgentEvents().setCallback(eventType, callback);
     }
     /** set object to cache */
     public CacheSetBack setCacheObject(String key, Object value, CacheMode mode) {
@@ -143,11 +143,11 @@ public abstract class CacheBase implements Cache {
     }
     /** get all recent issues with cache */
     public Queue<DistIssue> getIssues() {
-        return getAgent().getIssues();
+        return getAgent().getAgentIssues().getIssues();
     }
     /** get all recent events added to cache */
     public Queue<CacheEvent> getEvents() {
-        return getAgent().getEvents();
+        return getAgent().getAgentEvents().getEvents();
     }
 
     public <T> T withCache(String key, Supplier<? extends T> supplier) {

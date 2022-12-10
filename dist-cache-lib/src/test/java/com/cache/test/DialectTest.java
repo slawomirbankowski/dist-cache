@@ -19,18 +19,18 @@ public class DialectTest {
             JdbcDialect defaultDialect = JdbcDialect.getDialect("", "");
             JdbcDialect postgres = JdbcDialect.getDialect("com.postgresql.Driver", "");
 
-
             assertNotNull(defaultDialect, "Postgres dialect should be non empty");
             assertNotNull(postgres, "Postgres dialect should be non empty");
 
             Properties props = new Properties();
             props.load(getClass().getClassLoader().getResourceAsStream("default.dialect"));
-            System.out.println("Properties: " + props.size());
+            log.info("Properties: " + props.size());
 
         } catch (Exception ex) {
-            System.out.println("Cannot load properties file, reason: " + ex.getMessage());
+            log.info("Cannot load properties file, reason: " + ex.getMessage());
             ex.printStackTrace();
         }
         log.info("END-----");
     }
 }
+

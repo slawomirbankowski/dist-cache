@@ -1,5 +1,6 @@
 package com.cache.interfaces;
 
+/** interface for client connected to other agent - this could be any client based on socket, udp, http, Kafka, JDBC, ... */
 public interface AgentClient {
 
     /** initialize client - connecting or reconnecting */

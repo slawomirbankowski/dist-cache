@@ -4,7 +4,6 @@ import com.cache.DistFactory;
 import com.cache.api.CacheObject;
 import com.cache.interfaces.Cache;
 import com.cache.api.CacheMode;
-import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,10 +37,10 @@ public class CacheJdbcStorageTest {
         Object[] objs = new Object[] {
                 "value5",
                 Map.of("aaaa", "1111", "bbbb", "2222"),
-                new SimpleObject("aaaa", 1111),
+                new BasicTestObject("aaaa", 1111),
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 List.of("aaaaa", "bbbbbb", "cccccc", "dddddd"),
-                new ComplexObject(10)
+                new ComplexTestObject(10)
         };
 
         for (int i=0; i< objs.length; i++) {
@@ -51,23 +50,23 @@ public class CacheJdbcStorageTest {
             var co = cache.getCacheObject("key" + i);
             if (co.isPresent()) {
                 CacheObject o = co.get();
-                System.out.println("-----------------------------------------------------" + i);
-                System.out.println("OBJECT:" + i + ", type=" + objs[i].getClass().getName() + ", VALUE=" + objs[i]);
-                System.out.println("CACHE =" + i + ", type=" + o.getClassName() + ", VALUE=" + o.getValue() + ", size=" + o.getSize() + ", priority=" + o.getPriority());
+                log.info("-----------------------------------------------------" + i);
+                log.info("OBJECT:" + i + ", type=" + objs[i].getClass().getName() + ", VALUE=" + objs[i]);
+                log.info("CACHE =" + i + ", type=" + o.getClassName() + ", VALUE=" + o.getValue() + ", size=" + o.getSize() + ", priority=" + o.getPriority());
             } else {
-                System.out.println("OBJECT[" + i + ", key: key" + i + ", original: " + objs[i].getClass().getName() + ", NO OBJ IN CACHE[" + i + "]");
+                log.info("OBJECT[" + i + ", key: key" + i + ", original: " + objs[i].getClass().getName() + ", NO OBJ IN CACHE[" + i + "]");
             }
         }
-        System.out.println("-----------------------------------------------------");
+        log.info("-----------------------------------------------------");
         log.info("Cache getItemsCount: " + cache.getItemsCount());
         cache.close();
         log.info("END-----");
     }
 }
-class SimpleObject implements Serializable {
+class BasicTestObject implements Serializable {
     private String name;
     private int number;
-    public SimpleObject(String name, int number) {
+    public BasicTestObject(String name, int number) {
         this.name = name;
         this.number = number;
     }
@@ -75,14 +74,14 @@ class SimpleObject implements Serializable {
         return "SimpleObject:name=" + name + ",number=" + number;
     }
 }
-class ComplexObject implements Serializable {
+class ComplexTestObject implements Serializable {
 
-    private SimpleObject obj;
-    protected List<SimpleObject> objs = new LinkedList<>();
-    public ComplexObject(int n) {
-        obj = new SimpleObject("item", n);
+    private BasicTestObject obj;
+    protected List<BasicTestObject> objs = new LinkedList<>();
+    public ComplexTestObject(int n) {
+        obj = new BasicTestObject("item", n);
         for (int i=0; i<n; i++) {
-            objs.add(new SimpleObject("item" + i, i));
+            objs.add(new BasicTestObject("item" + i, i));
         }
     }
     public String toString() {

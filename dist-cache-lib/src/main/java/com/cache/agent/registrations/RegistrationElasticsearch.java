@@ -1,4 +1,4 @@
-package com.cache.agent.connectors;
+package com.cache.agent.registrations;
 
 import com.cache.agent.AgentInstance;
 import com.cache.api.*;

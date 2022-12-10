@@ -39,8 +39,4 @@ public enum DialectQueries {
     insertAgentIssue,
     selectAgentIssue
 
-
-
-
-
 }

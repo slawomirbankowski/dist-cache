@@ -8,6 +8,7 @@ import java.util.Properties;
 /** dialects for different databases like Postgres, MySql, MS SQL Server, Oracle, IBM DB2 */
 public class JdbcDialect {
 
+
     /** name of this dialect */
     public final String dialectName;
     /** all queries for this dialect */
@@ -21,11 +22,8 @@ public class JdbcDialect {
     public boolean loadFromResource(String resourceFile) {
         try {
             dialectQueries.load(this.getClass().getClassLoader().getResourceAsStream(resourceFile));
-            System.out.println("Dialect file: " + resourceFile + ", SQL queries count: " + dialectQueries.size());
             return true;
         } catch (Exception ex) {
-            System.out.println("Cannot load properties file from: " + resourceFile + ", reason: " + ex.getMessage());
-            //ex.printStackTrace();
             return false;
         }
     }

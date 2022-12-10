@@ -2,17 +2,25 @@ package com.cache.interfaces;
 
 import com.cache.api.DistServiceType;
 
+/** interface for message sent by dist service to another service between agent
+ * message should be serialized and sent using known servers-clients like Socket, Datagram, Kafka, HTTP, ...
+ *  */
 public interface DistMessage {
 
     /** unique ID of this message */
-    public String getMessageUid();
+    String getMessageUid();
+    /** get UID of agent that send this message */
+    String getSendFrom();
     /** */
-    public String getSendFrom();
-    public String getSendTo();
+    String getSendTo();
+    /** get destination service dedicated for this message */
     public DistServiceType getService();
     /** get method */
-    public String getMethod();
-    public Object getMessage();
-    public String[] getTagsTab();
-    public String getTags();
+    String getMethod();
+    /** get message as Object */
+    Object getMessage();
+    /** get tags for this message */
+    String[] getTagsTab();
+    /** get comma-separated list of tags for this message */
+    String getTags();
 }

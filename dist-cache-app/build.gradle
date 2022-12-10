@@ -21,6 +21,7 @@ dependencies {
     implementation 'org.springframework:spring-context-support:5.3.21'
     implementation 'org.postgresql:postgresql:42.5.1'
     implementation 'com.microsoft.sqlserver:mssql-jdbc:12.1.0.jre11-preview'
+    implementation 'org.slf4j:slf4j-api:1.7.28'
 
     // TODO: check what versions of Swagger/SpringFor are compliant with current Spring Boot
     //implementation 'io.swagger:swagger-annotations:2.0.0-rc2'
@@ -38,6 +39,8 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:4.8.0'
     testImplementation 'org.hamcrest:hamcrest:2.2'
     testImplementation 'ch.qos.logback:logback-classic:1.4.4'
+    testImplementation 'org.slf4j:slf4j-api:1.7.28'
+
     // end::tests[]
 }
 

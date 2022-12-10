@@ -29,7 +29,7 @@ public class CacheManager extends CacheBase {
     private final Timer timer = new Timer();
     private final LinkedList<TimerTask> timerTasks = new LinkedList<>();
     /** agent object connected to given manager
-     * agent can connect to different cache managers in the same group
+     * agent can connect to different cache managers and different services in the same group
      * to cooperate as distributed cache
      *  */
     private AgentInstance agent;
@@ -46,8 +46,8 @@ public class CacheManager extends CacheBase {
         super(cacheCfg);
         this.agent = agent;
         this.serializer = ComplexSerializer.createSerializer(serializers);
-
         // TODO: finishing initialization - to be done, creating agent, storages, policies
+        //agent.sendMessage(agent.createMessage());
         initializeStorages();
         initializeAgent();
         initializePolicies();
@@ -69,6 +69,17 @@ public class CacheManager extends CacheBase {
         return storages.size();
     }
 
+    /** process message, returns status */
+    public DistMessageStatus processMessage(DistMessage msg) {
+        // process message
+        msg.getService();
+        // TODO: process given message with selected method
+
+        return new DistMessageStatus();
+    }
+
+
+
     /** initialize all storages from configuration */
     private void initializeStorages() {
         addEvent(new CacheEvent(this, "initializeStorages", CacheEvent.EVENT_INITIALIZE_STORAGES));
@@ -80,6 +91,7 @@ public class CacheManager extends CacheBase {
                 //.filter(st -> !st.isBlank() && st.isEmpty()) // TODO: check what should be put here
                 .forEach(storageClass -> initializeSingleStorage(initParams, storageClass));
     }
+
     /** initialize single storage */
     private void initializeSingleStorage(StorageInitializeParameter initParams, String className) {
         try {
@@ -106,15 +118,13 @@ public class CacheManager extends CacheBase {
     /** initialize Agent to communicate with other CacheManagers */
     protected void initializeAgent() {
         addEvent(new CacheEvent(this, "initializeAgent", CacheEvent.EVENT_INITIALIZE_AGENT));
-        agent.registerService(this);
-
+        agent.getAgentServices().registerService(this);
     }
-
     /** initialize policies */
     protected void initializePolicies() {
         addEvent(new CacheEvent(this, "initializePolicies", CacheEvent.EVENT_INITIALIZE_POLICIES));
+        // TODO: initialize all plolicies for keeping/moving caches around
     }
-
     /** */
     protected void initializeTimer() {
         addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMERS));
@@ -171,15 +181,9 @@ public class CacheManager extends CacheBase {
         agent.close();
         addEvent(new CacheEvent(this, "onClose", CacheEvent.EVENT_CLOSE_END));
     }
-    /** process message, returns status */
-    public DistMessageStatus processMessage(DistMessage msg) {
-        // process message
-        msg.getService();
 
 
 
-        return new DistMessageStatus();
-    }
     /** set object in all or one internal caches */
     private List<CacheObject> setItemInternal(CacheObject co) {
         addedItemsSequence.incrementAndGet();

@@ -1,6 +1,7 @@
 package com.cache.test;
 
 import com.cache.DistFactory;
+import com.cache.agent.servers.AgentServerSocket;
 import com.cache.api.DistConfig;
 import com.cache.api.CacheMode;
 import com.cache.api.CacheObject;
@@ -10,6 +11,8 @@ import com.cache.storage.InternalWithTtlAndPriority;
 import com.cache.util.measure.Stopwatch;
 import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;

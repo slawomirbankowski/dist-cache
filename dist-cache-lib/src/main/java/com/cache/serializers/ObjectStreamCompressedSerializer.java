@@ -2,6 +2,8 @@ package com.cache.serializers;
 
 import com.cache.interfaces.DistSerializer;
 import com.cache.utils.CacheUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -14,6 +16,8 @@ import java.util.zip.DeflaterOutputStream;
 
 /** */
 public class ObjectStreamCompressedSerializer implements DistSerializer {
+
+    private static final Logger log = LoggerFactory.getLogger(ObjectStreamCompressedSerializer.class);
 
     @Override
     public byte[] serialize(Object obj) {
@@ -31,7 +35,7 @@ public class ObjectStreamCompressedSerializer implements DistSerializer {
             byte[] outBytes = Arrays.copyOf(buff, compressed);
             return outBytes;
         } catch (Exception ex) {
-            System.out.println("ObjectStreamCompressedSerializer:serialize Exception, reason: " + ex.getMessage());
+            log.info("ObjectStreamCompressedSerializer:serialize Exception, reason: " + ex.getMessage());
             return new byte[0];
         }
     }
@@ -50,7 +54,7 @@ public class ObjectStreamCompressedSerializer implements DistSerializer {
             ois.close();
             return obj;
         } catch (Exception ex) {
-            System.out.println("ObjectStreamCompressedSerializer:deserialize Exception, reason: " + ex.getMessage());
+            log.info("ObjectStreamCompressedSerializer:deserialize Exception, reason: " + ex.getMessage());
             ex.printStackTrace();
             return new byte[0];
         }

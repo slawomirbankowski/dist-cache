@@ -17,35 +17,26 @@ public interface Agent {
     DistConfig getConfig();
     /** returns true if agent has been already closed */
     boolean isClosed();
-
-    /** get list of connected agents */
-    List<AgentSimplified> getAgents();
+    /** initialize agent - server, application, jdbc, kafka */
+    void initializeAgent();
     /** get date and time of creating this agent */
     LocalDateTime getCreateDate();
 
-    /** add issue to cache manager to be revoked by parent
-     * issue could be Exception, Error, problem with connecting to storage,
-     * internal error, not consistent state that is unknown and could be used by parent manager */
-    void addIssue(DistIssue issue);
-    /** add issue with method and exception */
-    public void addIssue(String methodName, Exception ex);
-    /** add new event and distribute it to callback methods,
-     * event could be useful information about change of cache status, new connection, refresh of cache, clean */
-    void addEvent(CacheEvent event);
-    /** set new callback method for events for given type */
-    void setCallback(String eventType, Function<CacheEvent, String> callback);
-    /** get all recent issues with cache */
-    Queue<DistIssue> getIssues();
-    /** get all recent events added to cache */
-    Queue<CacheEvent> getEvents();
-    /** get all servers from registration services */
-    List<DistAgentServerRow> getServers();
-    /** return all services assigned to this agent */
-    List<DistService> getServices();
-    /** receive message from connector or server */
-    DistMessageStatus receiveMessage(DistMessage msg);
-    /** register service to this agent */
-    void registerService(DistService service);
+    /** get agent threads manager */
+    AgentThreads getAgentThreads();
+    /** get agent timers manager */
+    AgentTimers getAgentTimers();
+
+    /** get agent service manager */
+    AgentServices getAgentServices();
+    /** get agent connector manager to manage direct connections to other agents, including sending and receiving messages */
+    AgentConnectors getAgentConnectors();
+    /** get agent registration manager to register this agent in global repositories (different types: JDBC, Kafka, App, Elasticsearch, ... */
+    AgentRegistrations getAgentRegistrations();
+    /** get agent events manager to add events and set callbacks */
+    AgentEvents getAgentEvents();
+    /** get agent issuer manager add issues */
+    AgentIssues getAgentIssues();
     /** close all items in this agent */
     void close();
 

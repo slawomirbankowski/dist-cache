@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 public class DistMessageAdvanced implements DistMessage, Serializable {
 
+    /** unique ID of this message */
     private String messageUid = CacheUtils.generateCacheGuid();
     private String sendFrom;
     private String sendTo;
