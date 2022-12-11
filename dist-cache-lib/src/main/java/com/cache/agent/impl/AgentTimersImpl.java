@@ -1,20 +1,13 @@
 package com.cache.agent.impl;
 
 import com.cache.agent.AgentInstance;
-import com.cache.api.DistConfig;
-import com.cache.api.DistMessageStatus;
-import com.cache.dtos.DistAgentServerRow;
-import com.cache.interfaces.AgentServices;
 import com.cache.interfaces.AgentTimers;
-import com.cache.interfaces.DistMessage;
-import com.cache.interfaces.DistService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /** implementation of timer manager with scheduled tasks */
 public class AgentTimersImpl implements AgentTimers {
@@ -35,16 +28,25 @@ public class AgentTimersImpl implements AgentTimers {
         this.parentAgent = parentAgent;
     }
 
+    /** get number of timer tasks */
+    public int getTimerTasksCount() {
+        return timerTasks.size();
+    }
+    /** get timer associated with this timer manager */
+    public Timer getTimer() {
+        return timer;
+    }
+
     /** set-up timer gor given method */
     public void setUpTimer(long delayMs, long periodMs, Function<String, Boolean> onTask) {
         // initialization for communicate
-        log.info("Scheduling timer task for agent: " + parentAgent.getAgentGuid());
+        log.info("Scheduling timer task for agent: " + parentAgent.getAgentGuid() + ", current tasks: " + timerTasks.size());
         timerRunSeq.incrementAndGet();
         TimerTask onTimeCommunicateTask = new TimerTask() {
             @Override
             public void run() {
                 try {
-                    //agentConnectors
+                    timerRunSeq.incrementAndGet();
                     onTask.apply("");
                 } catch (Exception ex) {
                     // TODO: mark exception

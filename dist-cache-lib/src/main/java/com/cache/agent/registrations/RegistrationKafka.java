@@ -3,8 +3,8 @@ package com.cache.agent.registrations;
 import com.cache.agent.AgentInstance;
 import com.cache.api.*;
 import com.cache.base.RegistrationBase;
-import com.cache.dtos.DistAgentRegisterRow;
-import com.cache.dtos.DistAgentServerRow;
+import com.cache.base.dtos.DistAgentRegisterRow;
+import com.cache.base.dtos.DistAgentServerRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

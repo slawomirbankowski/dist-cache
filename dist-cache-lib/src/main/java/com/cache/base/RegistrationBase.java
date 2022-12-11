@@ -2,8 +2,8 @@ package com.cache.base;
 
 import com.cache.agent.AgentInstance;
 import com.cache.api.*;
-import com.cache.dtos.DistAgentRegisterRow;
-import com.cache.dtos.DistAgentServerRow;
+import com.cache.base.dtos.DistAgentRegisterRow;
+import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.utils.CacheHitRatio;
 import com.cache.utils.CacheUtils;
 

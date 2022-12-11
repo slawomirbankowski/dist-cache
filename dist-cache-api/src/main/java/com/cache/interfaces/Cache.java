@@ -7,13 +7,18 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-/** base interface for cache that is allowing to operate on cache objects */
+/** base interface for cache that is allowing to operate on cache objects
+ * cashe could help with keeping local copy with much less latency to get it, so reading object could be very efficient
+ * there could be many different storages to keep cache object: HashMap in JVM memory, Redis, Elasticsearch, local disk
+ * there are two main storage types: internal (in the same JVM memory), external (somewhere not internal)
+ * internal storages could keep complicated objects,
+ * external storages could be local (visible only for this agent) or global (visible globally for all agents)
+ * */
 public interface Cache extends DistService {
 
     /** get unique ID of this cache */
     String getCacheGuid();
-    /** get date and time of creation for this cache */
-    LocalDateTime getCreatedDateTime();
+
     /** get agent for communication with other services in distributed environment */
     Agent getAgent();
     /** get configuration for cache */

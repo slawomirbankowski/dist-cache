@@ -30,6 +30,14 @@ public class AgentServicesImpl implements AgentServices {
     public List<DistService> getServices() {
         return services.values().stream().collect(Collectors.toList());
     }
+    /** get number of services */
+    public int getServicesCount() {
+        return services.size();
+    }
+    /** get keys of registered services */
+    public List<String> getServiceKeys() {
+        return services.values().stream().map(x -> x.getServiceUid()).collect(Collectors.toList());
+    }
     /** register service to this agent */
     public void registerService(DistService service) {
         // TODO: register new service like cache, report, measure, ...

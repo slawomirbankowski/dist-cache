@@ -1,5 +1,6 @@
 package com.cache.jdbc;
 
+/** all queries for JDBC tables */
 public enum DialectQueries {
     dialectName,
     selectAllTables,

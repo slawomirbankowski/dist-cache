@@ -7,8 +7,8 @@ import com.cache.agent.registrations.RegistrationJdbc;
 import com.cache.agent.registrations.RegistrationKafka;
 import com.cache.api.*;
 import com.cache.base.RegistrationBase;
-import com.cache.dtos.DistAgentRegisterRow;
-import com.cache.dtos.DistAgentServerRow;
+import com.cache.base.dtos.DistAgentRegisterRow;
+import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.interfaces.AgentRegistrations;
 import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
@@ -55,12 +55,24 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
         long communicatePeriodMs = parentAgent.getConfig().getPropertyAsLong(DistConfig.TIMER_COMMUNICATE_DELAY, DistConfig.TIMER_COMMUNICATE_DELAY_VALUE);
         registerToAll();
         parentAgent.getAgentTimers().setUpTimer(communicateDelayMs, communicatePeriodMs, x -> onTimeCommunicate());
-
+    }
+    /** get number of registration */
+    public int getRegistrationsCount() {
+        return registrations.size();
+    }
+    /** get UIDs for registration services */
+    public List<String> getRegistrationKeys() {
+        return registrations.values().stream().map(x -> x.getRegisterGuid()).collect(Collectors.toList());
     }
     /** get list of connected agents */
     public List<DistAgentRegisterRow> getAgentsNow() {
         return registrations.values().stream().flatMap(x -> x.getAgentsNow().stream()).collect(Collectors.toList());
     }
+    /** get number of known agents */
+    public int getAgentsCount() {
+        return connectedAgents.size();
+    }
+
     /** register server for ROW */
     public void registerServer(DistAgentServerRow servDto) {
         log.info("Registering server for GUID: " + servDto.serverguid + ", server type: " + servDto.servertype + ", servers: " + registeredServers.size() + ", registrations: " + registrations.size());
@@ -106,7 +118,7 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
             checkServers();
             // TODO: connect to all nearby agents, check statuses
             // TODO: implement communication of agent with other cache agents
-            log.info("=====----> AGENT REGISTRATION summary gor guid: " + parentAgent.getAgentGuid() + ", registrations: " + registrations.size() + ", connected agents: " + connectedAgents.size() + ", registeredServers: " + registeredServers.size());
+            log.info("=====----> AGENT REGISTRATION summary for guid: " + parentAgent.getAgentGuid() + ", registrations: " + registrations.size() + ", connected agents: " + connectedAgents.size() + ", registeredServers: " + registeredServers.size());
             return true;
         } catch (Exception ex) {
             log.warn("Cannot communicate with other agents, reason: " + ex.getMessage());
@@ -132,32 +144,32 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
     }
     /** check all active agents from all registrations */
     private void checkActiveAgents() {
-        log.info("Agent - check connected agents, current count: " + connectedAgents.size());
+        log.info("********************>>> Check connected agents for agent: " + parentAgent.getAgentGuid() + ", current count: " + connectedAgents.size() + ", registrations: " + registrations.size() + ", registeredServers: " + registeredServers.size());
         registrations.entrySet().stream().forEach(e -> {
             List<AgentSimplified> activeAgents = e.getValue().getAgentsActive();
-            log.info("Agent - from register: " + e.getKey() +", GOT agents: " + activeAgents.size());
+            log.info("********************>>> Get agents for register, agent: " + parentAgent.getAgentGuid() + ", registration: " + e.getKey() +", activeAgents: " + activeAgents.size());
             activeAgents.stream().forEach(ag -> {
                 AgentSimplified existingAgent = connectedAgents.get(ag.agentGuid);
                 if (existingAgent != null) {
                     existingAgent.update(ag);
-                    log.info("=====---->Existing agent update: " + ag.agentGuid);
+                    log.info("********************>>> Existing client for agent: " + parentAgent.getAgentGuid() + ", update: " + ag.agentGuid);
                 } else {
-                    log.info("=====---->New agent add: " + ag.agentGuid);
+                    log.info("****************>>> Adding new client for agent: " + parentAgent.getAgentGuid() + ", connected to: " + ag.agentGuid);
                     connectedAgents.put(ag.agentGuid, ag);
                 }
             });
-            log.info("=====----> New agents from registration: " + e.getKey() + ", agents: " + activeAgents.size());
         });
+        log.info("********************>>> AFTER check connected agents for agent: " + parentAgent.getAgentGuid() + ", current count: " + connectedAgents.size() + ", registrations: " + registrations.size() + ", registeredServers: " + registeredServers.size());
     }
     /** check servers */
     private void checkServers() {
         List<DistAgentServerRow> servers = registrations.entrySet().stream().flatMap(e -> e.getValue().getServers().stream()).collect(Collectors.toList());
-        log.info("Agent - check servers, current count: " + connectedAgents.size());
+        log.info("Check servers for agent: " + parentAgent.getAgentGuid() + ", connectedAgents: " + connectedAgents.size() + ", servers from registrations: " + servers.size());
         parentAgent.getAgentConnectors().checkActiveServers(servers);
     }
     /** register this agent to all available connectors */
     private void registerToAll() {
-        log.info("Registering agent to all registration objects, registrations: " + registrations.size());
+        log.info("Registering agent: " + parentAgent.getAgentGuid() + " to all registration objects, registrations: " + registrations.size());
         var agents = getAgents();
         AgentRegister register = new AgentRegister(parentAgent.getAgentGuid(), parentAgent.getAgentSecret(),
                 CacheUtils.getCurrentHostName(), CacheUtils.getCurrentHostAddress(),
@@ -170,7 +182,7 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
                 });
             }
         } catch (Exception ex) {
-            log.info("Cannot register agents to connectors, reason: " + ex.getMessage());
+            log.warn("Cannot register agent " + parentAgent.getAgentGuid() + " to connectors, reason: " + ex.getMessage(), ex);
         }
     }
 
@@ -178,7 +190,7 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
     private void unregisterFromAll() {
         try {
             synchronized (registrations) {
-                log.info("Unregistering this agent " +  parentAgent.getAgentGuid() + " to all registrations: " + registrations.size());
+                log.info("Unregistering this agent: " +  parentAgent.getAgentGuid() + " from all registrations: " + registrations.size());
                 registrations.values().stream().forEach(reg -> {
                     reg.agentUnregister();
                     registeredServers.stream().forEach(srv -> {
@@ -187,7 +199,7 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
                 });
             }
         } catch (Exception ex) {
-            log.warn("Cannot register agents to connectors, reason: " + ex.getMessage());
+            log.warn("Cannot register agents to connectors, reason: " + ex.getMessage(), ex);
         }
     }
 

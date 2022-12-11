@@ -1,4 +1,4 @@
-package com.cache.dtos;
+package com.cache.base.dtos;
 
 import com.cache.utils.AdvancedMap;
 

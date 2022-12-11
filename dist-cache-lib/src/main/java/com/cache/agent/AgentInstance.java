@@ -79,6 +79,17 @@ public class AgentInstance implements Agent, DistService {
         return agentSecret;
     }
 
+    /** get high-level information about this agent */
+    public AgentInfo getAgentInfo() {
+        return new AgentInfo(agentGuid, createDate, closed,
+                agentConnectors.getServersCount(), agentConnectors.getServerKeys(),
+                agentConnectors.getClientsCount(), agentConnectors.getClientKeys(),
+                agentServices.getServicesCount(), agentServices.getServiceKeys(),
+                agentRegistrations.getRegistrationsCount(), agentRegistrations.getRegistrationKeys(),
+                getAgentTimers().getTimerTasksCount(), getAgentThreads().getThreadsCount(),
+                getAgentEvents().getEvents().size(),
+                getAgentIssues().getIssues().size());
+    }
     /** get agent threads manager */
     public AgentThreads getAgentThreads() {
         return agentThreads;
@@ -130,6 +141,7 @@ public class AgentInstance implements Agent, DistService {
 
     /** receive message from connector or server, need to find service and process that message on service */
     public DistMessageStatus receiveMessage(DistMessage msg) {
+
         return agentServices.receiveMessage(msg);
     }
 

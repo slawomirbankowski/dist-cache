@@ -104,12 +104,11 @@ public class DaoBase {
             return withConnection(conn -> {
                 try {
                     int updCnt = 0;
-                    log.debug("UPDATE QUERY !!!!! " + sql + ", COUNT: " + params.size());
+                    log.debug("UPDATE QUERY, sql: " + sql + ", parameters count: " + params.size());
                     PreparedStatement st = createStatement(conn, sql);
                     for (Object[] p : params) {
                         fillStatement(st, p);
                         updCnt += st.executeUpdate();
-                        log.info("UPDATE QUERY !!!!! " + sql + ", updCnt: " + updCnt + ", PARAMS: " + CacheUtils.serializeTable(p));
                     }
                     st.close();
                     return updCnt;
@@ -138,7 +137,7 @@ public class DaoBase {
                     int trueCnt = 0;
                     PreparedStatement st = createStatement(conn, sql);
                     for (Object[] p : params) {
-                        log.info("Fill statement for SQL:" + sql);
+                        log.debug("Fill statement for SQL:" + sql);
                         fillStatement(st, p);
                         boolean ok = st.execute();
                         if (ok) {
@@ -146,11 +145,10 @@ public class DaoBase {
                         }
                     }
                     st.close();
-                    log.info("------ Executed query: " +sql);
+                    log.debug("------ Executed query: " +sql);
                     return trueCnt;
                 } catch (SQLException ex) {
                     log.warn("Cannot execute query, reason: " + ex.getMessage(), ex);
-
                     return -2;
                 }
             }, -1);
@@ -216,7 +214,7 @@ public class DaoBase {
         } else {
             Object sampleObj = objs.get(0);
             String sql = getSqlForClass(sampleObj, tableName);
-            log.info("SAVING objects to DB, count: " + objs.size() +  "; SQL: " + sql);
+            log.debug("SAVING objects to DB, count: " + objs.size() +  "; SQL: " + sql);
             Field[] fields = sampleObj.getClass().getDeclaredFields();
             List<Object[]> params = objs.stream().map(o -> CacheUtils.getValuesForFields(o, fields)).collect(Collectors.toList());
             return executeUpdateQuery(sql, params);
@@ -226,12 +224,12 @@ public class DaoBase {
     public boolean isConnected() {
         try {
             Connection conn = connPool.getConnection();
-            log.debug("Conn: " + conn);
             boolean closed = conn.isClosed();
             log.debug("Closed: " + closed);
             conn.close();
             return !closed;
         } catch (SQLException ex) {
+            log.info("Cannot check if connection is connected");
             return false;
         }
     }

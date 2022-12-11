@@ -1,12 +1,8 @@
 package com.cache.interfaces;
 
 import com.cache.api.*;
-import com.cache.dtos.DistAgentServerRow;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Queue;
-import java.util.function.Function;
 
 /** interfaces for agent in distributed environment
  * this is to communicate among all distributed services */
@@ -15,6 +11,9 @@ public interface Agent {
     String getAgentGuid();
     /** get configuration for this agent */
     DistConfig getConfig();
+    /** get high-level information about this agent */
+    AgentInfo getAgentInfo();
+
     /** returns true if agent has been already closed */
     boolean isClosed();
     /** initialize agent - server, application, jdbc, kafka */
@@ -37,6 +36,8 @@ public interface Agent {
     AgentEvents getAgentEvents();
     /** get agent issuer manager add issues */
     AgentIssues getAgentIssues();
+    /** receive message from connector or server, need to find service and process that message on service */
+    DistMessageStatus receiveMessage(DistMessage msg);
     /** close all items in this agent */
     void close();
 

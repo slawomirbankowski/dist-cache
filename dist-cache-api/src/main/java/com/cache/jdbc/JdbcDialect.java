@@ -8,7 +8,6 @@ import java.util.Properties;
 /** dialects for different databases like Postgres, MySql, MS SQL Server, Oracle, IBM DB2 */
 public class JdbcDialect {
 
-
     /** name of this dialect */
     public final String dialectName;
     /** all queries for this dialect */

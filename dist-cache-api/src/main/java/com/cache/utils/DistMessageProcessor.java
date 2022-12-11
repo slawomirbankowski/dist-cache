@@ -11,7 +11,6 @@ import java.util.function.BiFunction;
 public class DistMessageProcessor {
 
     /** key -> method name
-     *
      * value - method to process this message */
     private HashMap<String, BiFunction<String, DistMessage, DistMessageStatus>> methodProcessors = new HashMap<>();
     /** default processor for messages  */

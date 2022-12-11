@@ -8,10 +8,7 @@ public class HashMapMap<T, K, V> extends java.util.concurrent.ConcurrentHashMap<
 
     public void add(T key1, K key2, V value) {
         synchronized (this) {
-            Map<K, V> values = this.get(key1);
-            if (values == null) {
-                values = new HashMap<>();
-            }
+            Map<K, V> values = this.computeIfAbsent(key1, k -> new HashMap<>());
             values.put(key2, value);
         }
     }

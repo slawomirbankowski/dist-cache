@@ -60,6 +60,8 @@ public abstract class CacheBase implements Cache {
         log.info("--------> Creating new cache with GUID: " + cacheManagerGuid + ", CONFIG: " + cfg.getConfigGuid() + ", properties: " + cfg.getProperties().size());
     }
 
+    /** get date and time of creating service */
+    public LocalDateTime getCreateDate() { return createdDateTime; }
     /** get configuration for cache */
     public DistConfig getConfig() {
         return cacheCfg;
@@ -84,8 +86,6 @@ public abstract class CacheBase implements Cache {
     }
     /** get unique identifier for this CacheManager object */
     public String getCacheGuid() { return cacheManagerGuid; }
-    /** get date and time of creation for this CacheManager */
-    public LocalDateTime getCreatedDateTime() { return createdDateTime; }
     /** get item from cache as String if exists or None */
     public String getCacheObjectAsString(String key) {
         Optional<CacheObject> co = getCacheObject(key);

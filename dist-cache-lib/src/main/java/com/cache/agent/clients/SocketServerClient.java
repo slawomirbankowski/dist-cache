@@ -1,9 +1,12 @@
 package com.cache.agent.clients;
 
 
-import com.cache.dtos.DistAgentServerRow;
+import com.cache.api.DistConfig;
+import com.cache.api.DistMessageAdvanced;
+import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.AgentClient;
+import com.cache.interfaces.DistMessage;
 import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,9 +23,12 @@ public class SocketServerClient implements AgentClient, Runnable {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(SocketServerClient.class);
+    private Agent parentAgent;
     /** unique ID of this client */
-    private final String clientGuid = CacheUtils.generateClientGuid("SocketServerClient");
+    private final String clientGuid = CacheUtils.generateClientGuid(this.getClass().getSimpleName());
+    /** socket */
     protected Socket socket;
+    /** */
     protected boolean isServer;
     /** name of connected host */
     protected String host = "";
@@ -31,18 +37,22 @@ public class SocketServerClient implements AgentClient, Runnable {
     protected BufferedReader inSocket;
     protected PrintWriter outSocket;
     protected Thread receivingThread;
+    /**  */
     private boolean working = true;
     protected int sleepThreadTime = 1000; // TODO: change this to be configured
 
     /** creates new socket client */
     public SocketServerClient(Agent parentAgent, Socket socket) {
+        this.parentAgent = parentAgent;
+        log.info("@@@@@@@@@@@@@@@ Open new socket client on agent: " + parentAgent.getAgentGuid() + ", local host: " + socket.getLocalAddress().getHostName() + ":" + socket.getLocalPort() + ", remote: " + socket.getRemoteSocketAddress().toString() + ", uid: " + clientGuid);
         this.socket = socket;
         isServer = true;
         initialize();
     }
     public SocketServerClient(Agent parentAgent, DistAgentServerRow srv) {
         try {
-            log.info("Creates new socket client for server: " + srv.servertype + ", host: " + srv.serverhost + ", port: " + srv.serverport);
+            this.parentAgent = parentAgent;
+            log.info("@@@@@@@@@@@@@@@ Creates new socket client for server: " + srv.servertype + ", host: " + srv.serverhost + ", port: " + srv.serverport);
             isServer = false;
             this.socket = new Socket(srv.serverhost, srv.serverport);
         } catch (Exception ex) {
@@ -53,10 +63,11 @@ public class SocketServerClient implements AgentClient, Runnable {
     /** initialize client - connecting or reconnecting */
     public boolean initialize() {
         try {
+            parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SERVER_SOCKET_CLIENT_TIMEOUT, DistConfig.AGENT_SERVER_SOCKET_CLIENT_TIMEOUT_DEFAULT_VALUE);
             socket.setSoTimeout(1000);
             host = socket.getInetAddress().getHostAddress();
             port = socket.getPort();
-            log.info("Initializing socket client, server: " + isServer + ", host: " + host + ", port: " + port + ", GUID: " + clientGuid);
+            log.info("Initializing socket client for agent: " + parentAgent.getAgentGuid() + ", isServer: " + isServer + ", host: " + host + ", port: " + port + ", client UID: " + clientGuid);
             inSocket = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             outSocket = new PrintWriter(socket.getOutputStream(),true);
             working = true;
@@ -100,7 +111,14 @@ public class SocketServerClient implements AgentClient, Runnable {
                 return;
             }
             String readLine = inSocket.readLine();
-            log.info("Socket read line: " +readLine);
+            if (readLine != null) {
+                log.info("Socket read line: " +readLine);
+                // TODO: parse line and send message to be processed
+
+                DistMessageAdvanced
+                parentAgent.receiveMessage()
+
+            }
         }  catch (java.net.SocketTimeoutException ex) {
         }  catch (IOException ex) {
             working = false;

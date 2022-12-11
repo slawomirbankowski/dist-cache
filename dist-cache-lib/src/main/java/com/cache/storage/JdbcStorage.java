@@ -1,10 +1,9 @@
 package com.cache.storage;
 
 import com.cache.api.*;
-import com.cache.dtos.DistCacheItemRow;
+import com.cache.base.dtos.DistCacheItemRow;
 import com.cache.base.CacheStorageBase;
 import com.cache.base.DaoBase;
-import com.cache.jdbc.DialectQueries;
 import com.cache.jdbc.JdbcDialect;
 
 import java.util.*;

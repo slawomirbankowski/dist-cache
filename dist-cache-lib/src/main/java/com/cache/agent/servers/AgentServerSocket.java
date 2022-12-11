@@ -71,6 +71,7 @@ public class AgentServerSocket implements AgentServer, Runnable {
                     log.info("......... SERVER - New socket connected on port " + workingPort + ", creating client");
                     SocketServerClient client = new SocketServerClient(parentAgent, socket);
                     clients.add(client);
+                    parentAgent.getAgentConnectors().registerLocalClient(client);
                 }
             } catch (SocketTimeoutException ex) {
             } catch (Exception ex) {

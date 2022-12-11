@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 public class AdvancedMap {
 
     /** map to advanced functions */
-    private Map<String, Object> map;
+    private final Map<String, Object> map;
     public AdvancedMap(Map<String, Object> map) {
         this.map = map;
     }

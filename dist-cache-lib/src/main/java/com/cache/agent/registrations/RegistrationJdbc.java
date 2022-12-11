@@ -2,13 +2,12 @@ package com.cache.agent.registrations;
 
 import com.cache.agent.AgentInstance;
 import com.cache.api.*;
-import com.cache.dtos.DistAgentRegisterRow;
-import com.cache.dtos.DistAgentServerRow;
+import com.cache.base.dtos.DistAgentRegisterRow;
+import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.base.DaoBase;
 import com.cache.base.RegistrationBase;
 import com.cache.jdbc.JdbcDialect;
 import com.cache.jdbc.JdbcTables;
-import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

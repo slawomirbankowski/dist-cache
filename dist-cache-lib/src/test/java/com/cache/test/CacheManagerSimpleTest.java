@@ -30,7 +30,6 @@ public class CacheManagerSimpleTest {
         assertEquals(cache.getStorageKeys().size(), 1, "There should be 1 storage in cache");
         log.info("Config GUID: " + cache.getConfig().getConfigGuid());
         log.info("Cache GUID: " + cache.getCacheGuid());
-        log.info("Cache createdDateTime: " + cache.getCreatedDateTime());
         log.info("Cache getObjectsCount: " + cache.getObjectsCount());
         log.info("Cache getItemsCount: " + cache.getItemsCount());
         log.info("Cache getClosed: " + cache.getClosed());
