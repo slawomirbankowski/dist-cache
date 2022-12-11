@@ -114,10 +114,6 @@ public class SocketServerClient implements AgentClient, Runnable {
             if (readLine != null) {
                 log.info("Socket read line: " +readLine);
                 // TODO: parse line and send message to be processed
-
-                DistMessageAdvanced
-                parentAgent.receiveMessage()
-
             }
         }  catch (java.net.SocketTimeoutException ex) {
         }  catch (IOException ex) {
