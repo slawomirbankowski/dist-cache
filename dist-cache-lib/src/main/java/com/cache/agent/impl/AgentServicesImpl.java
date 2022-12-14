@@ -1,9 +1,9 @@
 package com.cache.agent.impl;
 
 import com.cache.agent.AgentInstance;
-import com.cache.api.DistMessageStatus;
+import com.cache.api.DistMessageType;
 import com.cache.interfaces.AgentServices;
-import com.cache.interfaces.DistMessage;
+import com.cache.api.DistMessage;
 import com.cache.interfaces.DistService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,14 +46,31 @@ public class AgentServicesImpl implements AgentServices {
         }
     }
     /** receive message from connector or server, need to find service and process that message on service */
-    public DistMessageStatus receiveMessage(DistMessage msg) {
-        DistService serviceToProcessMessage = services.get(msg.getService());
+    public void receiveMessage(DistMessage msg) {
+        log.info("Receive message to be processes, message: " + msg.toString());
+        if (msg.isTypeRequest()) {
+            DistMessage response = processMessage(msg);
+            // got response, send it to requestor agent
+            parentAgent.getAgentConnectors().sendMessage(response);
+        } else if (msg.isTypeResponse()) {
+            if (msg.isTypeResponse()) {
+                processMessage(msg);
+            }
+            parentAgent.getAgentConnectors().markResponse(msg);
+        } else {
+
+        }
+    }
+    /** process message - find service and execute on method  */
+    public DistMessage processMessage(DistMessage msg) {
+        DistService serviceToProcessMessage = services.get(msg.getToService().name());
         if (serviceToProcessMessage != null) {
             return serviceToProcessMessage.processMessage(msg);
         } else {
-            return new DistMessageStatus();
+            return msg.serviceNotFound();
         }
     }
+
     /** close */
     public void close() {
         log.info("Closing all registered services with agent, services: " + services.size());

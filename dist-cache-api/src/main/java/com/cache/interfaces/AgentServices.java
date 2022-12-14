@@ -1,6 +1,6 @@
 package com.cache.interfaces;
 
-import com.cache.api.DistMessageStatus;
+import com.cache.api.DistMessage;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ public interface AgentServices {
     /** register service to this agent */
     void registerService(DistService service) ;
     /** receive message from connector or server, need to find service and process that message on service */
-    DistMessageStatus receiveMessage(DistMessage msg);
+    void receiveMessage(DistMessage msg);
     /** close  */
     void close();
 

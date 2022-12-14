@@ -121,7 +121,7 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
             log.info("=====----> AGENT REGISTRATION summary for guid: " + parentAgent.getAgentGuid() + ", registrations: " + registrations.size() + ", connected agents: " + connectedAgents.size() + ", registeredServers: " + registeredServers.size());
             return true;
         } catch (Exception ex) {
-            log.warn("Cannot communicate with other agents, reason: " + ex.getMessage());
+            log.warn("Cannot communicate with other agents, reason: " + ex.getMessage(), ex);
             return false;
         }
     }
@@ -167,7 +167,8 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
         log.info("Check servers for agent: " + parentAgent.getAgentGuid() + ", connectedAgents: " + connectedAgents.size() + ", servers from registrations: " + servers.size());
         parentAgent.getAgentConnectors().checkActiveServers(servers);
     }
-    /** register this agent to all available connectors */
+    /** register this agent to all available connectors
+     * this is registering agent itself,  */
     private void registerToAll() {
         log.info("Registering agent: " + parentAgent.getAgentGuid() + " to all registration objects, registrations: " + registrations.size());
         var agents = getAgents();

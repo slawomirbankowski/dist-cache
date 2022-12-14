@@ -3,7 +3,7 @@ package com.cache.utils;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/** */
+/** type to store map of maps with easy operations on all maps and elements */
 public class HashMapMap<T, K, V> extends java.util.concurrent.ConcurrentHashMap<T, Map<K, V>> {
 
     public void add(T key1, K key2, V value) {

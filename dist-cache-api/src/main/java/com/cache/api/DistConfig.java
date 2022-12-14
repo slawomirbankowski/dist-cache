@@ -82,7 +82,8 @@ public class DistConfig {
     }
     /** name of group - all caches connecting together should be having the same group
      * name of group could be like GlobalAppCache */
-    public static String DIST_GROUP = "CACHE_GROUP";
+    public static String DIST_GROUP = "DIST_GROUP";
+
     /** name of Distributed system - local instance
      * name should be unique */
     public static String DIST_NAME = "DIST_NAME";

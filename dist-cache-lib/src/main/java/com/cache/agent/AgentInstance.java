@@ -3,7 +3,9 @@ package com.cache.agent;
 import com.cache.agent.impl.*;
 import com.cache.api.*;
 import com.cache.interfaces.*;
+import com.cache.serializers.ComplexSerializer;
 import com.cache.utils.CacheUtils;
+import com.cache.utils.DistMessageProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,13 +44,20 @@ public class AgentInstance implements Agent, DistService {
     private final AgentEvents agentEvents = new AgentEventsImpl(this);
     /** manager for registrations */
     private final AgentIssues agentIssues = new AgentIssuesImpl(this);
+    /** serializer for serialization of DistMessage to external connectors */
+    protected DistSerializer serializer;
+    /** processor that is connecting message method with current class method to be executed */
+    private final DistMessageProcessor messageProcessor = new DistMessageProcessor()
+            .addMethod("ping", this::pingMethod)
+            .addMethod("getRegistrationKeys", this::getRegistrationKeys);
 
     /** create new agent */
-    public AgentInstance(DistConfig config, Map<String, Function<CacheEvent, String>> callbacksMethods) {
+    public AgentInstance(DistConfig config, Map<String, Function<CacheEvent, String>> callbacksMethods, HashMap<String, DistSerializer> serializers) {
         this.config = config;
         // self register of agent as service
         agentServices.registerService(this);
         agentEvents.addCallbackMethods(callbacksMethods);
+        serializer = ComplexSerializer.createSerializer(serializers);
     }
 
     /** get type of service: cache, measure, report, flow, space, ... */
@@ -65,7 +74,10 @@ public class AgentInstance implements Agent, DistService {
         agentRegistrations.createRegistrations();
         agentConnectors.openServers();
     }
-
+    /** get this Agent */
+    public Agent getAgent() {
+        return this;
+    }
     /** get configuration for this agent */
     public DistConfig getConfig() { return config; }
     /** get unique ID of this agent */
@@ -79,6 +91,10 @@ public class AgentInstance implements Agent, DistService {
         return agentSecret;
     }
 
+    /** get serializer/deserializer helper to serialize/deserialize objects when sending through connectors or saving to external storages */
+    public DistSerializer getSerializer() {
+        return serializer;
+    }
     /** get high-level information about this agent */
     public AgentInfo getAgentInfo() {
         return new AgentInfo(agentGuid, createDate, closed,
@@ -90,6 +106,7 @@ public class AgentInstance implements Agent, DistService {
                 getAgentEvents().getEvents().size(),
                 getAgentIssues().getIssues().size());
     }
+
     /** get agent threads manager */
     public AgentThreads getAgentThreads() {
         return agentThreads;
@@ -139,37 +156,77 @@ public class AgentInstance implements Agent, DistService {
         agentIssues.close();
     }
 
-    /** receive message from connector or server, need to find service and process that message on service */
-    public DistMessageStatus receiveMessage(DistMessage msg) {
-
-        return agentServices.receiveMessage(msg);
-    }
-
     /** process message by this agent service, choose method and , returns status */
-    public DistMessageStatus processMessage(DistMessage msg) {
-        // TODO: process message in this agent, there could be many methods to process system agent messages
-
-        return new DistMessageStatus();
+    public DistMessage processMessage(DistMessage msg) {
+        log.info("Process message by AgentInstance, message: " + msg);
+        return messageProcessor.process(msg.getMethod(), msg);
     }
-    /** message send to agents, directed to services, selected method */
-    public DistMessageStatus sendMessage(DistMessage msg) {
-        // TODO: check destination by agent and tags
-        return new DistMessageStatus();
+
+    /** create new message builder starting this agent */
+    public DistMessageBuilder createMessageBuilder() {
+        return DistMessageBuilder.empty().fromAgent(this);
+    }
+
+    /** message send to agent(s) */
+    public DistMessageFull sendMessage(DistMessageFull msg) {
+        log.info("SENDING MESSAGE " + msg.getMessage());
+        getAgentConnectors().sendMessage(msg);
+        return msg;
+    }
+    /** send message to agents */
+    public DistMessageFull sendMessage(DistMessage msg, DistCallbacks callbacks) {
+        return sendMessage(msg.withCallbacks(callbacks));
     }
     /** create broadcast message send to all clients */
-    public DistMessage createMessageBroadcast(DistServiceType service, String method, Object message) {
-        return new DistMessageAdvanced(agentGuid, "*", service, method, message, "");
+    public DistMessageFull sendMessageBroadcast(DistMessageType messageType, DistServiceType fromService,
+                                                DistServiceType toService, String requestMethod, Object message, String tags, LocalDateTime validTill, DistCallbacks callbacks) {
+        // DistMessageType messageType, String fromAgent, DistServiceType fromService, String toAgent, DistServiceType toService, String method, Object message,  String tags, LocalDateTime validTill
+        DistMessage msg = DistMessage.createMessage(messageType, agentGuid, fromService, "*", toService, requestMethod, message, tags, validTill);
+        return sendMessage(msg.withCallbacks(callbacks));
     }
-    /** */
-    public DistMessage createMessage(String sendTo, DistServiceType service, String method, Object message) {
-        return new DistMessageAdvanced(agentGuid, sendTo, service, method, message, "");
+    public DistMessageFull sendMessageBroadcast(DistMessageType messageType, DistServiceType fromService,
+                                                DistServiceType toService, String requestMethod, Object message, String tags, DistCallbacks callbacks) {
+        DistMessage msg = DistMessage.createMessage(messageType, agentGuid, fromService, "*", toService, requestMethod, message, tags, LocalDateTime.MAX);
+        return sendMessage(msg.withCallbacks(callbacks));
     }
-    /** */
-    public DistMessage createMessage(String sendTo, DistServiceType service, String method, Object message, String tags) {
-        DistMessageAdvanced dist = new DistMessageAdvanced(agentGuid, sendTo, service, method, message, tags);
-        dist.getService();
-        return dist;
+    public DistMessageFull sendMessageBroadcast(DistMessageType messageType, DistServiceType fromService,
+                                                DistServiceType toService, String requestMethod, Object message, DistCallbacks callbacks) {
+        DistMessage msg = DistMessage.createMessage(messageType, agentGuid, fromService, "*", toService, requestMethod, message, "", LocalDateTime.MAX);
+        return sendMessage(msg.withCallbacks(callbacks));
+    }
+    public DistMessageFull sendMessageBroadcast(DistServiceType fromService, DistServiceType toService, String requestMethod, Object message, DistCallbacks callbacks) {
+        DistMessage msg = DistMessage.createMessage(DistMessageType.request, agentGuid, fromService, "*", toService, requestMethod, message, "", LocalDateTime.MAX);
+        DistMessageFull full = msg.withCallbacks(callbacks);
+        return sendMessage(full);
+    }
+    public DistMessageFull sendMessage(DistService fromService, String toAgent, DistServiceType toService, String method, Object message,
+                                   DistCallbacks callbacks) {
+        DistMessage msg = DistMessage.createMessage(DistMessageType.request, agentGuid, fromService.getServiceType(), toAgent, toService, method, message, "", LocalDateTime.MAX);
+        return sendMessage(msg.withCallbacks(callbacks));
+    }
+    public DistMessageFull sendMessageAny(DistService fromService, DistServiceType toService, String method, Object message,
+                                      DistCallbacks callbacks) {
+        DistMessage msg = DistMessage.createMessage(DistMessageType.request, agentGuid, fromService.getServiceType(), "?", toService, method, message, "", LocalDateTime.MAX);
+        return sendMessage(msg.withCallbacks(callbacks));
     }
 
+
+    /** ping this agent, return is pong */
+    private DistMessage pingMethod(String methodName, DistMessage msg) {
+        log.info("METHOD PING from agent: " + msg.getFromAgent());
+        if (msg.isTypeRequest()) {
+            return msg.pong(getAgentGuid());
+        } else {
+
+            return msg.pong(getAgentGuid());
+        }
+    }
+
+    /** method to get registration keys for this agent */
+    private DistMessage getRegistrationKeys(String methodName, DistMessage msg) {
+        getAgentRegistrations().getRegistrationKeys();
+        // TODO: create response message with registration keys
+        return msg.pong(getAgentGuid());
+    }
 
 }

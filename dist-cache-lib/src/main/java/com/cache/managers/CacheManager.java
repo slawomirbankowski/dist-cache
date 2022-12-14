@@ -6,9 +6,8 @@ import com.cache.base.CacheBase;
 import com.cache.base.CachePolicyBase;
 import com.cache.base.CacheStorageBase;
 import com.cache.interfaces.Agent;
-import com.cache.interfaces.DistMessage;
-import com.cache.interfaces.DistSerializer;
-import com.cache.serializers.ComplexSerializer;
+import com.cache.api.DistMessage;
+import com.cache.utils.DistMessageProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,14 +37,16 @@ public class CacheManager extends CacheBase {
     private final Map<String, CacheStorageBase> storages = new HashMap<>();
     /** list of policies for given cache object to check to what caches that object should be add */
     private final List<CachePolicyBase> policies = new LinkedList<CachePolicyBase>();
+    /** processor that is connecting message method with current class method to be executed */
+    private final DistMessageProcessor messageProcessor = new DistMessageProcessor()
+            .addMethod("clearCache", this::clearCache);
 
     /** initialize current manager with properties
      * this is creating storages, connecting to storages
      * creating cache policy, create agent and connecting to other cache agents */
-    public CacheManager(AgentInstance agent, DistConfig cacheCfg, HashMap<String, DistSerializer> serializers) {
+    public CacheManager(AgentInstance agent, DistConfig cacheCfg) {
         super(cacheCfg);
         this.agent = agent;
-        this.serializer = ComplexSerializer.createSerializer(serializers);
         // TODO: finishing initialization - to be done, creating agent, storages, policies
         //agent.sendMessage(agent.createMessage());
         initializeStorages();
@@ -70,15 +71,10 @@ public class CacheManager extends CacheBase {
     }
 
     /** process message, returns status */
-    public DistMessageStatus processMessage(DistMessage msg) {
-        // process message
-        msg.getService();
-        // TODO: process given message with selected method
-
-        return new DistMessageStatus();
+    public DistMessage processMessage(DistMessage msg) {
+        log.info("Process message by CacheManager, message: " + msg);
+        return messageProcessor.process(msg.getMethod(), msg);
     }
-
-
 
     /** initialize all storages from configuration */
     private void initializeStorages() {
@@ -344,6 +340,12 @@ public class CacheManager extends CacheBase {
     }
     public <T> T withCache(String key, Function<String, ? extends T> mapper, CacheMode mode, Set<String> groups) {
         return withCache(key, () -> mapper.apply(key), mode, groups);
+    }
+    /** method to get registration keys for this agent */
+    private DistMessage clearCache(String methodName, DistMessage msg) {
+
+        // TODO: create response message with registration keys
+        return msg.pong(getAgent().getAgentGuid());
     }
 
 }

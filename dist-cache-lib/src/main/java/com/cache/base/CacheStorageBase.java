@@ -37,7 +37,7 @@ public abstract class CacheStorageBase {
     public CacheStorageBase(StorageInitializeParameter p) {
         this.initParams = p;
         this.storageUid = CacheUtils.generateStorageGuid(getClass().getSimpleName());
-        this.distSerializer = p.cache.getCacheSerializer();
+        this.distSerializer = p.cache.getAgent().getSerializer();
         this.maxObjects = initParams.cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_OBJECTS, 1000);
         this.maxItems = initParams.cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_ITEMS, 1000);
     }

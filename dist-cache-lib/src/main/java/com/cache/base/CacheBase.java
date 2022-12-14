@@ -34,8 +34,6 @@ public abstract class CacheBase implements Cache {
     protected AtomicLong addedItemsSequence = new AtomicLong();
     /** class to register hit/miss ratio with historical records */
     protected CacheHitRatio hitRatio = new CacheHitRatio();
-    /** serializer for serialization of cache objects to external storages */
-    protected DistSerializer serializer;
     /** if cache has been already closed */
     protected boolean isClosed = false;
     /** cache properties to initialize all storages, agent, policies, */
@@ -59,6 +57,10 @@ public abstract class CacheBase implements Cache {
         initializeSerializer();
         log.info("--------> Creating new cache with GUID: " + cacheManagerGuid + ", CONFIG: " + cfg.getConfigGuid() + ", properties: " + cfg.getProperties().size());
     }
+    /** create new message builder starting this agent */
+    public DistMessageBuilder createMessageBuilder() {
+        return DistMessageBuilder.empty().fromService(this);
+    }
 
     /** get date and time of creating service */
     public LocalDateTime getCreateDate() { return createdDateTime; }
@@ -76,10 +78,6 @@ public abstract class CacheBase implements Cache {
         return cacheManagerGuid;
     }
 
-    /** get default serialized for this cache */
-    public DistSerializer getCacheSerializer() {
-        return serializer;
-    }
     /** get value of cache configuration */
     public String getConfigValue(String cfgName) {
         return cacheCfg.getProperty(cfgName);

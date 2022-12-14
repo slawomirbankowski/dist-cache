@@ -1,6 +1,7 @@
 package com.cache.test;
 
 import com.cache.DistFactory;
+import com.cache.api.*;
 import com.cache.interfaces.Agent;
 import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
@@ -31,30 +32,28 @@ public class AgentRegisterTest {
                 .withServerSocketPort(9902)
                 .createAgentInstance();
 
-        Agent agent3 = DistFactory.buildEmptyFactory()
-                .withName("GlobalAgent")
-                .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
-                        "cache_user", "cache_password123")
-                .withServerSocketPort(9903)
-                .createAgentInstance();
-
         assertNotNull(agent1, "Created agent1 should not be null");
         assertNotNull(agent2, "Created agent2 should not be null");
-        assertNotNull(agent3, "Created agent2 should not be null");
-        for (int i=0; i<5; i++) {
+        for (int i=0; i<3; i++) {
             log.info("SLEEPING................................");
             CacheUtils.sleep(60000);
             log.info("========-------------------------------------------------------------------------------------========================");
             log.info("========-----> Agents1: " + agent1.getAgentInfo());
             log.info("========-----> Agents2: " + agent2.getAgentInfo());
-            log.info("========-----> Agents3: " + agent3.getAgentInfo());
+            // DistServiceType fromService, DistServiceType toService, String method, Object message, DistCallbacks callbacks
+            //DistMessageBuilder.empty().fromAgent(agent1).fromService();
+            //agent1.createMessageBuilder().fromService(DistServiceType.agent).toAll().toService(DistServiceType.agent).withObject("ping");
+            agent1.sendMessageBroadcast(DistServiceType.agent, DistServiceType.agent, "ping", "ping", DistCallbacks.createEmpty().addCallback(DistCallbackType.onResponse, x -> {
+                log.info("RESPONSE GET for message: " + x.getMessageUid());
+                return true;
+            }));
+            log.info("========-------------------------------------------------------------------------------------========================");
         }
 
         log.info("==================================================================================================//////////////////////////////////////////////////////////////////////////////////////////////////////////////========================");
         log.info("========--------> CLOSING TEST");
         agent1.close();
         agent2.close();
-        agent3.close();
         assertTrue(agent1.isClosed(), "agent1 should be closed");
         assertTrue(agent2.isClosed(), "agent2 should be closed");
         log.info("END-----");

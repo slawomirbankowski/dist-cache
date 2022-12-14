@@ -23,8 +23,6 @@ public interface Cache extends DistService {
     Agent getAgent();
     /** get configuration for cache */
     DistConfig getConfig();
-    /** get default serialized for this cache */
-    DistSerializer getCacheSerializer();
     /** check if cache has been already closed and deinitialized */
     boolean getClosed();
     /** get information about all storages in this cache */

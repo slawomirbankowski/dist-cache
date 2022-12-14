@@ -122,9 +122,10 @@ public class DistFactory {
     /** create instance of cache from current factory using properties and callbacks */
     public Cache createCacheInstance() {
         DistConfig config = new DistConfig(props);
-        AgentInstance agent = new AgentInstance(config, callbacks);
+
+        AgentInstance agent = new AgentInstance(config, callbacks, serializers);
         agent.initializeAgent();
-        Cache cache = new CacheManager(agent, config, serializers);
+        Cache cache = new CacheManager(agent, config);
         createdCaches.add(cache);
         // TODO: add measure service
         // TODO: add other services
@@ -133,7 +134,7 @@ public class DistFactory {
     /** create instance of agent from current factory using properties and callbacks */
     public Agent createAgentInstance() {
         DistConfig config = new DistConfig(props);
-        AgentInstance agent = new AgentInstance(config, callbacks);
+        AgentInstance agent = new AgentInstance(config, callbacks, serializers);
         agent.initializeAgent();
         return agent;
     }

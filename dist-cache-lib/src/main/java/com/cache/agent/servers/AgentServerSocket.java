@@ -56,6 +56,7 @@ public class AgentServerSocket implements AgentServer, Runnable {
             Thread mainThread = new Thread(this);
             mainThread.setDaemon(true);
             mainThread.start();
+            parentAgent.getAgentThreads().registerThread(mainThread);
             threads.add(mainThread);
         } catch (Exception ex) {
             log.warn("Cannot run socket server on port: " + workingPort + ", reason: " + ex.getMessage());

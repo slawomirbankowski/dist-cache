@@ -28,7 +28,8 @@ public interface AgentRegistrations {
 
     /** get number of known agents */
     int getAgentsCount();
-    /** get list of agents possible to connect */
+    /** get list of agents possible to connect from this agent
+     * this is list of all known agents read from registration services of from other agents */
     List<AgentSimplified> getAgents();
     /** add issue to registrations */
     void addIssue(DistIssue issue);

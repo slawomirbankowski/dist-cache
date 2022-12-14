@@ -10,7 +10,7 @@ import com.cache.utils.CacheUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/** base class to connect to global storage that is managing agents
+/** base class to connect to registration service - global storage that is managing agents
  * connector should be able to register agent, ping it, check health
  * */
 public abstract class RegistrationBase {

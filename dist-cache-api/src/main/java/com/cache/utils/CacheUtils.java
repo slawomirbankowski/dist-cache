@@ -59,28 +59,34 @@ public class CacheUtils {
     public static final String hostName = getCurrentHostName();
     private static final AtomicLong configGuidSeq = new AtomicLong();
     public static String generateConfigGuid() {
-        return "CONFIG_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + configGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+        return "CFG_" + hostName + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + configGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
     private static final AtomicLong cacheGuidSeq = new AtomicLong();
     public static String generateCacheGuid() {
-        return "CACHE_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + cacheGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+        return "CACHE_" + hostName + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+    private static final AtomicLong messageGuidSeq = new AtomicLong();
+    public static String generateMessageGuid() {
+        return "MSG_" + hostName + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + messageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
     private static final AtomicLong connectorGuidSeq = new AtomicLong();
     public static String generateConnectorGuid(String connectorClass) {
-        return "CONNECTOR_H" + getCurrentHostName() + "_CL" + connectorClass + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + connectorGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+        return "CONN_" + hostName + "_CL" + connectorClass + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + connectorGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
     private static final AtomicLong storageGuidSeq = new AtomicLong();
     public static String generateStorageGuid(String className) {
-        return "STORAGE_H" + getCurrentHostName() + "_S" + className + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+        return "ST_" + hostName + "_S" + className + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
     public static String generateAgentGuid() {
-        return "AGENT_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+        return "A_" + hostName + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
     public static String generateServerGuid(String servType) {
-        return "SERVER_T" + servType + "_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+        return "SRV_" +  hostName  + "_T" + servType + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
+
+    private static final AtomicLong clientGuidSeq = new AtomicLong();
     public static String generateClientGuid(String clientType) {
-        return "CLIENT_T" + clientType + "_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+        return "CL_" + clientType + "_H" + hostName + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + clientGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
     /** initialized random object to generate random values globally */
     private static final Random rndObj = new Random();

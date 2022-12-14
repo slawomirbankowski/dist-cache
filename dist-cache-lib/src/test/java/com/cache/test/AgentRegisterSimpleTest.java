@@ -22,8 +22,9 @@ public class AgentRegisterSimpleTest {
                         "cache_user", "cache_password123")
                 .withServerSocketPort(9901)
                 .createAgentInstance();
-
-        assertNotNull(agent1, "Created agent1 should not be null");
+       // agent1.getConfig().saveToJson();
+        agent1.getAgentRegistrations().getAgents();
+        assertNotNull(agent1, "Created agent should not be null");
 
         for (int i=0; i<2; i++) {
             log.info("SLEEPING");

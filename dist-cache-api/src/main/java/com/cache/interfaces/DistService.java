@@ -1,7 +1,7 @@
 package com.cache.interfaces;
 
 import com.cache.api.DistConfig;
-import com.cache.api.DistMessageStatus;
+import com.cache.api.DistMessage;
 import com.cache.api.DistServiceType;
 
 import java.time.LocalDateTime;
@@ -14,8 +14,10 @@ public interface DistService {
     public LocalDateTime getCreateDate();
     /** get type of service: cache, measure, report, flow, space, ... */
     DistServiceType getServiceType();
+    /** get parent Agent */
+    Agent getAgent();
     /** process message, returns status */
-    DistMessageStatus processMessage(DistMessage msg);
+    DistMessage processMessage(DistMessage msg);
     /** get unique ID of this service */
     String getServiceUid();
     /** get configuration for cache */
