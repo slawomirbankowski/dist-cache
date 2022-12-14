@@ -1,5 +1,6 @@
 package com.cache.agent.servers;
 
+import com.cache.agent.clients.SocketServerClient;
 import com.cache.api.DistConfig;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.AgentServer;
@@ -7,7 +8,13 @@ import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -18,8 +25,8 @@ public class AgentServerSocket implements AgentServer, Runnable {
     protected static final Logger log = LoggerFactory.getLogger(AgentServerSocket.class);
     /** date ant time of creation */
     private final LocalDateTime createDate = LocalDateTime.now();
-    /** GUID of agent */
-    private final String serverGuid = CacheUtils.generateAgentGuid();
+    /** GUID of server */
+    private final String serverGuid = CacheUtils.generateServerGuid("AgentServerSocket");
     /** if server has been closed */
     private boolean closed = false;
     private final Agent parentAgent;
@@ -33,7 +40,7 @@ public class AgentServerSocket implements AgentServer, Runnable {
     private HashMap<String,SocketServerClient> clientsByAgentGuid = new HashMap<>();
     private int workingPort;
 
-    /** */
+    /** creates new server for communication based on socket */
     public AgentServerSocket(Agent parentAgent) {
         this.parentAgent = parentAgent;
     }
@@ -41,7 +48,7 @@ public class AgentServerSocket implements AgentServer, Runnable {
         try {
             this.workingPort = workingPort;
             // open socket port
-            log.info("Starting socket for incoming connections from other clients on port " + workingPort);
+            log.info("Starting socket for incoming connections from other clients on port " + workingPort + ", server UID: " + serverGuid);
             // TODO: create SocketServer and thread for accepting sockets
             serverSocket = new java.net.ServerSocket(workingPort);
             serverSocket.setSoTimeout(2000);
@@ -49,26 +56,33 @@ public class AgentServerSocket implements AgentServer, Runnable {
             Thread mainThread = new Thread(this);
             mainThread.setDaemon(true);
             mainThread.start();
+            parentAgent.getAgentThreads().registerThread(mainThread);
             threads.add(mainThread);
         } catch (Exception ex) {
-            log.info("Cannot run socket server on port: " + workingPort + ", reason: " + ex.getMessage());
+            log.warn("Cannot run socket server on port: " + workingPort + ", reason: " + ex.getMessage());
         }
     }
     /** run in separated thread to accept */
     public void run() {
+        log.info("......... Accepting connections on port " + workingPort);
         while (!closed) {
             try {
-                System.out.print("......... Accepting connections on port " + workingPort);
                 Socket socket = serverSocket.accept();
                 if (socket != null) {
-                    SocketServerClient client = new SocketServerClient(this, serverSocket, socket);
+                    log.info("......... SERVER - New socket connected on port " + workingPort + ", creating client");
+                    SocketServerClient client = new SocketServerClient(parentAgent, socket);
                     clients.add(client);
+                    parentAgent.getAgentConnectors().registerLocalClient(client);
                 }
+            } catch (SocketTimeoutException ex) {
             } catch (Exception ex) {
-                log.info("!!!!! Interrupted accepting sockets on port " + workingPort);
+                log.error("!!!!! Unknown exception on Socket server wotking on port " + workingPort);
             }
             CacheUtils.sleep(2000);
         }
+    }
+    private void closeClient() {
+
     }
     @Override
     public String getServerGuid() {
@@ -110,17 +124,5 @@ public class AgentServerSocket implements AgentServer, Runnable {
         } catch (Exception ex) {
             log.warn("Cannot close socket server, reason: " + ex.getMessage());
         }
-    }
-}
-
-/** socket client with client communications */
-class SocketServerClient {
-
-    /** */
-    public SocketServerClient(AgentServerSocket parentServer, java.net.ServerSocket serverSocket, Socket socket) {
-
-    }
-    public void close() {
-
     }
 }

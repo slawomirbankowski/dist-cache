@@ -1,307 +1,232 @@
 package com.cache.agent;
 
-import com.cache.agent.connectors.RegistrationApplication;
-import com.cache.agent.connectors.RegistrationElasticsearch;
-import com.cache.agent.connectors.RegistrationJdbc;
-import com.cache.agent.connectors.RegistrationKafka;
-import com.cache.agent.servers.AgentServerSocket;
+import com.cache.agent.impl.*;
 import com.cache.api.*;
-import com.cache.base.RegistrationBase;
-import com.cache.interfaces.Agent;
-import com.cache.interfaces.AgentServer;
-import com.cache.interfaces.DistService;
+import com.cache.interfaces.*;
+import com.cache.serializers.ComplexSerializer;
 import com.cache.utils.CacheUtils;
+import com.cache.utils.DistMessageProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /** agent class to be connected to dist-cache applications, Kafka, Elasticsearch or other global agent repository
  * Agent is also connecting directly to other agents */
-public class AgentInstance implements Agent {
+public class AgentInstance implements Agent, DistService {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentInstance.class);
     /** date ant time of creation */
     private final LocalDateTime createDate = LocalDateTime.now();
     /** configuration for agent */
-    private DistConfig config;
-    /** timer to schedule important check methods */
-    private final Timer timer = new Timer();
+    private final DistConfig config;
     /** if agent has been closed */
     private boolean closed = false;
-    /** all registered tasks for timer */
-    private final LinkedList<TimerTask> timerTasks = new LinkedList<>();
     /** generate secret of this agent to be able to put commands */
     private final String agentSecret = UUID.randomUUID().toString();
     /** GUID of agent */
     private final String agentGuid = CacheUtils.generateAgentGuid();
-    /** all registered services for this agent */
-    private final HashMap<String, DistService> services = new HashMap<>();
-    /** all servers for connections to other agents */
-    private final HashMap<String, AgentServer> servers = new HashMap<>();
-    /* allows to perform ping, get current list of agents and unregister agent */
-    private final HashMap<String, RegistrationBase> registrations = new HashMap<>();
-    /** default working port for Socket server */
-    private int workingPort = -1;
-    /** all connected agents */
-    private final HashMap<String, AgentSimplified> connectedAgents = new HashMap<>();
-    /** callbacks - methods to be called when given event is happening
-     * only one callback per event type is allowed */
-    protected HashMap<String, Function<CacheEvent, String>> callbacks = new HashMap<>();
-    /** queue of issues reported when using cache */
-    protected final Queue<CacheIssue> issues = new LinkedList<>();
-    /** queue of events that would be added to callback methods */
-    protected final Queue<CacheEvent> events = new LinkedList<>();
+
+    /** manager for threads in Agent system */
+    private final AgentThreads agentThreads = new AgentThreadsImpl(this);
+    /** manager for timers in Agent system */
+    private final AgentTimers agentTimers = new AgentTimersImpl(this);
+    /** manager for registrations */
+    private final AgentRegistrations agentRegistrations = new AgentRegistrationsImpl(this);
+    /** manager for services registered in agent  */
+    private final AgentServices agentServices = new AgentServicesImpl(this);
+    /** manager for agent connections to other agents */
+    private final AgentConnectors agentConnectors = new AgentConnectorsImpl(this);
+    /** manager for registrations */
+    private final AgentEvents agentEvents = new AgentEventsImpl(this);
+    /** manager for registrations */
+    private final AgentIssues agentIssues = new AgentIssuesImpl(this);
+    /** serializer for serialization of DistMessage to external connectors */
+    protected DistSerializer serializer;
+    /** processor that is connecting message method with current class method to be executed */
+    private final DistMessageProcessor messageProcessor = new DistMessageProcessor()
+            .addMethod("ping", this::pingMethod)
+            .addMethod("getRegistrationKeys", this::getRegistrationKeys);
 
     /** create new agent */
-    public AgentInstance(DistConfig config, Map<String, Function<CacheEvent, String>> callbacksMethods) {
+    public AgentInstance(DistConfig config, Map<String, Function<CacheEvent, String>> callbacksMethods, HashMap<String, DistSerializer> serializers) {
         this.config = config;
-        callbacksMethods.entrySet().stream().forEach(cb -> callbacks.put(cb.getKey(), cb.getValue()));
+        // self register of agent as service
+        agentServices.registerService(this);
+        agentEvents.addCallbackMethods(callbacksMethods);
+        serializer = ComplexSerializer.createSerializer(serializers);
+    }
+
+    /** get type of service: cache, measure, report, flow, space, ... */
+    public DistServiceType getServiceType() {
+        return DistServiceType.agent;
+    }
+    /** get unique ID of this service */
+    public String getServiceUid() {
+        return agentGuid;
     }
     /** initialize agent - server, application, jdbc, kafka */
     public void initializeAgent() {
         log.info("Initializing agent for guid: " + agentGuid);
-        workingPort = config.getPropertyAsInt(DistConfig.AGENT_SOCKET_PORT, DistConfig.AGENT_SOCKET_PORT_DEFAULT_VALUE);
-        openServers();
-        createRegistrations();
-        registerToAll();
-        setUpTimerToCommunicate();
+        agentRegistrations.createRegistrations();
+        agentConnectors.openServers();
+    }
+    /** get this Agent */
+    public Agent getAgent() {
+        return this;
     }
     /** get configuration for this agent */
     public DistConfig getConfig() { return config; }
     /** get unique ID of this agent */
     public String getAgentGuid() { return agentGuid; }
-
-    /** return all services assigned to this agent */
-    public List<DistService> getServices() {
-        return services.values().stream().collect(Collectors.toList());
-    }
-    /** returns true if agent has been already closed */
-    public boolean isClosed() {
-        return closed;
-    }
-    /** get list of connected agents */
-    public List<AgentSimplified> getAgents() {
-        return connectedAgents.values().stream().collect(Collectors.toList());
-    }
-
-    /** get secret generated or set for this agent */
-    public String getAgentSecret() {
-        return agentSecret;
-    }
     /** get date and time of creating this agent */
     public LocalDateTime getCreateDate() {
         return createDate;
     }
-
-    /** get working port of SocketServer to have connections from other agents */
-    public int getWorkingPort() {
-        return workingPort;
+    /** get secret generated or set for this agent */
+    public String getAgentSecret() {
+        return agentSecret;
     }
 
-    /** register service to this agent */
-    public void registerService(DistService service) {
-        // TODO: register new service like cache, report, measure, ...
-        synchronized (services) {
-            services.put(service.toString(), service);
-        }
+    /** get serializer/deserializer helper to serialize/deserialize objects when sending through connectors or saving to external storages */
+    public DistSerializer getSerializer() {
+        return serializer;
     }
-    /** run by parent cache every 1 minute */
-    public void onTimeCommunicate() {
-        try {
-            log.info("Agent - Ping registration objects!!!!!!!");
-            registrations.entrySet().stream().forEach(e -> {
-                e.getValue().agentPing(new AgentPing(this.agentGuid));
-            });
-            log.info("Agent - check connected agents, current count: " + connectedAgents.size());
-            registrations.entrySet().stream().forEach(e -> {
-                List<AgentSimplified> activeAgents = e.getValue().getAgentsActive();
-                activeAgents.stream().forEach(ag -> {
-                    AgentSimplified existingAgent = connectedAgents.get(ag.agentGuid);
-                    if (existingAgent != null) {
-                        existingAgent.update(ag);
-                        log.info("=====---->Existing agent update: " + ag.agentGuid);
-                    } else {
-                        log.info("=====---->New agent add: " + ag.agentGuid);
-                        connectedAgents.put(ag.agentGuid, ag);
-                    }
-                });
-                log.info("=====----> New agents from registration: " + e.getKey() + ", count: " + activeAgents.size());
-            });
-            // TODO: connect to all nearby agents, check statuses
+    /** get high-level information about this agent */
+    public AgentInfo getAgentInfo() {
+        return new AgentInfo(agentGuid, createDate, closed,
+                agentConnectors.getServersCount(), agentConnectors.getServerKeys(),
+                agentConnectors.getClientsCount(), agentConnectors.getClientKeys(),
+                agentServices.getServicesCount(), agentServices.getServiceKeys(),
+                agentRegistrations.getRegistrationsCount(), agentRegistrations.getRegistrationKeys(),
+                getAgentTimers().getTimerTasksCount(), getAgentThreads().getThreadsCount(),
+                getAgentEvents().getEvents().size(),
+                getAgentIssues().getIssues().size());
+    }
 
-            // TODO: implement communication of agent with other cache agents
+    /** get agent threads manager */
+    public AgentThreads getAgentThreads() {
+        return agentThreads;
+    }
+    /** get agent timers manager */
+    public AgentTimers getAgentTimers() {
+        return agentTimers;
+    }
 
-        } catch (Exception ex) {
-            log.warn("Cannot communicate with other agents, reason: " + ex.getMessage());
-        }
+    /** get agent service manager */
+    public AgentServices getAgentServices() {
+        return agentServices;
+    }
+    /** get agent connector manager to manage direct connections to other agents, including sending and receiving messages */
+    public AgentConnectors getAgentConnectors() {
+        return agentConnectors;
+    }
+    /** get agent registration manager to register this agent in global repositories (different types: JDBC, Kafka, App, Elasticsearch, ... */
+    public AgentRegistrations getAgentRegistrations() {
+        return agentRegistrations;
+    }
+    /** get agent events manager to add events and set callbacks */
+    public AgentEvents getAgentEvents() {
+        return agentEvents;
+    }
+    /** get agent issue manager for adding issues */
+    public AgentIssues getAgentIssues() {
+        return agentIssues;
+    }
+
+    /** returns true if agent has been already closed */
+    public boolean isClosed() {
+        return closed;
     }
 
     /** close all items in this agent */
     public void close() {
         log.info("Closing agent: " + agentGuid);
         closed = true;
-        log.info("Canceling timers in agent: " +agentGuid);
-        timerTasks.forEach(TimerTask::cancel);
         // TODO: close all items for this agent - unregister in application, notify all agents
-        unregisterFromAll();
-        servers.values().stream().forEach(serv -> {
-            serv.close();
-        });
-        log.info("Clearing events in agent: " +agentGuid);
-        events.clear();
-        log.info("Clearing issues in agent: " +agentGuid);
-        issues.clear();
-    }
-    /** add issue to cache manager to be revoked by parent
-     * issue could be Exception, Error, problem with connecting to storage,
-     * internal error, not consistent state that is unknown and could be used by parent manager */
-    public void addIssue(CacheIssue issue) {
-        synchronized (issues) {
-            issues.add(issue);
-            while (issues.size() > config.getPropertyAsLong(DistConfig.CACHE_ISSUES_MAX_COUNT, DistConfig.CACHE_ISSUES_MAX_COUNT_VALUE)) {
-                issues.poll();
-            }
-        }
-    }
-    /** add issue with method and exception */
-    public void addIssue(String methodName, Exception ex) {
-        addIssue(new CacheIssue(this, methodName, ex));
-    }
-    /** add new event and distribute it to callback methods,
-     * event could be useful information about change of cache status, new connection, refresh of cache, clean */
-    public void addEvent(CacheEvent event) {
-        synchronized (events) {
-            events.add(event);
-            while (events.size() > config.getPropertyAsLong(DistConfig.CACHE_EVENTS_MAX_COUNT, DistConfig.CACHE_EVENTS_MAX_COUNT_VALUE)) {
-                events.poll();
-            }
-        }
-        Function<CacheEvent, String> callback = callbacks.get(event.getEventType());
-        if (callback != null) {
-            try {
-                callback.apply(event);
-            } catch (Exception ex) {
-                log.warn("Exception while running callback for event " + event.getEventType());
-            }
-        }
-    }
-    /** set new callback method for events for given type */
-    public void setCallback(String eventType, Function<CacheEvent, String> callback) {
-        log.info("Set callback method for events" + eventType);
-        callbacks.put(eventType, callback);
-    }
-    /** get all recent issues with cache */
-    public Queue<CacheIssue> getIssues() {
-        return issues;
-    }
-    /** get all recent events added to cache */
-    public Queue<CacheEvent> getEvents() {
-        return events;
+        agentThreads.close();
+        agentTimers.close();
+        agentServices.close();
+        agentConnectors.close();
+        agentRegistrations.close();
+        agentEvents.close();
+        agentIssues.close();
     }
 
-    /** open socket server  */
-    private void openServers() {
-        if (config.hasProperty(DistConfig.AGENT_SOCKET_PORT)) {
-            int portNum = config.getPropertyAsInt(DistConfig.AGENT_SOCKET_PORT, DistConfig.AGENT_SOCKET_PORT_VALUE_SEQ.incrementAndGet());
-            log.info("SERVER SOCKET opening at port: " + portNum + " for agent: " + agentGuid);
-            AgentServerSocket serv = new AgentServerSocket(this);
-            serv.initializeServer(portNum);
-            servers.put(serv.getServerGuid(), serv);
-        }
+    /** process message by this agent service, choose method and , returns status */
+    public DistMessage processMessage(DistMessage msg) {
+        log.info("Process message by AgentInstance, message: " + msg);
+        return messageProcessor.process(msg.getMethod(), msg);
     }
-    private void createSocketServer() {
 
+    /** create new message builder starting this agent */
+    public DistMessageBuilder createMessageBuilder() {
+        return DistMessageBuilder.empty().fromAgent(this);
     }
-    private void createRegistrations() {
-        if (config.hasProperty(DistConfig.CACHE_APPLICATION_URL)) {
-            createAndAddRegistrations(RegistrationApplication.class.getName());
-        }
-        if (config.hasProperty(DistConfig.JDBC_URL)) {
-            createAndAddRegistrations(RegistrationJdbc.class.getName());
-        }
-        if (config.hasProperty(DistConfig.KAFKA_BROKERS)) {
-            createAndAddRegistrations(RegistrationKafka.class.getName());
-        }
-        if (config.hasProperty(DistConfig.ELASTICSEARCH_URL)) {
-            createAndAddRegistrations(RegistrationElasticsearch.class.getName());
-        }
+
+    /** message send to agent(s) */
+    public DistMessageFull sendMessage(DistMessageFull msg) {
+        log.info("SENDING MESSAGE " + msg.getMessage());
+        getAgentConnectors().sendMessage(msg);
+        return msg;
     }
-    /** create global connector and save in connectors */
-    private void createAndAddRegistrations(String className) {
-        synchronized (registrations) {
-            createRegistrationForClass(className).stream().forEach(reg -> {
-                registrations.put(reg.toString(), reg);
-            });
+    /** send message to agents */
+    public DistMessageFull sendMessage(DistMessage msg, DistCallbacks callbacks) {
+        return sendMessage(msg.withCallbacks(callbacks));
+    }
+    /** create broadcast message send to all clients */
+    public DistMessageFull sendMessageBroadcast(DistMessageType messageType, DistServiceType fromService,
+                                                DistServiceType toService, String requestMethod, Object message, String tags, LocalDateTime validTill, DistCallbacks callbacks) {
+        // DistMessageType messageType, String fromAgent, DistServiceType fromService, String toAgent, DistServiceType toService, String method, Object message,  String tags, LocalDateTime validTill
+        DistMessage msg = DistMessage.createMessage(messageType, agentGuid, fromService, "*", toService, requestMethod, message, tags, validTill);
+        return sendMessage(msg.withCallbacks(callbacks));
+    }
+    public DistMessageFull sendMessageBroadcast(DistMessageType messageType, DistServiceType fromService,
+                                                DistServiceType toService, String requestMethod, Object message, String tags, DistCallbacks callbacks) {
+        DistMessage msg = DistMessage.createMessage(messageType, agentGuid, fromService, "*", toService, requestMethod, message, tags, LocalDateTime.MAX);
+        return sendMessage(msg.withCallbacks(callbacks));
+    }
+    public DistMessageFull sendMessageBroadcast(DistMessageType messageType, DistServiceType fromService,
+                                                DistServiceType toService, String requestMethod, Object message, DistCallbacks callbacks) {
+        DistMessage msg = DistMessage.createMessage(messageType, agentGuid, fromService, "*", toService, requestMethod, message, "", LocalDateTime.MAX);
+        return sendMessage(msg.withCallbacks(callbacks));
+    }
+    public DistMessageFull sendMessageBroadcast(DistServiceType fromService, DistServiceType toService, String requestMethod, Object message, DistCallbacks callbacks) {
+        DistMessage msg = DistMessage.createMessage(DistMessageType.request, agentGuid, fromService, "*", toService, requestMethod, message, "", LocalDateTime.MAX);
+        DistMessageFull full = msg.withCallbacks(callbacks);
+        return sendMessage(full);
+    }
+    public DistMessageFull sendMessage(DistService fromService, String toAgent, DistServiceType toService, String method, Object message,
+                                   DistCallbacks callbacks) {
+        DistMessage msg = DistMessage.createMessage(DistMessageType.request, agentGuid, fromService.getServiceType(), toAgent, toService, method, message, "", LocalDateTime.MAX);
+        return sendMessage(msg.withCallbacks(callbacks));
+    }
+    public DistMessageFull sendMessageAny(DistService fromService, DistServiceType toService, String method, Object message,
+                                      DistCallbacks callbacks) {
+        DistMessage msg = DistMessage.createMessage(DistMessageType.request, agentGuid, fromService.getServiceType(), "?", toService, method, message, "", LocalDateTime.MAX);
+        return sendMessage(msg.withCallbacks(callbacks));
+    }
+
+
+    /** ping this agent, return is pong */
+    private DistMessage pingMethod(String methodName, DistMessage msg) {
+        log.info("METHOD PING from agent: " + msg.getFromAgent());
+        if (msg.isTypeRequest()) {
+            return msg.pong(getAgentGuid());
+        } else {
+
+            return msg.pong(getAgentGuid());
         }
     }
 
-    /** create registration base object for current instance and given class */
-    private Optional<RegistrationBase> createRegistrationForClass(String className) {
-        try {
-            log.info("Try to create registration for class: " + className);
-            RegistrationBase registr = (RegistrationBase)Class.forName(className)
-                    .getConstructor(AgentInstance.class)
-                    .newInstance(this);
-            return Optional.of(registr);
-        } catch (Exception ex) {
-            log.info("Cannot create new registration object for class: " + className + ", reason: " + ex.getMessage());
-            return Optional.empty();
-        }
-    }
-    /** register this agent to all available connectors */
-    private void registerToAll() {
-        log.info("Registering agent to all registration objects, count: " + registrations.size());
-        var agents = getAgents();
-        AgentRegister register = new AgentRegister(agentGuid, getAgentSecret(),
-                CacheUtils.getCurrentHostName(), CacheUtils.getCurrentHostAddress(),
-                getWorkingPort(), getCreateDate(), agents);
-        try {
-            synchronized (registrations) {
-                log.info("Registering this agent " + agentGuid + " on host " + register.hostName + " to all registrations: " + registrations.size());
-                registrations.values().stream().forEach(c -> {
-                    c.agentRegister(register);
-                });
-            }
-        } catch (Exception ex) {
-            log.info("Cannot register agents to connectors, reason: " + ex.getMessage());
-        }
-    }
-
-    private void unregisterFromAll() {
-        try {
-            synchronized (registrations) {
-                log.info("Unregistering this agent " +  agentGuid + " to all registrations: " + registrations.size());
-                registrations.values().stream().forEach(reg -> {
-                    reg.agentUnregister();
-                });
-            }
-        } catch (Exception ex) {
-            log.warn("Cannot register agents to connectors, reason: " + ex.getMessage());
-        }
-    }
-    private void setUpTimerToCommunicate() {
-        // initialization for communicate
-        long communicateDelayMs = config.getPropertyAsLong(DistConfig.CACHE_TIMER_COMMUNICATE_DELAY, DistConfig.CACHE_TIMER_COMMUNICATE_DELAY_VALUE);
-        long communicatePeriodMs = config.getPropertyAsLong(DistConfig.CACHE_TIMER_COMMUNICATE_DELAY, DistConfig.CACHE_TIMER_COMMUNICATE_DELAY_VALUE);
-        log.info("Scheduling communicating timer task for agent: " + getAgentGuid());
-        TimerTask onTimeCommunicateTask = new TimerTask() {
-            @Override
-            public void run() {
-                try {
-                    onTimeCommunicate();
-                } catch (Exception ex) {
-                    // TODO: mark exception
-                    //parentCache.addIssue("initializeTimer:communicate", ex);
-                }
-            }
-        };
-        timerTasks.add(onTimeCommunicateTask);
-        timer.scheduleAtFixedRate(onTimeCommunicateTask, communicateDelayMs, communicatePeriodMs);
+    /** method to get registration keys for this agent */
+    private DistMessage getRegistrationKeys(String methodName, DistMessage msg) {
+        getAgentRegistrations().getRegistrationKeys();
+        // TODO: create response message with registration keys
+        return msg.pong(getAgentGuid());
     }
 
 }

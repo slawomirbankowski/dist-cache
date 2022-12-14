@@ -4,7 +4,8 @@ import com.cache.api.DistConfig;
 
 import java.time.LocalDateTime;
 
-/** interface for communication server between agent - this could be as Socket server, UDP server, REST server, or anything for direct communication */
+/** interface for communication server between agent - this could be as Socket server, UDP server, REST server, or anything for direct communication\
+ * direct communication helps to communicate fast without delay */
 public interface AgentServer {
     /** get unique ID of this server */
     String getServerGuid();

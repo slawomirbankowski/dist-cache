@@ -7,7 +7,7 @@ import java.net.HttpURLConnection;
 import java.util.Map;
 import java.util.Optional;
 
-/** simplified agent information about GUID, host, port and create date */
+/** Helper for HTTP connection - this is helping call HTTP endpoints with given method and body with headers */
 public class HttpConnectionHelper {
 
     /** base URL of HTTP(s) connection */
@@ -84,7 +84,7 @@ public class HttpConnectionHelper {
         }
     }
 
-    /** */
+    /** GET method without body and JSON default header */
     public HttpResponseContent callHttpGet(String appendUrl) {
         return callHttp(appendUrl, METHOD_GET, Optional.empty(), applicationJsonHeaders, defaultTimeout);
     }

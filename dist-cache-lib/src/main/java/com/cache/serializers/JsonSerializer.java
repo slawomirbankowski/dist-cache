@@ -1,11 +1,11 @@
 package com.cache.serializers;
 
-import com.cache.interfaces.CacheSerializer;
+import com.cache.interfaces.DistSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
 /** serialize using JSON */
-public class JsonSerializer implements CacheSerializer {
+public class JsonSerializer implements DistSerializer {
 
     @Override
     public byte[] serialize(Object obj) {
@@ -16,9 +16,9 @@ public class JsonSerializer implements CacheSerializer {
         }
     }
     @Override
-    public Object deserialize(byte[] b) {
+    public Object deserialize(String objectClassName, byte[] b) {
         try {
-            return deserializeFromString(new String(b));
+            return deserializeFromString(objectClassName, new String(b));
         } catch (Exception ex) {
             return null;
         }
@@ -36,7 +36,7 @@ public class JsonSerializer implements CacheSerializer {
         }
     }
     @Override
-    public Object deserializeFromString(String str) {
+    public Object deserializeFromString(String objectClassName, String str) {
         try {
             // TODO: read from JSON to Object
             ObjectMapper mapper = JsonMapper.builder()

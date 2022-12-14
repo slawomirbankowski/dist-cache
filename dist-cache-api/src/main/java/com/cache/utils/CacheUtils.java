@@ -59,28 +59,47 @@ public class CacheUtils {
     public static final String hostName = getCurrentHostName();
     private static final AtomicLong configGuidSeq = new AtomicLong();
     public static String generateConfigGuid() {
-        return "CONFIG_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + configGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+        return "CFG_" + hostName + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + configGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
     private static final AtomicLong cacheGuidSeq = new AtomicLong();
     public static String generateCacheGuid() {
-        return "CACHE_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + cacheGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+        return "CACHE_" + hostName + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+    private static final AtomicLong messageGuidSeq = new AtomicLong();
+    public static String generateMessageGuid() {
+        return "MSG_" + hostName + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + messageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
     private static final AtomicLong connectorGuidSeq = new AtomicLong();
     public static String generateConnectorGuid(String connectorClass) {
-        return "CONNECTOR_H" + getCurrentHostName() + "_CL" + connectorClass + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + connectorGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+        return "CONN_" + hostName + "_CL" + connectorClass + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + connectorGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
     private static final AtomicLong storageGuidSeq = new AtomicLong();
     public static String generateStorageGuid(String className) {
-        return "STORAGE_H" + getCurrentHostName() + "_S" + className + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+        return "ST_" + hostName + "_S" + className + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
     public static String generateAgentGuid() {
-        return "AGENT_H" + getCurrentHostName() + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
+        return "A_" + hostName + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+    public static String generateServerGuid(String servType) {
+        return "SRV_" +  hostName  + "_T" + servType + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    private static final AtomicLong clientGuidSeq = new AtomicLong();
+    public static String generateClientGuid(String clientType) {
+        return "CL_" + clientType + "_H" + hostName + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + clientGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
     /** initialized random object to generate random values globally */
     private static final Random rndObj = new Random();
 
     public static int randomInt(int n) {
         return rndObj.nextInt(n);
+    }
+    public static int[] randomTable(int s, int n) {
+        int[] t = new int[s];
+        for (int i=0; i<s; i++) {
+            t[i] = randomInt(n);
+        }
+        return t;
     }
     public static long randomLong() {
         return rndObj.nextLong();
@@ -147,6 +166,35 @@ public class CacheUtils {
         }
     }
 
+    /** split String into name1=value1;name2=value2;name3=value3 */
+    public static List<String[]> splitBySeparationEqual(String str, String splitChar, char equalsChar, boolean removeEmpty) {
+        LinkedList<String[]> splitedItems = new LinkedList<>();
+        String[] items = str.split(splitChar);
+        for (int i=0; i<items.length; i++) {
+            String equation = items[i];
+            String[] t = splitByChar(equation, equalsChar);
+            if (t.length == 2) {
+                if (!t[0].isEmpty() && !t[1].isEmpty()) {
+                    splitedItems.add(t);
+                }
+            }
+        }
+        return splitedItems;
+    }
+    public static String[] splitByChar(String str, char equalsChar) {
+        int pos = str.indexOf(equalsChar);
+        if (pos > 0) {
+            String firstPart = str.substring(0, pos);
+            String secondPart = str.substring(pos+1);
+            if (firstPart.isEmpty()) {
+                return new String[0];
+            } else {
+                return new String[] { firstPart, secondPart };
+            }
+        } else {
+            return new String[0];
+        }
+    }
     public static String bytesToBase64(byte[] bytes) {
         return new String(Base64.getEncoder().encode(bytes));
     }
@@ -189,6 +237,15 @@ public class CacheUtils {
         for (int i=0; i<o.length; i++) {
             b.append(o[i]);
             b.append(" ; ");
+        }
+        return b.toString();
+    }
+
+    public static String serializeBytes(byte[] o) {
+        StringBuilder b = new StringBuilder();
+        for (int i=0; i<o.length; i++) {
+            b.append(o[i]);
+            b.append(",");
         }
         return b.toString();
     }

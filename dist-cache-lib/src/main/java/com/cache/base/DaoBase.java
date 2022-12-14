@@ -92,25 +92,32 @@ public class DaoBase {
     public int executeUpdateQuery(String sql, Object[] params) {
         return executeUpdateQuery(sql, rowtoParams(params));
     }
+    /** */
+    public int executeUpdateQueryParams(String sql, Object... params) {
+        return executeUpdateQuery(sql, params);
+    }
     /** execute INSERT/UPDATE/DELETE query */
     public int executeUpdateQuery(String sql, List<Object[]> params) {
-        return withConnection(conn -> {
-            try {
-                int updCnt = 0;
-                log.debug("UPDATE QUERY !!!!! " + sql + ", COUNT: " + params.size());
-                PreparedStatement st = createStatement(conn, sql);
-                for (Object[] p : params) {
-                    fillStatement(st, p);
-                    updCnt += st.executeUpdate();
-                    log.info("UPDATE QUERY !!!!! " + sql + ", updCnt: " + updCnt + ", PARAMS: " + CacheUtils.serializeTable(p));
+        if (sql == null || sql.isEmpty()) {
+            return -1;
+        } else {
+            return withConnection(conn -> {
+                try {
+                    int updCnt = 0;
+                    log.debug("UPDATE QUERY, sql: " + sql + ", parameters count: " + params.size());
+                    PreparedStatement st = createStatement(conn, sql);
+                    for (Object[] p : params) {
+                        fillStatement(st, p);
+                        updCnt += st.executeUpdate();
+                    }
+                    st.close();
+                    return updCnt;
+                } catch (SQLException ex) {
+                    log.warn("Exception while executing SQL: " + sql + ", reason: " + ex.getMessage());
+                    return -1;
                 }
-                st.close();
-                return updCnt;
-            } catch (SQLException ex) {
-                log.warn("Exception while executing SQL: " + sql + ", reason: " + ex.getMessage());
-                return -1;
-            }
-        }, -1);
+            }, -1);
+        }
     }
     /** execute any query on database */
     public int executeAnyQuery(String sql) {
@@ -122,27 +129,30 @@ public class DaoBase {
     }
     /** execute any query on database with given SQL and parameters */
     public int executeAnyQuery(String sql, List<Object[]> params) {
-        return withConnection(conn -> {
-            try {
-                int trueCnt = 0;
-                PreparedStatement st = createStatement(conn, sql);
-                for (Object[] p : params) {
-                    log.info("Fill statement for SQL:" + sql);
-                    fillStatement(st, p);
-                    boolean ok = st.execute();
-                    if (ok) {
-                        trueCnt++;
+        if (sql == null || sql.isEmpty()) {
+            return -1;
+        } else {
+            return withConnection(conn -> {
+                try {
+                    int trueCnt = 0;
+                    PreparedStatement st = createStatement(conn, sql);
+                    for (Object[] p : params) {
+                        log.debug("Fill statement for SQL:" + sql);
+                        fillStatement(st, p);
+                        boolean ok = st.execute();
+                        if (ok) {
+                            trueCnt++;
+                        }
                     }
+                    st.close();
+                    log.debug("------ Executed query: " +sql);
+                    return trueCnt;
+                } catch (SQLException ex) {
+                    log.warn("Cannot execute query, reason: " + ex.getMessage(), ex);
+                    return -2;
                 }
-                st.close();
-                log.info("------ Executed query: " +sql);
-                return trueCnt;
-            } catch (SQLException ex) {
-                log.warn("Cannot execute query, reason: " + ex.getMessage(), ex);
-                log.info("Cannot execute query, reason: " + ex.getMessage());
-                return -2;
-            }
-        }, -1);
+            }, -1);
+        }
     }
     /** execute SELECT query from resultset */
     public LinkedList<Map<String, Object>> executeSelectQuery(String sql) {
@@ -169,25 +179,29 @@ public class DaoBase {
     }
     /** execute SELECT query from resultset */
     public <T> LinkedList<T> executeSelectQuery(String sql, Object[] params, Function<Map<String, Object>, T> convertMethod) {
-        return withConnection(conn -> {
-            try {
-                LinkedList<T> tmpRows = new LinkedList<T>();
-                PreparedStatement stat = createStatement(conn, sql);
-                fillStatement(stat, params);
-                ResultSet rs = stat.executeQuery();
-                int colsCount = stat.getMetaData().getColumnCount();
-                while (rs.next()) {
-                    Map<String, Object> row = new HashMap<>();
-                    for (int col=1; col<=colsCount; col++) {
-                        row.put(rs.getMetaData().getColumnName(col), rs.getObject(col));
+        if (sql == null || sql.isEmpty()) {
+            return new LinkedList<>();
+        } else {
+            return withConnection(conn -> {
+                try {
+                    LinkedList<T> tmpRows = new LinkedList<T>();
+                    PreparedStatement stat = createStatement(conn, sql);
+                    fillStatement(stat, params);
+                    ResultSet rs = stat.executeQuery();
+                    int colsCount = stat.getMetaData().getColumnCount();
+                    while (rs.next()) {
+                        Map<String, Object> row = new HashMap<>();
+                        for (int col=1; col<=colsCount; col++) {
+                            row.put(rs.getMetaData().getColumnName(col), rs.getObject(col));
+                        }
+                        tmpRows.add(convertMethod.apply(row));
                     }
-                    tmpRows.add(convertMethod.apply(row));
+                    return tmpRows;
+                } catch (SQLException ex) {
+                    return new LinkedList<T>();
                 }
-                return tmpRows;
-            } catch (SQLException ex) {
-                return new LinkedList<T>();
-            }
-        }, new LinkedList<T>());
+            }, new LinkedList<T>());
+        }
     }
     /** */
     public int executeInsert(Object obj, String tableName) {
@@ -200,7 +214,7 @@ public class DaoBase {
         } else {
             Object sampleObj = objs.get(0);
             String sql = getSqlForClass(sampleObj, tableName);
-            log.info("SAVING objects to DB, count: " + objs.size() +  "; SQL: " + sql);
+            log.debug("SAVING objects to DB, count: " + objs.size() +  "; SQL: " + sql);
             Field[] fields = sampleObj.getClass().getDeclaredFields();
             List<Object[]> params = objs.stream().map(o -> CacheUtils.getValuesForFields(o, fields)).collect(Collectors.toList());
             return executeUpdateQuery(sql, params);
@@ -210,12 +224,12 @@ public class DaoBase {
     public boolean isConnected() {
         try {
             Connection conn = connPool.getConnection();
-            log.debug("Conn: " + conn);
             boolean closed = conn.isClosed();
             log.debug("Closed: " + closed);
             conn.close();
             return !closed;
         } catch (SQLException ex) {
+            log.info("Cannot check if connection is connected");
             return false;
         }
     }

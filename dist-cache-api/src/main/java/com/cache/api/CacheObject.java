@@ -1,10 +1,9 @@
 package com.cache.api;
 
-import com.cache.interfaces.CacheSerializer;
+import com.cache.interfaces.DistSerializer;
 import com.cache.utils.CacheUtils;
 
 import java.io.*;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -191,16 +190,13 @@ public class CacheObject {
         return 0;
     }
     /** serialize object in cache to byte[] */
-    public byte[] serializeObjectInCache(CacheSerializer serializer) {
+    public byte[] serializeObjectInCache(DistSerializer serializer) {
         return serializer.serialize(objectInCache);
     }
-    /** serialize object in cache to String */
-    public String serializeObjectInCacheToString(CacheSerializer serializer) {
-        return new String(Base64.getEncoder().encode(serializer.serialize(objectInCache)));
-    }
-    /** get map with current values */
-    public CacheObjectSerialized serializedFullCacheObject(CacheSerializer serializer) {
-        byte[] serializedObj = serializeObjectInCache(serializer);
+
+    /** serialize CacheObject */
+    public CacheObjectSerialized serializedFullCacheObject(DistSerializer serializer) {
+        String serializedObj = serializer.serializeToString(objectInCache);
         return new CacheObjectSerialized(objectSeq, createdTimeMs, lastUseTime, lastRefreshTime, key,
                 serializedObj, objectInCache.getClass().getName(),
                 objSize, acquireTimeMs, usages.get(), refreshes.get(),
@@ -208,7 +204,7 @@ public class CacheObject {
                 groups);
     }
     /** write to Stream as blob, returns number of bytes written OR -1 if there is error while writing */
-    public int writeToStream(CacheSerializer serializer, OutputStream outStream) {
+    public int writeToStream(DistSerializer serializer, OutputStream outStream) {
         try {
             byte[] b = serializeObjectInCache(serializer);
             outStream.write(b);
@@ -218,7 +214,7 @@ public class CacheObject {
         }
     }
     /** create cache object from serialized CacheObjectSerialized */
-    public static CacheObject fromSerialized(CacheSerializer serializer, CacheObjectSerialized serialized) {
+    public static CacheObject fromSerialized(DistSerializer serializer, CacheObjectSerialized serialized) {
         return serialized.toCacheObject(serializer);
     }
 

@@ -16,9 +16,8 @@ public class CacheManagerDistributeTest {
         log.info("START------");
         Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest") // set friendly cache name
-                .withDefaultSocketPort() // open TCP port for listening to commands and external cache agents
-                .withCacheApp("https://localhost:8080/") // connect to cache standalone application to synchronize cache agents
-                .withServers("localhost:9095") // try to connect to cache agents
+                .withServerSocketDefaultPort() // open TCP port for listening to commands and external cache agents
+                .withRegisterApplication("https://localhost:8080/") // connect to cache standalone application to synchronize cache agents
                 //.withStorageKafka("") // connect to Kafka brokers as storage
                 //.withStorageElasticsearch("", "", "") // connect to Elasticsearch storage
                 .withStorageHashMap() // add storage build of HashMap manager by cache

@@ -6,6 +6,8 @@ import com.cache.base.CacheBase;
 import com.cache.base.CachePolicyBase;
 import com.cache.base.CacheStorageBase;
 import com.cache.interfaces.Agent;
+import com.cache.api.DistMessage;
+import com.cache.utils.DistMessageProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +28,7 @@ public class CacheManager extends CacheBase {
     private final Timer timer = new Timer();
     private final LinkedList<TimerTask> timerTasks = new LinkedList<>();
     /** agent object connected to given manager
-     * agent can connect to different cache managers in the same group
+     * agent can connect to different cache managers and different services in the same group
      * to cooperate as distributed cache
      *  */
     private AgentInstance agent;
@@ -35,6 +37,9 @@ public class CacheManager extends CacheBase {
     private final Map<String, CacheStorageBase> storages = new HashMap<>();
     /** list of policies for given cache object to check to what caches that object should be add */
     private final List<CachePolicyBase> policies = new LinkedList<CachePolicyBase>();
+    /** processor that is connecting message method with current class method to be executed */
+    private final DistMessageProcessor messageProcessor = new DistMessageProcessor()
+            .addMethod("clearCache", this::clearCache);
 
     /** initialize current manager with properties
      * this is creating storages, connecting to storages
@@ -43,6 +48,7 @@ public class CacheManager extends CacheBase {
         super(cacheCfg);
         this.agent = agent;
         // TODO: finishing initialization - to be done, creating agent, storages, policies
+        //agent.sendMessage(agent.createMessage());
         initializeStorages();
         initializeAgent();
         initializePolicies();
@@ -64,6 +70,12 @@ public class CacheManager extends CacheBase {
         return storages.size();
     }
 
+    /** process message, returns status */
+    public DistMessage processMessage(DistMessage msg) {
+        log.info("Process message by CacheManager, message: " + msg);
+        return messageProcessor.process(msg.getMethod(), msg);
+    }
+
     /** initialize all storages from configuration */
     private void initializeStorages() {
         addEvent(new CacheEvent(this, "initializeStorages", CacheEvent.EVENT_INITIALIZE_STORAGES));
@@ -75,6 +87,7 @@ public class CacheManager extends CacheBase {
                 //.filter(st -> !st.isBlank() && st.isEmpty()) // TODO: check what should be put here
                 .forEach(storageClass -> initializeSingleStorage(initParams, storageClass));
     }
+
     /** initialize single storage */
     private void initializeSingleStorage(StorageInitializeParameter initParams, String className) {
         try {
@@ -101,21 +114,19 @@ public class CacheManager extends CacheBase {
     /** initialize Agent to communicate with other CacheManagers */
     protected void initializeAgent() {
         addEvent(new CacheEvent(this, "initializeAgent", CacheEvent.EVENT_INITIALIZE_AGENT));
-        agent.registerService(this);
-
+        agent.getAgentServices().registerService(this);
     }
-
     /** initialize policies */
     protected void initializePolicies() {
         addEvent(new CacheEvent(this, "initializePolicies", CacheEvent.EVENT_INITIALIZE_POLICIES));
+        // TODO: initialize all plolicies for keeping/moving caches around
     }
-
     /** */
     protected void initializeTimer() {
         addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMERS));
         // initialization for clean
-        long cleanDelayMs = cacheCfg.getPropertyAsLong(DistConfig.CACHE_TIMER_DELAY, DistConfig.CACHE_TIMER_DELAY_VALUE);
-        long cleanPeriodMs = cacheCfg.getPropertyAsLong(DistConfig.CACHE_TIMER_PERIOD, DistConfig.CACHE_TIMER_PERIOD_VALUE);
+        long cleanDelayMs = cacheCfg.getPropertyAsLong(DistConfig.TIMER_DELAY, DistConfig.TIMER_DELAY_VALUE);
+        long cleanPeriodMs = cacheCfg.getPropertyAsLong(DistConfig.TIMER_PERIOD, DistConfig.TIMER_PERIOD_VALUE);
         log.info("Scheduling clean timer task for cache: " + getCacheGuid());
         TimerTask onTimeCleanTask = new TimerTask() {
             @Override
@@ -130,11 +141,9 @@ public class CacheManager extends CacheBase {
         timerTasks.add(onTimeCleanTask);
         timer.scheduleAtFixedRate(onTimeCleanTask, cleanDelayMs, cleanPeriodMs);
         addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMER_CLEAN));
-
-        addEvent(new CacheEvent(this, "initializeTimer", CacheEvent.EVENT_INITIALIZE_TIMER_COMMUNICATE));
         // initialization for
-        long ratioDelayMs = cacheCfg.getPropertyAsLong(DistConfig.CACHE_TIMER_RATIO_DELAY, DistConfig.CACHE_TIMER_RATIO_DELAY_VALUE);
-        long ratioPeriodMs = cacheCfg.getPropertyAsLong(DistConfig.CACHE_TIMER_RATIO_DELAY, DistConfig.CACHE_TIMER_RATIO_DELAY_VALUE);
+        long ratioDelayMs = cacheCfg.getPropertyAsLong(DistConfig.TIMER_RATIO_DELAY, DistConfig.TIMER_RATIO_DELAY_VALUE);
+        long ratioPeriodMs = cacheCfg.getPropertyAsLong(DistConfig.TIMER_RATIO_DELAY, DistConfig.TIMER_RATIO_DELAY_VALUE);
         log.info("Scheduling ratio timer task for cache: " + getCacheGuid());
         TimerTask onTimeHitRatioTask = new TimerTask() {
             @Override
@@ -168,6 +177,8 @@ public class CacheManager extends CacheBase {
         agent.close();
         addEvent(new CacheEvent(this, "onClose", CacheEvent.EVENT_CLOSE_END));
     }
+
+
 
     /** set object in all or one internal caches */
     private List<CacheObject> setItemInternal(CacheObject co) {
@@ -329,6 +340,12 @@ public class CacheManager extends CacheBase {
     }
     public <T> T withCache(String key, Function<String, ? extends T> mapper, CacheMode mode, Set<String> groups) {
         return withCache(key, () -> mapper.apply(key), mode, groups);
+    }
+    /** method to get registration keys for this agent */
+    private DistMessage clearCache(String methodName, DistMessage msg) {
+
+        // TODO: create response message with registration keys
+        return msg.pong(getAgent().getAgentGuid());
     }
 
 }

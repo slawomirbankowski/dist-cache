@@ -1,9 +1,10 @@
 package com.cache.storage;
 
 import com.cache.api.*;
-import com.cache.dtos.CacheRowJdbc;
+import com.cache.base.dtos.DistCacheItemRow;
 import com.cache.base.CacheStorageBase;
 import com.cache.base.DaoBase;
+import com.cache.jdbc.JdbcDialect;
 
 import java.util.*;
 
@@ -34,11 +35,11 @@ public class JdbcStorage extends CacheStorageBase {
     }
     /** */
     private void initializeConnectionAndCreateTables() {
-        var tables = dao.executeSelectQuery(dialect.selectCacheTables);
+        var tables = dao.executeSelectQuery(dialect.selectCacheTables());
         if (tables.size() == 0) {
             log.info("Creating distcacheitem TABLE and INDEX");
-            int ret = dao.executeAnyQuery(dialect.createDistCacheItemTable);
-            dao.executeAnyQuery(dialect.ddlCreateCacheItemIndex);
+            int ret = dao.executeAnyQuery(dialect.createDistCacheItemTable());
+            dao.executeAnyQuery(dialect.createCacheItemIndex());
             log.info("Created distcacheitem TABLE and INDEX: " + ret);
         }
     }
@@ -48,15 +49,16 @@ public class JdbcStorage extends CacheStorageBase {
 
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
-        var items = dao.executeSelectQuery(dialect.selectFindCacheItems, new Object[] { "%" + key + "%" }, x -> CacheRowJdbc.fromMap(x));
+        var items = dao.executeSelectQuery(dialect.selectFindCacheItems(),
+                new Object[] { "%" + key + "%" }, x -> DistCacheItemRow.fromMap(x));
         return !items.isEmpty();
     }
 
     /** get CacheObject item from JDBC */
     public Optional<CacheObject> getObject(String key) {
         //CacheObject.fromSerialized();
-        var items = dao.executeSelectQuery(dialect.selectCacheItemsByKey,
-                new Object[] { key }, x -> CacheObjectSerialized.fromMap(x).toCacheObject(cacheSerializer));
+        var items = dao.executeSelectQuery(dialect.selectCacheItemsByKey(),
+                new Object[] { key }, x -> CacheObjectSerialized.fromMap(x).toCacheObject(distSerializer));
         if (items.isEmpty()) {
             return Optional.empty();
         } else {
@@ -66,15 +68,12 @@ public class JdbcStorage extends CacheStorageBase {
 
     /** set object */
     public  Optional<CacheObject> setObject(CacheObject o) {
-        log.debug(" CACHE JDBC SET OBJECT !!!!!!!! ");
-        CacheObjectSerialized cos = o.serializedFullCacheObject(cacheSerializer);
-        // cachekey, cachevalue, objectclassname,
-        // inserteddate, cacheguid, lastusedate
-        // enddate,createdtimems,objectseq,objsize,acquiretimems,cachemode,cachepriority,groupslist
+        log.debug(" CACHE JDBC SET OBJECT");
+        CacheObjectSerialized cos = o.serializedFullCacheObject(distSerializer);
         var createDate = new java.util.Date();
         var endDate = new java.util.Date(createDate.getTime()+cos.getTimeToLiveMs());
-        dao.executeUpdateQuery(dialect.insertUpdateCacheItem, new Object[] {
-                cos.getKey(), cos.getObjectInCacheAsString(), cos.getObjectClassName(),
+        dao.executeUpdateQuery(dialect.insertUpdateCacheItem(), new Object[] {
+                cos.getKey(), cos.getObjectInCache(), cos.getObjectClassName(),
                 createDate, getCacheUid(), createDate,
                 endDate, cos.getCreatedTimeMs(), cos.getObjectSeq(), cos.getObjSize(), cos.getAcquireTimeMs(),
                 cos.getMode().ordinal(), cos.getPriority(), String.join(",", cos.getGroups())
@@ -92,9 +91,7 @@ public class JdbcStorage extends CacheStorageBase {
     }
     /** get number of items in cache */
     public int getItemsCount() {
-        dao.executeSelectQuerySingle("select sum(objsize) as cnt from distcacheitem").getIntOrZero("cnt");
-
-        return 0;
+        return dao.executeSelectQuerySingle("select sum(objsize) as cnt from distcacheitem").getIntOrZero("cnt");
     }
     /** get number of objects in this cache */
     public int getObjectsCount() {
@@ -121,7 +118,7 @@ public class JdbcStorage extends CacheStorageBase {
     }
     /** check cache every X seconds to clear TTL caches */
     public void onTimeClean(long checkSeq) {
-        dao.executeSelectQuery("delete from distcacheitem where enddate < now()", new Object[0]);
+        //dao.executeSelectQuery("delete from distcacheitem where enddate < now()", new Object[0]);
     }
     public void disposeStorage() {
         if (dao != null) {

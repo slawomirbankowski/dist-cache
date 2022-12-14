@@ -25,6 +25,7 @@ public class DistConfig {
 
     public DistConfig(Properties p) {
         this.props = p;
+        props.setProperty("", configGuid);
     }
 
     /** get current properties */
@@ -70,10 +71,19 @@ public class DistConfig {
     public double getPropertyAsDouble(String name, double defaultValue) {
         return CacheUtils.parseDouble(getProperty(name), defaultValue);
     }
-
+    /** save to File */
+    public void saveToFile(String fileName) {
+        // TODO: save Properties into file for given name
+    }
+    /** save to JSON */
+    public String saveToJson() {
+        // TODO: save Properties to JSON
+        return "";
+    }
     /** name of group - all caches connecting together should be having the same group
      * name of group could be like GlobalAppCache */
-    public static String DIST_GROUP = "CACHE_GROUP";
+    public static String DIST_GROUP = "DIST_GROUP";
+
     /** name of Distributed system - local instance
      * name should be unique */
     public static String DIST_NAME = "DIST_NAME";
@@ -87,26 +97,27 @@ public class DistConfig {
     public static final AtomicInteger AGENT_SOCKET_PORT_VALUE_SEQ = new AtomicInteger(9901);
 
     /** delay of timer run to clear storages - value in milliseconds */
-    public static String CACHE_TIMER_DELAY = "CACHE_TIMER_DELAY";
-    public static long CACHE_TIMER_DELAY_VALUE = 1000;
-    public static String CACHE_TIMER_COMMUNICATE_DELAY = "CACHE_TIMER_COMMUNICATE_DELAY";
-    public static long CACHE_TIMER_COMMUNICATE_DELAY_VALUE = 60000;
-    public static String CACHE_TIMER_RATIO_DELAY = "CACHE_TIMER_COMMUNICATE_DELAY";
-    public static long CACHE_TIMER_RATIO_DELAY_VALUE = 60000;
+    public static String TIMER_DELAY = "TIMER_DELAY";
+    public static long TIMER_DELAY_VALUE = 1000;
+    public static String TIMER_COMMUNICATE_DELAY = "TIMER_COMMUNICATE_DELAY";
+    public static long TIMER_COMMUNICATE_DELAY_VALUE = 60000;
+    public static String TIMER_RATIO_DELAY = "TIMER_RATIO_DELAY";
+    public static long TIMER_RATIO_DELAY_VALUE = 60000;
     /** period of timer to clear storages - value in milliseconds */
-    public static String CACHE_TIMER_PERIOD = "CACHE_TIMER_PERIOD";
-    public static long CACHE_TIMER_PERIOD_VALUE = 1000;
+    public static String TIMER_PERIOD = "TIMER_PERIOD";
+    public static long TIMER_PERIOD_VALUE = 1000;
+
+    /** */
+    public static String AGENT_SERVER_SOCKET_CLIENT_TIMEOUT = "AGENT_SERVER_SOCKET_CLIENT_TIMEOUT";
+    public static int AGENT_SERVER_SOCKET_CLIENT_TIMEOUT_DEFAULT_VALUE = 2000;
 
     /** default value of time-to-live objects in cache*/
     public static String CACHE_TTL = "CACHE_TTL";
     public static long CACHE_TTL_VALUE = CacheMode.TIME_ONE_HOUR;
 
-    /** list of cache agent servers - this should be semicolon separated list of initial cache agents like:
-     * server001d:9999;server015d:9999;server018d:9999
-     * There might be more agents registering and un-registering to the cache agent list.
-     * The list of agents can be synchronized through different repositories like JDBC DB or Kafka or Elasticsearch
-     * */
-    public static String CACHE_SERVERS = "CACHE_SERVERS";
+    public static String SERIALIZER_DEFINITION = "SERIALIZER_DEFINITION";
+    public static String SERIALIZER_DEFINITION_SERIALIZABLE_VALUE = "java.lang.String=StringSerializer,default=ObjectStreamSerializer";
+
     /** URL of cache standalone application to synchronize all distributed cache managers
      * Cache Standalone App is registering and unregistering all cache agents with managers
      * that are working in cluster */

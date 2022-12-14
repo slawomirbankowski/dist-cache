@@ -1,9 +1,9 @@
 package com.cache.serializers;
 
-import com.cache.interfaces.CacheSerializer;
+import com.cache.interfaces.DistSerializer;
 
 /** serializer and deserializer using String - assuming everything is String */
-public class StringSerializer implements CacheSerializer {
+public class StringSerializer implements DistSerializer {
 
     @Override
     public byte[] serialize(Object obj) {
@@ -14,7 +14,7 @@ public class StringSerializer implements CacheSerializer {
         }
     }
     @Override
-    public Object deserialize(byte[] b) {
+    public Object deserialize(String objectClassName, byte[] b) {
         return new String(b);
     }
     @Override
@@ -23,7 +23,7 @@ public class StringSerializer implements CacheSerializer {
     }
 
     @Override
-    public Object deserializeFromString(String str) {
+    public Object deserializeFromString(String objectClassName, String str) {
         return str;
     }
 
