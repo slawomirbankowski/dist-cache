@@ -3,6 +3,9 @@ package com.cache.utils;
 import com.cache.api.AppGlobalInfo;
 import com.cache.api.CacheObject;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -171,7 +174,7 @@ public class CacheUtils {
         LinkedList<String[]> splitedItems = new LinkedList<>();
         String[] items = str.split(splitChar);
         for (int i=0; i<items.length; i++) {
-            String equation = items[i];
+            String equation = items[i].trim();
             String[] t = splitByChar(equation, equalsChar);
             if (t.length == 2) {
                 if (!t[0].isEmpty() && !t[1].isEmpty()) {
@@ -284,6 +287,23 @@ public class CacheUtils {
                 runTime.freeMemory(), runTime.maxMemory(), runTime.totalMemory(),
                 runTime.freeMemory() / MEGABYTE, runTime.maxMemory() / MEGABYTE, runTime.totalMemory() / MEGABYTE);
     }
-
+    /** get all classes */
+    public static Set<Class> findAllClassesUsingClassLoader(String packageName, ClassLoader cl) {
+        InputStream stream = cl.getResourceAsStream(packageName.replaceAll("[.]", "/"));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+        return reader.lines()
+                .filter(line -> line.endsWith(".class"))
+                .map(line -> getClass(line, packageName))
+                .collect(Collectors.toSet());
+    }
+    private static Class getClass(String className, String packageName) {
+        try {
+            return Class.forName(packageName + "."
+                    + className.substring(0, className.lastIndexOf('.')));
+        } catch (ClassNotFoundException e) {
+            // invalid class or incorrect class
+        }
+        return null;
+    }
     public static final long MEGABYTE = 1024 * 1024;
 }

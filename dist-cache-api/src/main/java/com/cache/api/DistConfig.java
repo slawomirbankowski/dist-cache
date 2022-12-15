@@ -135,6 +135,8 @@ public class DistConfig {
     public static String CACHE_EVENTS_MAX_COUNT = "CACHE_EVENTS_MAX_COUNT";
     public static long CACHE_EVENTS_MAX_COUNT_VALUE = 100;
 
+    public static String CACHE_POLICY = "CACHE_POLICY";
+
     /** maximum number of local items - each object could be a list with many objects
      * this could be taken from collection size = number of items */
     public static String CACHE_MAX_LOCAL_ITEMS = "CACHE_MAX_LOCAL_ITEMS";

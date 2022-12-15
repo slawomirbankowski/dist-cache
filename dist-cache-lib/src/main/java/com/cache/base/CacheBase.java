@@ -43,15 +43,19 @@ public abstract class CacheBase implements Cache {
 
     /** key encoder to hide passwords and secrets in keys */
     protected CacheKeyEncoder keyEncoder;
+    /** policy to add cache Objects to storages and changing mode, ttl, priority, tags */
+    protected CachePolicy policy;
 
     public CacheBase() {
-        this(DistConfig.buildEmptyConfig());
+        this(DistConfig.buildEmptyConfig(), CachePolicyBuilder.empty().create());
     }
     /** initialize current manager with properties
      * this is creating storages, connecting to storages
      * creating cache policy, create agent and connecting to other cache agents */
-    public CacheBase(DistConfig cfg) {
+    public CacheBase(DistConfig cfg, CachePolicy policy) {
         this.cacheCfg = cfg;
+        this.policy = policy;
+        //policy = CachePolicyBuilder.empty().parse(cfg.getProperty(DistConfig.CACHE_POLICY, "")).create();
         // add all callback functions
         initializeEncoder();
         initializeSerializer();

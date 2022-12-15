@@ -1,6 +1,8 @@
 package com.cache;
 
 import com.cache.agent.AgentInstance;
+import com.cache.api.CachePolicy;
+import com.cache.api.CachePolicyBuilder;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.Cache;
 import com.cache.api.DistConfig;
@@ -110,6 +112,8 @@ public class DistFactory {
      * key = full name of class to be serialized
      * value = serializer to do the work */
     private final HashMap<String, DistSerializer> serializers = new HashMap<>();
+    /** cache policy */
+    private CachePolicy policy = CachePolicyBuilder.empty().create();
 
     /** factory is just creating managers */
     private DistFactory() {
@@ -122,10 +126,9 @@ public class DistFactory {
     /** create instance of cache from current factory using properties and callbacks */
     public Cache createCacheInstance() {
         DistConfig config = new DistConfig(props);
-
         AgentInstance agent = new AgentInstance(config, callbacks, serializers);
         agent.initializeAgent();
-        Cache cache = new CacheManager(agent, config);
+        Cache cache = new CacheManager(agent, config, policy);
         createdCaches.add(cache);
         // TODO: add measure service
         // TODO: add other services
@@ -368,6 +371,11 @@ public class DistFactory {
     public DistFactory withTimer(long delayMs, long periodMs) {
         props.setProperty(DistConfig.TIMER_DELAY, ""+delayMs);
         props.setProperty(DistConfig.TIMER_PERIOD, ""+periodMs);
+        return this;
+    }
+    /** set cache policy, this is overwriting existing policy */
+    public DistFactory withCachePolicy(CachePolicy policy) {
+        this.policy = policy;
         return this;
     }
 

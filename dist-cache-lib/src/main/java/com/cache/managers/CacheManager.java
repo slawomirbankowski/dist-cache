@@ -3,10 +3,10 @@ package com.cache.managers;
 import com.cache.agent.AgentInstance;
 import com.cache.api.*;
 import com.cache.base.CacheBase;
-import com.cache.base.CachePolicyBase;
 import com.cache.base.CacheStorageBase;
 import com.cache.interfaces.Agent;
 import com.cache.api.DistMessage;
+import com.cache.utils.CacheStats;
 import com.cache.utils.DistMessageProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,17 +35,17 @@ public class CacheManager extends CacheBase {
     /** all storages to store cache objects - there could be internal storages,
      * Elasticsearch, Redis, local disk, JDBC database with indexed table, and many others */
     private final Map<String, CacheStorageBase> storages = new HashMap<>();
-    /** list of policies for given cache object to check to what caches that object should be add */
-    private final List<CachePolicyBase> policies = new LinkedList<CachePolicyBase>();
     /** processor that is connecting message method with current class method to be executed */
     private final DistMessageProcessor messageProcessor = new DistMessageProcessor()
             .addMethod("clearCache", this::clearCache);
+    /** stats about this cache manager - long term diagnostic information*/
+    private final CacheStats cacheStats = new CacheStats();
 
     /** initialize current manager with properties
      * this is creating storages, connecting to storages
      * creating cache policy, create agent and connecting to other cache agents */
-    public CacheManager(AgentInstance agent, DistConfig cacheCfg) {
-        super(cacheCfg);
+    public CacheManager(AgentInstance agent, DistConfig cacheCfg, CachePolicy policy) {
+        super(cacheCfg, policy);
         this.agent = agent;
         // TODO: finishing initialization - to be done, creating agent, storages, policies
         //agent.sendMessage(agent.createMessage());
@@ -178,8 +178,6 @@ public class CacheManager extends CacheBase {
         addEvent(new CacheEvent(this, "onClose", CacheEvent.EVENT_CLOSE_END));
     }
 
-
-
     /** set object in all or one internal caches */
     private List<CacheObject> setItemInternal(CacheObject co) {
         addedItemsSequence.incrementAndGet();
@@ -199,8 +197,9 @@ public class CacheManager extends CacheBase {
         long acquireTimeMs = System.currentTimeMillis()-startActTime; // this is time of getting this object from method
         log.debug("===> Got object from external method/supplier, time: " + acquireTimeMs);
         CacheObject co = new CacheObject(key, objFromMethod, acquireTimeMs, acquireMethod, mode, groups);
-        // TODO: need to set object in internal caches
+        policy.checkAndApply(co, cacheStats);
         setItemInternal(co);
+        cacheStats.objectAcquire(key, acquireTimeMs);
         //Optional<CacheObject> prev = setItem(co);
         //prev.ifPresent(CacheObject::releaseObject);
         return objFromMethod;
@@ -211,6 +210,7 @@ public class CacheManager extends CacheBase {
         Function<String, Object> acquireMethod = s -> value;
         CacheObject co = new CacheObject(key, value, 0L, acquireMethod, mode, groups);
         List<CacheObject> prevObjects = setItemInternal(co);
+        // cacheStats.keyRead(key, );
         return new CacheSetBack(prevObjects, co);
     }
 
@@ -276,6 +276,7 @@ public class CacheManager extends CacheBase {
     /** check cache every X seconds to clear TTL caches */
     public void onTimeClean() {
         long checkSeq = checkSequence.incrementAndGet();
+        cacheStats.refreshMemory();
         addEvent(new CacheEvent(this, "onTimeClean", CacheEvent.EVENT_TIMER_CLEAN));
         storages.values().stream().forEach(x -> x.onTimeClean(checkSeq));
     }
@@ -287,6 +288,7 @@ public class CacheManager extends CacheBase {
 
     /** get item from cache if exists or None */
     public Optional<CacheObject> getCacheObject(String key) {
+        cacheStats.keyRead(key);
         for (CacheStorageBase storage: storages.values()) {
             Optional<CacheObject> fromCache = storage.getObject(key);
             if (fromCache.isPresent()) {
@@ -294,6 +296,7 @@ public class CacheManager extends CacheBase {
                     CacheObject co = fromCache.get();
                     co.use();
                     // TODO: if this is not internal cache - need to increase usage and lastUseDate ???
+                    cacheStats.keyHit(key, storage.getStorageUid());
                     return Optional.ofNullable(co);
                 } catch (Exception ex) {
                     // TODO: log problem with casting value from cache for given key into specific type
@@ -301,10 +304,12 @@ public class CacheManager extends CacheBase {
                 }
             }
         }
+        cacheStats.keyMiss(key);
         return Optional.empty();
     }
     /** get item from cache if exists or None */
     public <T> Optional<T> getObject(String key) {
+        cacheStats.keyRead(key);
         for (CacheStorageBase storage: storages.values()) {
             Optional<CacheObject> fromCache = storage.getObject(key);
             if (fromCache.isPresent()) {
@@ -319,9 +324,9 @@ public class CacheManager extends CacheBase {
                 }
             }
         }
+        cacheStats.keyMiss(key);
         return Optional.empty();
     }
-
 
     /** execute with cache for key
      * if object in cache exists and it is valid, then this object would be returned
