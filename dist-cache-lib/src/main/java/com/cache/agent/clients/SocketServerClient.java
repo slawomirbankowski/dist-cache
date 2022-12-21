@@ -56,6 +56,7 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
             isServer = false;
             socket = new Socket(srv.serverhost, srv.serverport);
         } catch (Exception ex) {
+            parentAgent.getAgentIssues().addIssue("SocketServerClient", ex);
             log.warn("Cannot initialize socket to host: " + srv.serverhost +", port: " + srv.serverport + ", current agent: " + parentAgent.getAgentGuid() + ", connecting to agent: " + srv.agentguid + ", reason: " + ex.getMessage(), ex);
         }
         initialize();
@@ -116,6 +117,7 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
             return true;
         } catch (Exception ex) {
             log.warn("ERROR WHILE SENDING DATA FOR CLIENT: " + clientGuid + ", reason: " + ex.getMessage(), ex);
+            parentAgent.getAgentIssues().addIssue("SocketServerClient.send", ex);
             return false;
         }
     }

@@ -198,6 +198,7 @@ public class DaoBase {
                     }
                     return tmpRows;
                 } catch (SQLException ex) {
+                    log.warn("Cannot execute query for SQL: " + sql + ", reason: " + ex.getMessage());
                     return new LinkedList<T>();
                 }
             }, new LinkedList<T>());

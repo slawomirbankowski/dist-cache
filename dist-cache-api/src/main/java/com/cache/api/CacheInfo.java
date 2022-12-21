@@ -39,8 +39,8 @@ public class CacheInfo {
         return cacheManagerGuid;
     }
 
-    public LocalDateTime getCreatedDateTime() {
-        return createdDateTime;
+    public String getCreatedDateTime() {
+        return createdDateTime.toString();
     }
 
     public long getCheckSequence() {

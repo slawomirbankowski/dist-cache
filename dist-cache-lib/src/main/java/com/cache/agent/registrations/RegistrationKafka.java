@@ -21,6 +21,7 @@ public class RegistrationKafka extends RegistrationBase {
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(RegistrationKafka.class);
 
+    private String kafkaBrokers;
     public RegistrationKafka(AgentInstance parentAgent) {
         super(parentAgent);
     }
@@ -49,6 +50,11 @@ public class RegistrationKafka extends RegistrationBase {
     @Override
     protected AgentPingResponse onAgentPing(AgentPing ping) {
         return null;
+    }
+
+    /** get normalized URL for this registration */
+    public String getUrl() {
+        return kafkaBrokers;
     }
     /** add issue for registration */
     public void addIssue(DistIssue issue) {

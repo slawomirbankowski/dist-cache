@@ -26,7 +26,6 @@ public class RegistrationApplication extends RegistrationBase {
 
     public RegistrationApplication(AgentInstance parentAgent) {
         super(parentAgent);
-
     }
     /** run for initialization in classes */
     @Override
@@ -36,9 +35,11 @@ public class RegistrationApplication extends RegistrationBase {
             log.info("Connecting to dist-cache application, URL: " + urlString);
             applicationConn = new HttpConnectionHelper(urlString);
         } catch (Exception ex) {
+            parentAgent.getAgentIssues().addIssue("AgentTimersImpl.onInitialize", ex);
             log.warn("Cannot connect to dist-cache application, reason: " + ex.getMessage(), ex);
         }
     }
+
     @Override
     protected boolean onIsConnected() {
         return false;
@@ -58,6 +59,7 @@ public class RegistrationApplication extends RegistrationBase {
             log.info("Got registration response from APP: " + response.getInfo());
             return null;
         } catch (Exception ex) {
+            parentAgent.getAgentIssues().addIssue("RegistrationApplication.onAgentRegister", ex);
             log.warn("Cannot connect to dist-cache application, reason: " + ex.getMessage(), ex);
             return null;
         }
@@ -71,6 +73,12 @@ public class RegistrationApplication extends RegistrationBase {
 
         return null;
     }
+
+    /** get normalized URL for this registration */
+    public String getUrl() {
+        return urlString;
+    }
+
     /** add issue for registration */
     public void addIssue(DistIssue issue) {
     }

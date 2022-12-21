@@ -33,8 +33,8 @@ public class StorageInfo {
         return storageUid;
     }
 
-    public LocalDateTime getStorageCreatedDate() {
-        return storageCreatedDate;
+    public String getStorageCreatedDate() {
+        return storageCreatedDate.toString();
     }
 
     public String getStorageClassName() {

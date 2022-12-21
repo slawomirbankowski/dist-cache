@@ -73,6 +73,7 @@ public class DistConfig {
     }
     /** save to File */
     public void saveToFile(String fileName) {
+
         // TODO: save Properties into file for given name
     }
     /** save to JSON */
@@ -89,6 +90,10 @@ public class DistConfig {
     public static String DIST_NAME = "DIST_NAME";
     public static String DIST_NAME_VALUE_DEFAULT = "DistSystem";
 
+
+    /** port of cache for extending and distributed join */
+    public static String AGENT_API_PORT = "AGENT_API_PORT";
+
     /** port of cache for extending and distributed join */
     public static String AGENT_SOCKET_PORT = "AGENT_SOCKET_PORT";
     /** */
@@ -98,14 +103,14 @@ public class DistConfig {
 
     /** delay of timer run to clear storages - value in milliseconds */
     public static String TIMER_DELAY = "TIMER_DELAY";
-    public static long TIMER_DELAY_VALUE = 1000;
+    public static long TIMER_DELAY_VALUE = 10000;
     public static String TIMER_COMMUNICATE_DELAY = "TIMER_COMMUNICATE_DELAY";
     public static long TIMER_COMMUNICATE_DELAY_VALUE = 60000;
     public static String TIMER_RATIO_DELAY = "TIMER_RATIO_DELAY";
     public static long TIMER_RATIO_DELAY_VALUE = 60000;
     /** period of timer to clear storages - value in milliseconds */
     public static String TIMER_PERIOD = "TIMER_PERIOD";
-    public static long TIMER_PERIOD_VALUE = 1000;
+    public static long TIMER_PERIOD_VALUE = 10000;
 
     /** */
     public static String AGENT_SERVER_SOCKET_CLIENT_TIMEOUT = "AGENT_SERVER_SOCKET_CLIENT_TIMEOUT";
@@ -134,6 +139,8 @@ public class DistConfig {
     /** maximum number of issues stored in cache */
     public static String CACHE_EVENTS_MAX_COUNT = "CACHE_EVENTS_MAX_COUNT";
     public static long CACHE_EVENTS_MAX_COUNT_VALUE = 100;
+
+    public static String CACHE_POLICY = "CACHE_POLICY";
 
     /** maximum number of local items - each object could be a list with many objects
      * this could be taken from collection size = number of items */
@@ -170,6 +177,24 @@ public class DistConfig {
     public static String CACHE_STORAGE_JDBC_INIT_CONNECTIONS = "CACHE_STORAGE_JDBC_INIT_CONNECTIONS";
     public static String CACHE_STORAGE_JDBC_MAX_ACTIVE_CONNECTIONS = "CACHE_STORAGE_JDBC_MAX_ACTIVE_CONNECTIONS";
 
+    /** settings for MongoDB storage */
+    public static String CACHE_STORAGE_MONGODB_HOST = "CACHE_STORAGE_MONGODB_HOST";
+    public static String CACHE_STORAGE_MONGODB_PORT = "CACHE_STORAGE_MONGODB_PORT";
+
+    /** settings for Redis storage */
+    public static String CACHE_STORAGE_REDIS_HOST = "CACHE_STORAGE_REDIS_HOST";
+    public static String CACHE_STORAGE_REDIS_PORT = "CACHE_STORAGE_REDIS_PORT";
+
+    /** settings for Elasticsearch storage */
+    public static String CACHE_STORAGE_ELASTICSEARCH_URL = "CACHE_STORAGE_ELASTICSEARCH_URL";
+
+    /** settings for Cassandra storage */
+    public static String CACHE_STORAGE_CASSANDRA_HOST = "CACHE_STORAGE_REDIS_HOST";
+    public static String CACHE_STORAGE_CASSANDRA_PORT = "CACHE_STORAGE_REDIS_PORT";
+
+    /** */
+    public static String CACHE_STORAGE_LOCAL_DISK_PREFIX_PATH = "CACHE_STORAGE_LOCAL_DISK_PREFIX_PATH";
+
     /** JDBC connection for agent registration */
     public static String JDBC_URL = "JDBC_URL";
     public static String JDBC_DRIVER = "JDBC_DRIVER";
@@ -192,5 +217,4 @@ public class DistConfig {
     public static String REDIS_URL = "REDIS_URL";
     public static String REDIS_PORT = "REDIS_PORT";
 
-    public static String LOCAL_DISK_PREFIX_PATH = "LOCAL_DISK_PREFIX_PATH";
 }

@@ -32,7 +32,7 @@ public class CacheManagerInfoTest {
                 return "value ";
             }, CacheMode.modeTtlFiveMinutes);
         }
-        List<CacheObjectInfo> objs = cache.getCacheValues("");
+        List<CacheObjectInfo> objs = cache.getCacheInfos("");
         assertEquals(cache.getCacheValues("").size(), 10);
         objs.stream().forEach(x -> {
             log.info("OBJ IN CACHE: " + x);

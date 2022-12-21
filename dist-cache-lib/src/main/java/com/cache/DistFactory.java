@@ -1,6 +1,8 @@
 package com.cache;
 
 import com.cache.agent.AgentInstance;
+import com.cache.api.CachePolicy;
+import com.cache.api.CachePolicyBuilder;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.Cache;
 import com.cache.api.DistConfig;
@@ -110,6 +112,8 @@ public class DistFactory {
      * key = full name of class to be serialized
      * value = serializer to do the work */
     private final HashMap<String, DistSerializer> serializers = new HashMap<>();
+    /** cache policy */
+    private CachePolicy policy = CachePolicyBuilder.empty().create();
 
     /** factory is just creating managers */
     private DistFactory() {
@@ -122,10 +126,9 @@ public class DistFactory {
     /** create instance of cache from current factory using properties and callbacks */
     public Cache createCacheInstance() {
         DistConfig config = new DistConfig(props);
-
         AgentInstance agent = new AgentInstance(config, callbacks, serializers);
         agent.initializeAgent();
-        Cache cache = new CacheManager(agent, config);
+        Cache cache = new CacheManager(agent, config, policy);
         createdCaches.add(cache);
         // TODO: add measure service
         // TODO: add other services
@@ -212,8 +215,13 @@ public class DistFactory {
         }
         return this;
     }
+    /** define port for Web Api */
+    public DistFactory withWebApiPort(int port) {
+        props.setProperty(DistConfig.AGENT_API_PORT, ""+port);
+        return this;
+    }
 
-    /** define port on which agent will be listening */
+    /** define port for Socket communication */
     public DistFactory withServerSocketPort(int port) {
         props.setProperty(DistConfig.AGENT_SOCKET_PORT, ""+port);
         return this;
@@ -233,26 +241,29 @@ public class DistFactory {
     }
 
 
+    private String getExistingStorageList() {
+        String existingStorages = props.getProperty(DistConfig.CACHE_STORAGES);
+        if (existingStorages == null) {
+            existingStorages = "";
+        }
+        return existingStorages;
+    }
     /** add storage with HashMap */
     public DistFactory withStorageHashMap() {
-        String existingProps = ""+props.getProperty(DistConfig.CACHE_STORAGES);
-        props.setProperty(DistConfig.CACHE_STORAGES, existingProps + "," + DistConfig.CACHE_STORAGE_VALUE_HASHMAP);
+        props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_HASHMAP);
         return this;
     }
     /**  */
     public DistFactory withStoragePriorityQueue() {
-        String existingProps = ""+props.getProperty(DistConfig.CACHE_STORAGES);
-        props.setProperty(DistConfig.CACHE_STORAGES, existingProps + "," + DistConfig.CACHE_STORAGE_VALUE_PRIORITYQUEUE);
+        props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_PRIORITYQUEUE);
         return this;
     }
     public DistFactory withStorageWeakHashMap() {
-        String existingProps = ""+props.getProperty(DistConfig.CACHE_STORAGES);
-        props.setProperty(DistConfig.CACHE_STORAGES, existingProps + "," + DistConfig.CACHE_STORAGE_VALUE_WEAKHASHMAP);
+        props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_WEAKHASHMAP);
         return this;
     }
     public DistFactory withStorageElasticsearch(String url, String user, String pass) {
-        String existingProps = ""+props.getProperty(DistConfig.CACHE_STORAGES);
-        props.setProperty(DistConfig.CACHE_STORAGES, existingProps + "," + DistConfig.CACHE_STORAGE_VALUE_ELASTICSEARCH);
+        props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_ELASTICSEARCH);
         props.setProperty(DistConfig.ELASTICSEARCH_URL, url);
         props.setProperty(DistConfig.ELASTICSEARCH_USER, user);
         props.setProperty(DistConfig.ELASTICSEARCH_PASS, pass);
@@ -260,8 +271,7 @@ public class DistFactory {
     }
     /** add JDBC as external storage */
     public DistFactory withStorageJdbc(String url, String driver, String user, String pass) {
-        String existingProps = ""+props.getProperty(DistConfig.CACHE_STORAGES);
-        props.setProperty(DistConfig.CACHE_STORAGES, existingProps + "," + DistConfig.CACHE_STORAGE_VALUE_JDBC);
+        props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_JDBC);
         props.setProperty(DistConfig.CACHE_STORAGE_JDBC_URL, url);
         props.setProperty(DistConfig.CACHE_STORAGE_JDBC_DRIVER, driver);
         props.setProperty(DistConfig.CACHE_STORAGE_JDBC_USER, user);
@@ -270,15 +280,13 @@ public class DistFactory {
         return this;
     }
     public DistFactory withStorageLocalDisk(String basePath) {
-        String existingProps = ""+props.getProperty(DistConfig.CACHE_STORAGES);
-        props.setProperty(DistConfig.CACHE_STORAGES, existingProps + "," + DistConfig.CACHE_STORAGE_VALUE_LOCAL_DISK);
-        props.setProperty(DistConfig.LOCAL_DISK_PREFIX_PATH, basePath);
+        props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_LOCAL_DISK);
+        props.setProperty(DistConfig.CACHE_STORAGE_LOCAL_DISK_PREFIX_PATH, basePath);
         return this;
     }
     /** add storage as Redis*/
     public DistFactory withStorageRedis(String url, String port) {
-        String existingProps = ""+props.getProperty(DistConfig.CACHE_STORAGES);
-        props.setProperty(DistConfig.CACHE_STORAGES, existingProps + "," + DistConfig.CACHE_STORAGE_VALUE_REDIS);
+        props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_REDIS);
         props.setProperty(DistConfig.REDIS_URL, url);
         props.setProperty(DistConfig.REDIS_PORT, port);
         return this;
@@ -368,6 +376,11 @@ public class DistFactory {
     public DistFactory withTimer(long delayMs, long periodMs) {
         props.setProperty(DistConfig.TIMER_DELAY, ""+delayMs);
         props.setProperty(DistConfig.TIMER_PERIOD, ""+periodMs);
+        return this;
+    }
+    /** set cache policy, this is overwriting existing policy */
+    public DistFactory withCachePolicy(CachePolicy policy) {
+        this.policy = policy;
         return this;
     }
 

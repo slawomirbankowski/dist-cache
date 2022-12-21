@@ -30,17 +30,28 @@ public interface Cache extends DistService {
     /** get information about all storages in this cache */
     int getStoragesCount();
 
+    /** get key encoder - this is a class to encode key to protect passwords, secrets of a key */
+    CacheKeyEncoder getKeyEncoder();
     /** check if there is object for given key in cache - this is checking in all storages available */
     boolean contains(String key);
     /** get all keys for storages, each storage has unique key to identify  */
     Set<String> getStorageKeys();
+
     /** get all cache keys that contains given string
      * cache keys are searched in all storages
      * this might return only TOP X keys if there are by far too many keys in cache to be downloaded */
+    Set<String> getCacheKeys(String containsStr, boolean includeExternal);
     Set<String> getCacheKeys(String containsStr);
+
     /** get values stored in cache
      * this might returns only first X values */
-    List<CacheObjectInfo> getCacheValues(String containsStr);
+    List<CacheObject> getCacheValues(String containsStr, boolean includeExternal);
+    List<CacheObject> getCacheValues(String containsStr);
+
+    /** get list of CacheInfo-s that contains that given key */
+    List<CacheObjectInfo> getCacheInfos(String containsStr, boolean includeExternal);
+    List<CacheObjectInfo> getCacheInfos(String containsStr);
+
     /** get number of items in cache,
      * each object might be having many items because it might be a List or Set or Map or Array
      * number of items must be greater or equal than number of objects */
@@ -53,7 +64,7 @@ public interface Cache extends DistService {
     /** get number of objects in each storage */
     Map<String, Integer> getObjectsCountPerStorage();
     /** clear caches with given clear cache */
-    int clearCaches(int clearMode);
+    int clearCaches(CacheClearMode clearMode);
     /** clear cache contains given partial key */
     int clearCacheContains(String str);
     /** get first object in cache for given key

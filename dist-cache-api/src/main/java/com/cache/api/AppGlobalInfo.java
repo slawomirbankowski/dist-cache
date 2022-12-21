@@ -31,12 +31,12 @@ public class AppGlobalInfo {
         this.totalMemoryMb = totalMemoryMb;
     }
 
-    public LocalDateTime getCreatedDate() {
-        return createdDate;
+    public String getCreatedDate() {
+        return createdDate.toString();
     }
 
-    public LocalDateTime getLocalDateTime() {
-        return localDateTime;
+    public String getLocalDateTime() {
+        return localDateTime.toString();
     }
 
     public String getCurrentHostName() {

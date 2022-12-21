@@ -13,7 +13,6 @@ import java.util.function.Function;
  * this cache is representing internal cache with object stored */
 public class CacheObject {
 
-
     /** sequence of object in this JVM */
     public static AtomicLong globalObjectSeq = new AtomicLong();
     /** sequence of created object in this JVM */
@@ -39,14 +38,18 @@ public class CacheObject {
     /** counter for refreshes */
     private final AtomicLong refreshes = new AtomicLong();
     /** cache mode */
-    private final CacheMode mode;
+    private CacheMode.Mode mode;
+    /** time to live milliseconds */
+    private long timeToLiveMs;
+    /** priority in cache */
+    private int priority;
     /** set of groups to identify cache with, these groups are helpful with clearing caches */
     private Set<String> groups;
 
     /** creates object from deserialization */
     public CacheObject(long objectSeq, long createdTimeMs, long lastUseTime, long lastRefreshTime, String key,
                        Object objectInCache, Function<String, ?> methodToAcquire, int objSize, long acquireTimeMs,
-                       long usages, long refreshes, CacheMode mode, Set<String> groups) {
+                       long usages, long refreshes, CacheMode.Mode mode, int priority, long timeToLive, Set<String> groups) {
         this.objectSeq = objectSeq;
         this.createdTimeMs = createdTimeMs;
         this.lastUseTime = lastUseTime;
@@ -59,16 +62,20 @@ public class CacheObject {
         this.usages.set(usages);
         this.refreshes.set(refreshes);
         this.mode = mode;
+        this.timeToLiveMs = timeToLive;
+        this.priority = priority;
         this.groups = groups;
     }
     /** creates new object in memory */
-    public CacheObject(String key, Object o, long acqTimeMs, Function<String, ?> method, CacheMode mode, Set<String> groups) {
+    public CacheObject(String key, Object o, long acqTimeMs, Function<String, ?> method, CacheMode cm, Set<String> groups) {
         this.key = key;
         this.objSize = CacheUtils.estimateSize(o);
         this.objectInCache = o;
         this.acquireTimeMs = acqTimeMs;
         this.methodToAcquire = method;
-        this.mode = mode;
+        this.mode = cm.getMode();
+        this.timeToLiveMs = cm.getTimeToLiveMs();
+        this.priority = cm.getPriority();
         this.groups = groups;
         calculateSize();
     }
@@ -90,7 +97,7 @@ public class CacheObject {
     public CacheObjectInfo getInfo() {
         return new CacheObjectInfo(key, createdTimeMs, objectSeq, objSize, acquireTimeMs,
                 usages.get(), refreshes.get(),
-                mode.getMode(), timeToLive(), lastUseTime, lastRefreshTime,
+                mode, timeToLive(), lastUseTime, lastRefreshTime,
                 objectInCache.getClass().getName());
     }
 
@@ -108,34 +115,60 @@ public class CacheObject {
     }
     /** get estimated size of object in cache - the size is counting objects in memory rather than bytes or real memory used */
     public int getSize() { return objSize; }
+    public Class getObjectClass() { return objectInCache.getClass(); }
     /** get full name of class in cache */
     public String getClassName() {
         return objectInCache.getClass().getName();
     }
     /** get sequence of object in cache - sequence is created from 1 */
     public long getSeq() { return objectSeq; }
+    /** get mode of this cache object */
+    public CacheMode.Mode getMode() {
+        return mode;
+    }
     /** get time of last use this cache */
     public long getLastUseTime() { return lastUseTime; }
     /** get acquire time of getting this object from aquire method */
     public long getAcquireTimeMs() { return acquireTimeMs; }
+    /** */
+    public long getTimeToLive() { return timeToLiveMs; }
+
     /** release action for this cache object - by default there is no action for releasing
      * GC should normally dispose this object */
     public void releaseObject() {
         // TODO: check via reflection if there is any method like close() or dispose() and run it
     }
-
+    /** returns true if cache time to live is finished */
     public boolean isOutdated() {
-        return this.timeToLive() <= 0;
+        return timeToLive() <= 0;
     }
-
+    /** get priority of this cache object */
     public int getPriority() {
-        return mode.getPriority();
+        return priority;
     }
-
+    /** set new size of this cache object */
+    void setSize(int newObjSize) {
+        this.objSize += newObjSize;
+    }
+    /** set new time to live for this cache object */
+    void setTtl(long newTtl) {
+        this.timeToLiveMs = newTtl;
+    }
+    /** set new mode for this object */
+    void setMode(CacheMode.Mode m) {
+        this.mode = m;
+    }
+    void setPriority(int priority) {
+        this.priority = priority;
+    }
+    /** */
+    void setGroups(Set<String> grs) {
+        this.groups = grs;
+    }
+    /** */
     public void renew() {
         lastUseTime = System.currentTimeMillis();
     }
-
     /** check if key of this object contains given string */
     public boolean keyContains(String str) {
         return key.contains(str);
@@ -151,16 +184,16 @@ public class CacheObject {
     }
     /** calculate current time to live for this object */
     public long timeToLive() {
-        return mode.getTimeToLiveMs() - (System.currentTimeMillis() - createdTimeMs);
+        return timeToLiveMs - (System.currentTimeMillis() - createdTimeMs);
     }
     /** if this object is old - it means that is TTL mode and live time is longer than declared time to live */
     public boolean isOld() {
-        return mode.isTtl() && (liveTime() > mode.getTimeToLiveMs());
+        return mode.isTtl() && (liveTime() > getTimeToLive());
     }
     /** check if this object should be refreshed
      * it means that object has REFRESH mode and last refresh time is longer than time to live */
     public boolean shouldBeRefreshed() {
-        return mode.isRefresh() && (System.currentTimeMillis()- lastRefreshTime>mode.getTimeToLiveMs());
+        return mode.isRefresh() && (System.currentTimeMillis()- lastRefreshTime>getTimeToLive());
     }
     /** refresh object using acquire method if object should be refreshed
      * returns size of object OR
@@ -200,7 +233,7 @@ public class CacheObject {
         return new CacheObjectSerialized(objectSeq, createdTimeMs, lastUseTime, lastRefreshTime, key,
                 serializedObj, objectInCache.getClass().getName(),
                 objSize, acquireTimeMs, usages.get(), refreshes.get(),
-                mode.getMode(), mode.getTimeToLiveMs(), mode.getPriority(), mode.isAddToInternal(), mode.isAddToExternal(),
+                mode, getTimeToLive(), getPriority(), true, true,
                 groups);
     }
     /** write to Stream as blob, returns number of bytes written OR -1 if there is error while writing */

@@ -1,8 +1,6 @@
 package com.cache.interfaces;
 
-import com.cache.api.DistConfig;
-import com.cache.api.DistMessage;
-import com.cache.api.DistServiceType;
+import com.cache.api.*;
 
 import java.time.LocalDateTime;
 
@@ -18,8 +16,12 @@ public interface DistService {
     Agent getAgent();
     /** process message, returns status */
     DistMessage processMessage(DistMessage msg);
+    /** handle API request in this Web API for this service */
+    AgentWebApiResponse handleRequest(AgentWebApiRequest request);
     /** get unique ID of this service */
     String getServiceUid();
+    /** get basic information about service */
+    DistServiceInfo getServiceInfo();
     /** get configuration for cache */
     DistConfig getConfig();
     /** close and deinitialize service */

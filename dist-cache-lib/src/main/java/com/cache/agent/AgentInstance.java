@@ -4,13 +4,16 @@ import com.cache.agent.impl.*;
 import com.cache.api.*;
 import com.cache.interfaces.*;
 import com.cache.serializers.ComplexSerializer;
+import com.cache.util.JsonUtils;
 import com.cache.utils.CacheUtils;
 import com.cache.utils.DistMessageProcessor;
+import com.cache.utils.DistWebApiProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /** agent class to be connected to dist-cache applications, Kafka, Elasticsearch or other global agent repository
@@ -44,13 +47,49 @@ public class AgentInstance implements Agent, DistService {
     private final AgentEvents agentEvents = new AgentEventsImpl(this);
     /** manager for registrations */
     private final AgentIssues agentIssues = new AgentIssuesImpl(this);
+    /** manager for Web API Objects to direct synchronous communication with this agent*/
+    private final AgentApi agentApi = new AgentApiImpl(this);
+
     /** serializer for serialization of DistMessage to external connectors */
     protected DistSerializer serializer;
     /** processor that is connecting message method with current class method to be executed */
     private final DistMessageProcessor messageProcessor = new DistMessageProcessor()
             .addMethod("ping", this::pingMethod)
             .addMethod("getRegistrationKeys", this::getRegistrationKeys);
+    /** processor with functions to handle Web API requests */
+    private final DistWebApiProcessor webApiProcessor = new DistWebApiProcessor()
+            .addHandler("ping", createTextHandler(param -> "pong"))
+            .addHandler("createdDate", (m, req) -> req.responseOkText( getCreateDate().toString()))
+            .addHandler("info", createJsonHandler(param -> getAgentInfo()))
+            .addHandler("config", createJsonHandler(param -> getConfig().getHashMap()))
+            .addHandler("threads", createJsonHandler(param -> agentThreads.getThreadsInfo()))
+            .addHandler("timers", createJsonHandler(param -> agentTimers.getInfo()))
 
+            .addHandler("registrations", createJsonHandler(param -> agentRegistrations.getRegistrationKeys()))
+            .addHandler("registration-connected-agents", createJsonHandler(param -> agentRegistrations.getAgents()))
+            .addHandler("registered-servers", createJsonHandler(param -> agentRegistrations.getServers()))
+            .addHandler("registration-infos", createJsonHandler(param -> agentRegistrations.getRegistrationInfos()))
+
+            .addHandler("service-keys", createJsonHandler(param -> agentServices.getServiceKeys()))
+            .addHandler("service-types", createJsonHandler(param -> agentServices.getServiceTypes()))
+            .addHandler("services", createJsonHandler(param -> agentServices.getServiceInfos()))
+            .addHandler("service", createJsonHandler(param -> agentServices.getServiceInfo(param)))
+
+            .addHandler("server-keys", createJsonHandler(param -> agentConnectors.getServerKeys()))
+            .addHandler("client-keys", createJsonHandler(param -> agentConnectors.getClientKeys()))
+
+            //.addHandler("xxxxxxxxxxx", (m, req) -> req.responseOkText(JsonUtils.serialize( agentThreads.getThreadsCount())))
+            //.addHandler("xxxxxxxxxxx", (m, req) -> req.responseOkText(JsonUtils.serialize( agentTimers.getTimerTasksCount())))
+            //.addHandler("xxxxxxxxxxx", (m, req) -> req.responseOkText(JsonUtils.serialize( agentThreads.getThreadsCount())))
+            //.addHandler("xxxxxxxxxxx", (m, req) -> req.responseOkText(JsonUtils.serialize( agentTimers.getTimerTasksCount())));
+            .addHandler("guid", (m, req) -> req.responseOkText( getAgentGuid()));
+
+    private BiFunction<String, AgentWebApiRequest, AgentWebApiResponse> createTextHandler(Function<String, Object> methodToGetObj) {
+        return (m, req) -> req.responseOkText(JsonUtils.serialize(methodToGetObj.apply(req.getParamOne())));
+    }
+    private BiFunction<String, AgentWebApiRequest, AgentWebApiResponse> createJsonHandler(Function<String, Object> methodToGetObj) {
+        return (m, req) -> req.responseOkJson(JsonUtils.serialize( methodToGetObj.apply(req.getParamOne())));
+    }
     /** create new agent */
     public AgentInstance(DistConfig config, Map<String, Function<CacheEvent, String>> callbacksMethods, HashMap<String, DistSerializer> serializers) {
         this.config = config;
@@ -68,11 +107,17 @@ public class AgentInstance implements Agent, DistService {
     public String getServiceUid() {
         return agentGuid;
     }
+    /** get basic information about service */
+    public DistServiceInfo getServiceInfo() {
+        // DistServiceType serviceType, String getServiceClass, String serviceGuid, LocalDateTime createdDateTime, boolean closed, Map<String, String> customAttributes
+        return new DistServiceInfo(getServiceType(), getClass().getName(), getServiceUid(), createDate, closed, Map.of());
+    }
     /** initialize agent - server, application, jdbc, kafka */
     public void initializeAgent() {
         log.info("Initializing agent for guid: " + agentGuid);
         agentRegistrations.createRegistrations();
         agentConnectors.openServers();
+        agentApi.openApis();
     }
     /** get this Agent */
     public Agent getAgent() {
@@ -147,6 +192,7 @@ public class AgentInstance implements Agent, DistService {
         log.info("Closing agent: " + agentGuid);
         closed = true;
         // TODO: close all items for this agent - unregister in application, notify all agents
+        agentApi.close();
         agentThreads.close();
         agentTimers.close();
         agentServices.close();
@@ -161,7 +207,10 @@ public class AgentInstance implements Agent, DistService {
         log.info("Process message by AgentInstance, message: " + msg);
         return messageProcessor.process(msg.getMethod(), msg);
     }
-
+    /** handle API request in this Web API for this service */
+    public AgentWebApiResponse handleRequest(AgentWebApiRequest request) {
+        return webApiProcessor.handleRequest(request);
+    }
     /** create new message builder starting this agent */
     public DistMessageBuilder createMessageBuilder() {
         return DistMessageBuilder.empty().fromAgent(this);

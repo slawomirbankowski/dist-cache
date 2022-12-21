@@ -33,6 +33,7 @@ public class AgentHttpServer {
             log.info("Started HTTP server!!!");
         } catch (Exception ex) {
             log.info("Cannot start HTTP server, reason: " + ex.getMessage());
+            parentAgent.getAgentIssues().addIssue("AgentHttpServer", ex);
         }
     }
 

@@ -7,6 +7,7 @@ import com.cache.base.DaoBase;
 import com.cache.jdbc.JdbcDialect;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /** cache with JDBC connection to any compliant database
  * it would create special table with cache items and index to fast access
@@ -15,6 +16,7 @@ public class JdbcStorage extends CacheStorageBase {
 
     /** DAO with DBCP to database */
     private final DaoBase dao;
+    /** JDBC dialect with SQL queries for different database management systems */
     private final JdbcDialect dialect;
 
     /** initialize JDBC storage */
@@ -73,17 +75,17 @@ public class JdbcStorage extends CacheStorageBase {
         var createDate = new java.util.Date();
         var endDate = new java.util.Date(createDate.getTime()+cos.getTimeToLiveMs());
         dao.executeUpdateQuery(dialect.insertUpdateCacheItem(), new Object[] {
-                cos.getKey(), cos.getObjectInCache(), cos.getObjectClassName(),
-                createDate, getCacheUid(), createDate,
-                endDate, cos.getCreatedTimeMs(), cos.getObjectSeq(), cos.getObjSize(), cos.getAcquireTimeMs(),
-                cos.getMode().ordinal(), cos.getPriority(), String.join(",", cos.getGroups())
-        });
+                cos.getKey(), cos.getObjectInCache(), cos.getObjectClassName(), // cachekey, cachevalue, objectclassname,
+                createDate, getCacheUid(), createDate, //  inserteddate, cacheguid, lastusedate,
+                endDate, cos.getCreatedTimeMs(), cos.getObjectSeq(), cos.getObjSize(), cos.getAcquireTimeMs(), //  enddate, createdtimems, objectseq, objsize, acquiretimems,
+                cos.getMode().ordinal(), cos.getPriority(), cos.getGroupsList()}); // cachemode, cachepriority, groupslist
         return Optional.empty();
     }
 
     /** remove objects in cache storage by keys */
     public void removeObjectsByKeys(List<String> keys) {
-        dao.executeUpdateQuery("delete from distcacheitem where cachekey in (?)", new Object[] { "" });
+        var sqlParams = String.join(",", keys.stream().map(x -> "?").collect(Collectors.toList()));
+        dao.executeUpdateQuery("delete from distcacheitem where cachekey in (" + sqlParams + ")", keys.toArray());
     }
     /** remove object in cache storage by key */
     public void removeObjectByKey(String key) {
@@ -99,26 +101,40 @@ public class JdbcStorage extends CacheStorageBase {
     }
     /** get keys for all cache items */
     public Set<String> getKeys(String containsStr) {
-        dao.executeSelectQuery("select cacheKey from distcacheitem", new Object[] { "%" + containsStr + "%" });
-        return new HashSet<String>();
+        log.info("Get cache keys ");
+        var rows = dao.executeSelectQuery("select cacheKey as key from distcacheitem where cachekey like ?", new Object[] { "%" + containsStr + "%" });
+        log.info("Got cache keys: " + rows.size());
+        return rows.stream().map(x -> ""+x.get("key")).collect(Collectors.toSet());
     }
     /** get info values */
-    public List<CacheObjectInfo> getValues(String containsStr) {
-
-        return new LinkedList<CacheObjectInfo>();
+    public List<CacheObjectInfo> getInfos(String containsStr) {
+        return getValues(containsStr).stream().map(c -> c.getInfo()).collect(Collectors.toList());
     }
-    /** clear caches with given clear cache */
-    public int clearCache(int clearMode) {
-        //
-        return 1;
+    /** get values of cache objects that contains given String in key */
+    public List<CacheObject> getValues(String containsStr) {
+        log.info("GET VALUES -=======> " + dialect.selectFindCacheItems());
+        var items = dao.executeSelectQuery(dialect.selectFindCacheItems(),
+                new Object[] { "%" + containsStr + "%" }, x -> CacheObjectSerialized.fromMap(x).toCacheObject(distSerializer));
+        return items.stream().collect(Collectors.toList());
+    }
+    /** clear caches for given group */
+    public int clearCacheForGroup(String groupName) {
+        return dao.executeUpdateQuery("delete from distcacheitem where groupslist like ?", new Object[] { "%," + groupName + ",%" });
     }
     /** clear cache contains given partial key */
     public int clearCacheContains(String str) {
         return dao.executeUpdateQuery("delete from distcacheitem where cachekey like ?", new Object[] { "%" + str + "%" });
     }
+
+    /** clear cache by given mode
+     * returns estimated of elements cleared */
+    public int clearCache(CacheClearMode clearMode) {
+
+        return -1;
+    }
     /** check cache every X seconds to clear TTL caches */
     public void onTimeClean(long checkSeq) {
-        //dao.executeSelectQuery("delete from distcacheitem where enddate < now()", new Object[0]);
+        // dao.executeAnyQuery("delete from distcacheitem where enddate < now()", new Object[0]);
     }
     public void disposeStorage() {
         if (dao != null) {

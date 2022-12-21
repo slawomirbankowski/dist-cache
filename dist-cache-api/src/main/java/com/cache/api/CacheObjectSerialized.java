@@ -53,7 +53,8 @@ public class CacheObjectSerialized implements Serializable {
     }
     public CacheObjectSerialized(long objectSeq, long createdTimeMs, long lastUseTime, long lastRefreshTime, String key,
                                  String objectInCache, String objectClassName,
-                                 int objSize, long acquireTimeMs, long usages, long refreshes, CacheMode.Mode mode, long timeToLiveMs, int priority, boolean addToInternal, boolean addToExternal, Set<String> groups) {
+                                 int objSize, long acquireTimeMs, long usages, long refreshes, CacheMode.Mode mode, long timeToLiveMs, int priority,
+                                 boolean addToInternal, boolean addToExternal, Set<String> groups) {
         this.objectSeq = objectSeq;
         this.createdTimeMs = createdTimeMs;
         this.lastUseTime = lastUseTime;
@@ -130,13 +131,15 @@ public class CacheObjectSerialized implements Serializable {
     public Set<String> getGroups() {
         return groups;
     }
-
+    /** get list of all groups - comma separated */
+    public String getGroupsList() {
+        return "" + String.join(",", groups) + "";
+    }
     public CacheObject toCacheObject(DistSerializer serializer) {
         Object obj = serializer.deserializeFromString(objectClassName, objectInCache);
         Function<String, ?> mta = (key) -> obj;
-        CacheMode cm = new CacheMode(mode, timeToLiveMs, addToInternal, addToExternal, priority);
         return new CacheObject(objectSeq, createdTimeMs, lastUseTime, lastRefreshTime, key,
-                obj, mta, objSize, acquireTimeMs, usages, refreshes, cm, groups);
+                obj, mta, objSize, acquireTimeMs, usages, refreshes, mode, priority, timeToLiveMs, groups);
     }
     /** get map with current values */
     public Map<String, String> getSerializedMap(DistSerializer serializer) {

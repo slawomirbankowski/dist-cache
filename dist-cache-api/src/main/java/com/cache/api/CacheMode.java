@@ -19,7 +19,13 @@ public class CacheMode {
         REFRESH,
         /** when cache size limit is reached and a new object is inserted, another object
          * with the lowest priority will be removed */
-        PRIORITY
+        PRIORITY;
+        public boolean isTtl() {
+            return this.equals(TTL);
+        }
+        public boolean isRefresh() {
+            return this.equals(REFRESH);
+        }
     }
 
     /** mode of keeping item in cache */

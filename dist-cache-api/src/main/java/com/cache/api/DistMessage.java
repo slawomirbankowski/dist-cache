@@ -196,6 +196,14 @@ public class DistMessage implements Serializable {
         return LocalDateTime.now().plusHours(24);
     }
 
+    public static DistMessage createEmpty() {
+        return new DistMessage(DistMessageType.welcome, sendToSelf, DistServiceType.agent,
+                sendToSelf, DistServiceType.agent,  "empty", "empty", "", "", CacheUtils.getCreatedDate(), DistMessageStatus.init);
+    }
+    public static DistMessage createError(String errorDescription, Exception ex) {
+        return new DistMessage(DistMessageType.welcome, sendToSelf, DistServiceType.agent,
+                sendToSelf, DistServiceType.agent,  "error", "error", "", "", CacheUtils.getCreatedDate(), DistMessageStatus.init);
+    }
     /** creates new message */
     public static DistMessage createMessage(DistMessageType messageType, String fromAgent, DistServiceType fromService, String toAgent, DistServiceType toService, String method, Object message,  String tags, LocalDateTime validTill) {
         return new DistMessage(messageType, fromAgent, fromService, toAgent, toService,  method, "", message, tags, validTill, DistMessageStatus.init);

@@ -1,20 +1,35 @@
 package com.cache.storage;
 
+import com.cache.api.CacheClearMode;
 import com.cache.api.CacheObject;
 import com.cache.api.CacheObjectInfo;
 import com.cache.api.StorageInitializeParameter;
 import com.cache.base.CacheStorageBase;
+//import redis.clients.jedis.Jedis;
 
 import java.util.*;
 
-/** cache with Elasticsearch index - need to connect to Elasticsearch,
- * create index and read/write items from/to cache
+/** cache with Redis as Cache Storage
+ *
+ * TODO: Implement storage saving cache objects in Redis
+ *
  * */
 public class RedisCacheStorage extends CacheStorageBase {
 
     /** initialize Redis storage */
     public RedisCacheStorage(StorageInitializeParameter p) {
+
         super(p);
+        /*
+        String host = "localhost";
+        int port = 9949;
+        Jedis jedis = new Jedis(host, port);
+        log.info("Redis client ID: " + jedis.clientId());
+        log.info("Redis client info: " + jedis.clientInfo());
+
+       // jedis.
+
+*/
     }
     /** Redis is external storage */
     public  boolean isInternal() { return false; }
@@ -46,16 +61,25 @@ public class RedisCacheStorage extends CacheStorageBase {
         return new HashSet<String>();
     }
     /** get info values */
-    public List<CacheObjectInfo> getValues(String containsStr) {
+    public List<CacheObjectInfo> getInfos(String containsStr) {
         return new LinkedList<CacheObjectInfo>();
     }
+    /** get values of cache objects that contains given String in key */
+    public List<CacheObject> getValues(String containsStr) {
+        return new LinkedList<CacheObject>();
+    }
     /** clear caches with given clear cache */
-    public int clearCache(int clearMode) {
+    public int clearCacheForGroup(String groupName) {
         return 1;
     }
     /** clear cache contains given partial key */
     public int clearCacheContains(String str) {
         return 1;
+    }
+    /** clear cache by given mode
+     * returns estimated of elements cleared */
+    public int clearCache(CacheClearMode clearMode) {
+        return -1;
     }
     /** check cache every X seconds to clear TTL caches */
     public void onTimeClean(long checkSeq) {

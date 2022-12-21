@@ -1,9 +1,6 @@
 package com.cache.storage;
 
-import com.cache.api.DistConfig;
-import com.cache.api.CacheObject;
-import com.cache.api.CacheObjectInfo;
-import com.cache.api.StorageInitializeParameter;
+import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
 import com.cache.util.measure.TimedResult;
 import com.cache.utils.CacheUtils;
@@ -105,7 +102,7 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
   }
 
   @Override
-  public List<CacheObjectInfo> getValues(String containsStr) {
+  public List<CacheObjectInfo> getInfos(String containsStr) {
     return withReadLock(() ->
         byKey.keySet().stream()
             .filter(k -> k.contains(containsStr))
@@ -115,8 +112,29 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
     );
   }
 
+  /** get values of cache objects that contains given String in key */
+  public List<CacheObject> getValues(String containsStr) {
+    return withReadLock(() ->
+            byKey.keySet().stream()
+                    .filter(k -> k.contains(containsStr))
+                    .map(byKey::get)
+                    .collect(Collectors.toUnmodifiableList())
+    );
+  }
+  /** clear cache by given mode
+   * returns estimated of elements cleared */
+  public int clearCache(CacheClearMode clearMode) {
+    return withWriteLock(() -> {
+      var sum = byKey.size() + byPriority.size();
+      byKey = new HashMap<>();
+      byPriority = new TreeMap<>();
+      this.objCount.set(0);
+      this.itemCount.set(0);
+      return sum;
+    });
+  }
   @Override
-  public int clearCache(int clearMode) {
+  public int clearCacheForGroup(String groupName) {
     return withWriteLock(() -> {
       var sum = byKey.size() + byPriority.size();
       byKey = new HashMap<>();

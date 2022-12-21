@@ -62,7 +62,16 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
     }
     /** get UIDs for registration services */
     public List<String> getRegistrationKeys() {
-        return registrations.values().stream().map(x -> x.getRegisterGuid()).collect(Collectors.toList());
+        return registrations.values().stream()
+                .map(RegistrationBase::getRegisterGuid)
+                .collect(Collectors.toList());
+    }
+    /** get information infos about registration objects */
+    public List<AgentRegistrationInfo> getRegistrationInfos() {
+        return registrations.values().stream()
+                .map(RegistrationBase::getInfo)
+                .collect(Collectors.toList());
+
     }
     /** get list of connected agents */
     public List<DistAgentRegisterRow> getAgentsNow() {
@@ -107,6 +116,7 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
             return Optional.of(registr);
         } catch (Exception ex) {
             log.warn("Cannot create new registration object for class: " + className + ", reason: " + ex.getMessage(), ex);
+            parentAgent.getAgentIssues().addIssue("AgentRegistrationsImpl.createRegistrationForClass", ex);
             return Optional.empty();
         }
     }
@@ -122,6 +132,7 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
             return true;
         } catch (Exception ex) {
             log.warn("Cannot communicate with other agents, reason: " + ex.getMessage(), ex);
+            parentAgent.getAgentIssues().addIssue("AgentRegistrationsImpl.onTimeCommunicate", ex);
             return false;
         }
     }
@@ -184,6 +195,7 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
             }
         } catch (Exception ex) {
             log.warn("Cannot register agent " + parentAgent.getAgentGuid() + " to connectors, reason: " + ex.getMessage(), ex);
+            parentAgent.getAgentIssues().addIssue("AgentRegistrationsImpl.registerToAll", ex);
         }
     }
 
@@ -201,6 +213,7 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
             }
         } catch (Exception ex) {
             log.warn("Cannot register agents to connectors, reason: " + ex.getMessage(), ex);
+            parentAgent.getAgentIssues().addIssue("AgentRegistrationsImpl.unregisterFromAll", ex);
         }
     }
 

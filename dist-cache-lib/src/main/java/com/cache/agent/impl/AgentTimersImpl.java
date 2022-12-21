@@ -1,6 +1,7 @@
 package com.cache.agent.impl;
 
 import com.cache.agent.AgentInstance;
+import com.cache.api.AgentTimerInfo;
 import com.cache.interfaces.AgentTimers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +51,7 @@ public class AgentTimersImpl implements AgentTimers {
                     onTask.apply("");
                 } catch (Exception ex) {
                     // TODO: mark exception
-
+                    parentAgent.getAgentIssues().addIssue("AgentTimersImpl.setUpTimer", ex);
                     log.warn("Exception while executing task, reason: " + ex.getMessage());
                 }
             }
@@ -58,11 +59,23 @@ public class AgentTimersImpl implements AgentTimers {
         timerTasks.add(onTimeCommunicateTask);
         timer.scheduleAtFixedRate(onTimeCommunicateTask, delayMs, periodMs);
     }
+    /** get information about timer and timer tasks */
+    public AgentTimerInfo getInfo() {
+        // String timerClassName, long timerRunSeq, int timerTasksCount
+        return new AgentTimerInfo(timer.getClass().getName(), timerRunSeq.get(), timerTasks.size());
+    }
 
     /** close */
     public void close() {
         log.info("Closing all tasks: " + timerTasks.size());
 
     }
+
+
+
+
+
+
+
 
 }
