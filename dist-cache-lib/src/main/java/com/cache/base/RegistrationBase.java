@@ -109,6 +109,13 @@ public abstract class RegistrationBase {
     /** ping from this agent to connector */
     protected abstract AgentPingResponse onAgentPing(AgentPing ping);
 
+    /** get normalized URL for this registration */
+    public abstract String getUrl();
+    /** get information about registration object */
+    public AgentRegistrationInfo getInfo() {
+        // String registerGuid, String registrationType, LocalDateTime createdDate, boolean initialized, boolean closed, boolean lastConnected, String url, AgentConfirmation confirmation
+        return new AgentRegistrationInfo(registerGuid, getClass().getSimpleName(), getCreatedDate(), initialized, closed, lastConnected, getUrl(), registerConfirmation);
+    }
     /** get all agents */
     public List<AgentSimplified> getAgents() {
         return onGetAgents();

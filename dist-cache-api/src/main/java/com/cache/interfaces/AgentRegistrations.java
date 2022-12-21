@@ -1,5 +1,6 @@
 package com.cache.interfaces;
 
+import com.cache.api.AgentRegistrationInfo;
 import com.cache.api.AgentSimplified;
 import com.cache.api.DistIssue;
 import com.cache.base.dtos.DistAgentServerRow;
@@ -22,6 +23,8 @@ public interface AgentRegistrations {
     int getRegistrationsCount();
     /** get UIDs for registration services */
     List<String> getRegistrationKeys();
+    /** get information infos about registration objects */
+    List<AgentRegistrationInfo> getRegistrationInfos();
 
     /** get all servers from registration services */
     List<DistAgentServerRow> getServers();

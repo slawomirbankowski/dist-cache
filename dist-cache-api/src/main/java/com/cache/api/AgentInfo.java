@@ -60,6 +60,52 @@ public class AgentInfo {
                 + ", registrationsCount: " + registrationsCount + ", registrations: " + registrations
                 + ", timerTasksCount: " + timerTasksCount + ", threadsCount: " + threadsCount
                 + ", eventsCount: " + eventsCount + ", issuesCount: " + issuesCount;
+    }
 
+    public String getAgentGuid() {
+        return agentGuid;
+    }
+
+    public String getCreateDate() {
+        return createDate.toString();
+    }
+    public boolean isClosed() {
+        return closed;
+    }
+    public int getServicesCount() {
+        return servicesCount;
+    }
+    public List<String> getServices() {
+        return services;
+    }
+    public int getServersCount() {
+        return serversCount;
+    }
+    public List<String> getServers() {
+        return servers;
+    }
+    public int getClientsCount() {
+        return clientsCount;
+    }
+    public List<String> getClients() {
+        return clients;
+    }
+    public int getTimerTasksCount() {
+        return timerTasksCount;
+    }
+    public int getThreadsCount() {
+        return threadsCount;
+    }
+    public int getRegistrationsCount() {
+        return registrationsCount;
+    }
+    public List<String> getRegistrations() {
+        return registrations;
+    }
+    public int getEventsCount() {
+        return eventsCount;
+    }
+    public int getIssuesCount() {
+        return issuesCount;
     }
 }

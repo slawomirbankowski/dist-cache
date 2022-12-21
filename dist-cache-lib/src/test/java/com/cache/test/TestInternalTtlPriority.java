@@ -2,10 +2,7 @@ package com.cache.test;
 
 import com.cache.DistFactory;
 import com.cache.agent.servers.AgentServerSocket;
-import com.cache.api.DistConfig;
-import com.cache.api.CacheMode;
-import com.cache.api.CacheObject;
-import com.cache.api.StorageInitializeParameter;
+import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
 import com.cache.storage.InternalWithTtlAndPriority;
 import com.cache.util.measure.Stopwatch;
@@ -36,7 +33,7 @@ public class TestInternalTtlPriority {
     runAll(batch1, batch2, batch3);
 
     assertThat(storage.getObjectsCount(), lessThanOrEqualTo(maxObjects));
-    storage.clearCache(0);
+    storage.clearCache(CacheClearMode.ALL_ELEMENTS);
 
     var batch4 = makeN(storage, "batch4-", 5000, 15, Long.MAX_VALUE, 1);
     var batch5 = makeN(storage, "batch5-", 2000, 7, Long.MAX_VALUE, 1);

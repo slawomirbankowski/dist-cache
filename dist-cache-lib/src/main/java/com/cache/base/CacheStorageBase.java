@@ -1,6 +1,7 @@
 package com.cache.base;
 
 import com.cache.api.*;
+import com.cache.interfaces.CacheKeyEncoder;
 import com.cache.interfaces.DistSerializer;
 import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
@@ -49,6 +50,16 @@ public abstract class CacheStorageBase {
     public StorageInfo getStorageInfo() {
         return new StorageInfo(storageUid, storageCreatedDate, this.getClass().getName(),
                 getItemsCount(), getObjectsCount(), isInternal()); }
+    /** get key encoder - this is a class to encode key to protect passwords, secrets of a key */
+    public CacheKeyEncoder getKeyEncoder() {
+        return initParams.cache.getKeyEncoder();
+    }
+    protected String encodeKeyToFileEnd(String key) {
+        return "." +  CacheUtils.stringToHex(getKeyEncoder().encodeKey(key)) + ".cache";
+    }
+    protected String encodeKey(String key) {
+        return CacheUtils.stringToHex(getKeyEncoder().encodeKey(key));
+    }
     /** check if object has given key, optional with specific type */
     /** get CacheObject item from cache by full key */
     public abstract Optional<CacheObject> getObject(String key);
@@ -66,15 +77,34 @@ public abstract class CacheStorageBase {
     public abstract int getItemsCount();
     public abstract Set<String> getKeys(String containsStr);
     /** get info values */
-    public abstract List<CacheObjectInfo> getValues(String containsStr);
+    public abstract List<CacheObject> getValues(String containsStr);
+    /** get information objects for cache values */
+    public abstract List<CacheObjectInfo> getInfos(String containsStr);
 
     /** clear caches with given clear cache */
-    public abstract int clearCache(int clearMode);
+    public abstract int clearCache(CacheClearMode clearMode);
+
     /** clear cache contains given partial key */
     public abstract int clearCacheContains(String str);
+    /** clear cache for given group */
+    public abstract int clearCacheForGroup(String groupName);
+
     /** check cache every X seconds to clear TTL caches
      * onTime should be run by parent manager in cycles */
     public abstract void onTimeClean(long checkSeq);
+
+    /** check cache every X seconds to clear TTL caches
+     * onTime should be run by parent manager in cycles */
+    public void timeToClean(long checkSeq, long lastCleanTime) {
+        // TODO: add minimum time between clean
+        if (checkSeq % timeCleanEvery() == 0) {
+            onTimeClean(checkSeq);
+        }
+    }
+    /** every this value storage would be cleared */
+    protected int timeCleanEvery() {
+        return 2;
+    }
     /** returns true if storage is internal and cache objects are kept in local memory
      * false if storage is external and cache objects are kept in any storages like Redis, Elasticsearch, DB*/
     public abstract boolean isInternal();

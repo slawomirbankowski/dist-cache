@@ -43,7 +43,6 @@ public class CacheObject {
     private long timeToLiveMs;
     /** priority in cache */
     private int priority;
-
     /** set of groups to identify cache with, these groups are helpful with clearing caches */
     private Set<String> groups;
 
@@ -139,31 +138,37 @@ public class CacheObject {
     public void releaseObject() {
         // TODO: check via reflection if there is any method like close() or dispose() and run it
     }
-
+    /** returns true if cache time to live is finished */
     public boolean isOutdated() {
-        return this.timeToLive() <= 0;
+        return timeToLive() <= 0;
     }
-
+    /** get priority of this cache object */
     public int getPriority() {
         return priority;
     }
-
+    /** set new size of this cache object */
     void setSize(int newObjSize) {
         this.objSize += newObjSize;
     }
+    /** set new time to live for this cache object */
     void setTtl(long newTtl) {
         this.timeToLiveMs = newTtl;
     }
+    /** set new mode for this object */
     void setMode(CacheMode.Mode m) {
         this.mode = m;
     }
     void setPriority(int priority) {
-        // TODO: change priority of this cache object
+        this.priority = priority;
     }
+    /** */
+    void setGroups(Set<String> grs) {
+        this.groups = grs;
+    }
+    /** */
     public void renew() {
         lastUseTime = System.currentTimeMillis();
     }
-
     /** check if key of this object contains given string */
     public boolean keyContains(String str) {
         return key.contains(str);

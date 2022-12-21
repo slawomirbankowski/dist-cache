@@ -20,8 +20,8 @@ public class CachePolicy {
     public void addItem(CachePolicyItem item) {
         items.add(item);
     }
-    public void addItems(List<CachePolicyItem> items) {
-        items.addAll(items);
+    public void addItems(List<CachePolicyItem> its) {
+        items.addAll(its);
     }
     /** check all items and apply these that are */
     public List<CachePolicyItem> checkAndApply(CacheObject co, CacheStats stats) {
@@ -37,4 +37,8 @@ public class CachePolicy {
         return items.stream().map(i -> i.toString()).collect(Collectors.toList());
     }
 
+    /** create String from given policy*/
+    public String toString() {
+        return String.join(";", items.stream().map(x -> x.toString()).collect(Collectors.toList()));
+    }
 }

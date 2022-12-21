@@ -22,7 +22,10 @@ public class CachePolicyBuildTest {
         String fullPolicy = "sizeMin=10,sizeMax=30,applyPrioritySet=5 ; ttlMin=10000,ttlMax=40000,applyMode=5 ; ttlMin=1000000,applyMode=KEEP";
         CachePolicy policy = CachePolicyBuilder.empty().fromString(fullPolicy).create();
 
+        log.info("Policy items count: " + policy.getItemsCount());
+        log.info("Policy items: " + policy.getItems());
         log.info("Policy: " + policy);
+
         long currTime = System.currentTimeMillis();
         Object obj = "objectInCache";
         String key = "key";

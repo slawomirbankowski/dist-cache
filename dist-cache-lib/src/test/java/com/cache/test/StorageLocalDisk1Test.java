@@ -12,8 +12,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class CacheManagerStorageLocalDiskTest {
-    private static final Logger log = LoggerFactory.getLogger(CacheManagerStorageLocalDiskTest.class);
+public class StorageLocalDisk1Test {
+    private static final Logger log = LoggerFactory.getLogger(StorageLocalDisk1Test.class);
 
     AtomicLong seq = new AtomicLong();
     @Test

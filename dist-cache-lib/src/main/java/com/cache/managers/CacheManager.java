@@ -8,6 +8,7 @@ import com.cache.interfaces.Agent;
 import com.cache.api.DistMessage;
 import com.cache.utils.CacheStats;
 import com.cache.utils.DistMessageProcessor;
+import com.cache.utils.DistWebApiProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +28,8 @@ public class CacheManager extends CacheBase {
     /** timer to schedule important check methods */
     private final Timer timer = new Timer();
     private final LinkedList<TimerTask> timerTasks = new LinkedList<>();
+    /** last time of clean for storages */
+    private long lastCleanTime = System.currentTimeMillis();
     /** agent object connected to given manager
      * agent can connect to different cache managers and different services in the same group
      * to cooperate as distributed cache
@@ -37,7 +40,18 @@ public class CacheManager extends CacheBase {
     private final Map<String, CacheStorageBase> storages = new HashMap<>();
     /** processor that is connecting message method with current class method to be executed */
     private final DistMessageProcessor messageProcessor = new DistMessageProcessor()
-            .addMethod("clearCache", this::clearCache);
+            .addMethod( ServiceMethods.agentCacheClear.getMethodName(), this::messageClearCache)
+            .addMethod("getStorages", this::messageGetStorages)
+            .addMethod("getCacheInfo", this::messageGetCacheInfo)
+            .addMethod("getStats", this::messageGetCacheStats)
+            .addMethod("getConfig", this::messageGetConfig)
+            .addMethod("setObject", this::messageSetObject)
+            .addMethod("getObject", this::messageGetObject);
+    private final DistWebApiProcessor webApiProcessor = new DistWebApiProcessor()
+            .addHandler("ping", (m, req) -> req.responseOkText("ping"))
+            .addHandler("createdDate", (m, req) -> req.responseOkText( getCreateDate().toString()))
+            .addHandler("guid", (m, req) -> req.responseOkText(getCacheGuid()));
+
     /** stats about this cache manager - long term diagnostic information*/
     private final CacheStats cacheStats = new CacheStats();
 
@@ -47,6 +61,7 @@ public class CacheManager extends CacheBase {
     public CacheManager(AgentInstance agent, DistConfig cacheCfg, CachePolicy policy) {
         super(cacheCfg, policy);
         this.agent = agent;
+        ServiceMethods.agentCacheClear.getMethodName();
         // TODO: finishing initialization - to be done, creating agent, storages, policies
         //agent.sendMessage(agent.createMessage());
         initializeStorages();
@@ -75,7 +90,10 @@ public class CacheManager extends CacheBase {
         log.info("Process message by CacheManager, message: " + msg);
         return messageProcessor.process(msg.getMethod(), msg);
     }
-
+    /** handle API request in this Web API for this service */
+    public AgentWebApiResponse handleRequest(AgentWebApiRequest request) {
+        return webApiProcessor.handleRequest(request);
+    }
     /** initialize all storages from configuration */
     private void initializeStorages() {
         addEvent(new CacheEvent(this, "initializeStorages", CacheEvent.EVENT_INITIALIZE_STORAGES));
@@ -84,7 +102,7 @@ public class CacheManager extends CacheBase {
         log.info("Initializing cache storages: " + cacheStorageList);
         Arrays.stream(cacheStorageList.split(","))
                 .distinct()
-                //.filter(st -> !st.isBlank() && st.isEmpty()) // TODO: check what should be put here
+                .filter(x -> !x.isEmpty())
                 .forEach(storageClass -> initializeSingleStorage(initParams, storageClass));
     }
 
@@ -169,7 +187,8 @@ public class CacheManager extends CacheBase {
         log.info("Removing caches and dispose storages");
         synchronized (storages) {
             for (CacheStorageBase value : storages.values()) {
-                value.clearCache(1);
+
+                value.clearCacheForGroup("");
                 value.disposeStorage();
             }
             storages.clear();
@@ -220,7 +239,7 @@ public class CacheManager extends CacheBase {
     }
 
     /** clear caches with given clear cache */
-    public int clearCaches(int clearMode) {
+    public int clearCaches(CacheClearMode clearMode) {
         addEvent(new CacheEvent(this, "clearCaches", CacheEvent.EVENT_CACHE_CLEAN));
         storages.values().stream().forEach(x -> x.clearCache(clearMode));
         return 1;
@@ -229,22 +248,42 @@ public class CacheManager extends CacheBase {
         return storages.keySet();
     }
     /** get all cache keys that contains given string */
-    public Set<String> getCacheKeys(String containsStr) {
+    public Set<String> getCacheKeys(String containsStr, boolean includeExternal) {
         return storages.values()
                 .stream()
-                .filter(x -> x.isInternal())
+                .filter(x -> x.isInternal() || includeExternal)
                 .flatMap(x -> x.getKeys(containsStr).stream())
                 .collect(Collectors.toSet());
     }
+    /** get all cache keys that contains given string;  this is getting keys ONLY in internal */
+    public Set<String> getCacheKeys(String containsStr) {
+        return getCacheKeys(containsStr, false);
+    }
     /** get values stored in cache
-     * this might returns only first X values */
-    public List<CacheObjectInfo> getCacheValues(String containsStr) {
+     * this might return only first X values */
+    public List<CacheObject> getCacheValues(String containsStr, boolean includeExternal) {
         return storages.values()
                 .stream()
-                .filter(x -> x.isInternal())
+                .filter(x -> x.isInternal() || includeExternal)
                 .flatMap(x -> x.getValues(containsStr).stream())
                 .collect(Collectors.toList());
     }
+    public List<CacheObject> getCacheValues(String containsStr) {
+        return getCacheValues(containsStr, false);
+    }
+
+    /** get list of cache infos for given key */
+    public List<CacheObjectInfo> getCacheInfos(String containsStr, boolean includeExternal) {
+        return storages.values()
+                .stream()
+                .filter(x -> x.isInternal() || includeExternal)
+                .flatMap(x -> x.getInfos(containsStr).stream())
+                .collect(Collectors.toList());
+    }
+    public List<CacheObjectInfo> getCacheInfos(String containsStr) {
+        return getCacheInfos(containsStr, false);
+    }
+
 
     /** get number of objects in all storages
      * if one object is inserted into cache - this is still one object even if this is a list of 1000 elements */
@@ -278,7 +317,8 @@ public class CacheManager extends CacheBase {
         long checkSeq = checkSequence.incrementAndGet();
         cacheStats.refreshMemory();
         addEvent(new CacheEvent(this, "onTimeClean", CacheEvent.EVENT_TIMER_CLEAN));
-        storages.values().stream().forEach(x -> x.onTimeClean(checkSeq));
+        storages.values().stream().forEach(x ->  x.timeToClean(checkSeq, lastCleanTime));
+        lastCleanTime = System.currentTimeMillis();
     }
 
     public void onTimeRatio() {
@@ -347,10 +387,29 @@ public class CacheManager extends CacheBase {
         return withCache(key, () -> mapper.apply(key), mode, groups);
     }
     /** method to get registration keys for this agent */
-    private DistMessage clearCache(String methodName, DistMessage msg) {
-
-        // TODO: create response message with registration keys
-        return msg.pong(getAgent().getAgentGuid());
+    private DistMessage messageClearCache(String methodName, DistMessage msg) {
+        clearCacheContains(msg.getMessage().toString());
+        return msg.response("", DistMessageStatus.ok);
     }
-
+    /** method to get registration keys for this agent */
+    private DistMessage messageGetStorages(String methodName, DistMessage msg) {
+        return msg.response(new StorageInfos(getStoragesInfo()), DistMessageStatus.ok);
+    }
+    private DistMessage messageGetCacheInfo(String methodName, DistMessage msg) {
+        return msg.response(getCacheInfo(), DistMessageStatus.ok);
+    }
+    private DistMessage messageGetCacheStats(String methodName, DistMessage msg) {
+        return msg.response(cacheStats, DistMessageStatus.ok);
+    }
+    private DistMessage messageGetConfig(String methodName, DistMessage msg) {
+        return msg.response(getConfig(), DistMessageStatus.ok);
+    }
+    private DistMessage messageSetObject(String methodName, DistMessage msg) {
+        CacheObjectSerialized cos = (CacheObjectSerialized)msg.getMessage();
+        return msg.response(setCacheObject(cos.getKey(), cos), DistMessageStatus.ok);
+    }
+    private DistMessage messageGetObject(String methodName, DistMessage msg) {
+        String key = msg.getMessage().toString();
+        return msg.response(getCacheObject(key), DistMessageStatus.ok);
+    }
 }

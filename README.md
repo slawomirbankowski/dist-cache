@@ -30,11 +30,9 @@ Cache could be used as:
 - standalone application having public API to be used and REST API
 - code to be included "as it is"
 
-To be added: 
-- JdbcDialect refactor for easier adding SQL queries
-- check creation of all tables for JDBC storage and JDBC registration
-- Agent socket server for communication
-- Implement AgentInstance with grid of agents registering to JDBC/App and getting list of other agents to communicate directly
+To be added:
+- Implement LocalDiskStorage to have storage for big objects in LocalDisk
+- Cache remote methods
 - hit ratio of cache usage - advanced possibilities to check what is percentage of hit/miss for cache object usage
 - cache blacklist - initial list of keys that should NOT be stored in cache
 - cache key encoder for secrets - when key contains secret or password, this part must be encoded with base643 or he
@@ -47,7 +45,7 @@ To be added:
 - 
 - Implement Redis storage - external storage based on Redis
 
-- Implement LocalDiskStorage to have storage for big objects in LocalDisk
+
 - cache object group and mode, acquire time, refresh time, methods to get next value for model
 
 

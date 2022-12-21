@@ -4,6 +4,7 @@ import com.cache.utils.CacheStats;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /** single item in policy
  * single item contains set of checks and set of applies to CacheObject if all checks are TRUE */
@@ -49,7 +50,7 @@ public class CachePolicyItem {
     }
     /** create String describing this item */
     public String toString() {
-        return "";
+        return String.join(",", checks.stream().map(x -> x.toString()).collect(Collectors.toList())) + "," + String.join(",", applies.stream().map(x -> x.toString()).collect(Collectors.toList()));
     }
 
 }

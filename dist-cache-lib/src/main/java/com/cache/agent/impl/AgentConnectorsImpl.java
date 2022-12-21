@@ -46,10 +46,8 @@ public class AgentConnectorsImpl implements AgentConnectors {
     private final java.util.concurrent.ConcurrentLinkedQueue<AgentClient> clientQueue = new ConcurrentLinkedQueue<>();
     /** table with all clients  */
     private final java.util.ArrayList<AgentClient> clientTable = new ArrayList<>();
-
     /** messages already sent with callbacks */
     private final DistMapTimeStorage<DistMessageFull> sentMessages = new DistMapTimeStorage();
-
     /** create new connectors */
     public AgentConnectorsImpl(AgentInstance parentAgent) {
         this.parentAgent = parentAgent;
@@ -60,7 +58,6 @@ public class AgentConnectorsImpl implements AgentConnectors {
             int portNum = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SOCKET_PORT, DistConfig.AGENT_SOCKET_PORT_VALUE_SEQ.incrementAndGet());
             log.info("SERVER SOCKET opening for agent: " + parentAgent.getAgentGuid() + " at port: " + portNum + ", current servers: " + servers.size());
             AgentServerSocket serv = new AgentServerSocket(parentAgent);
-            serv.initializeServer(portNum);
             servers.put(serv.getServerGuid(), serv);
             // register server for communication
             var createdDate = new java.util.Date();

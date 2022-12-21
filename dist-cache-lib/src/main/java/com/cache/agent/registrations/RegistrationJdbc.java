@@ -24,6 +24,7 @@ public class RegistrationJdbc extends RegistrationBase {
 
     private DaoBase dao;
     private JdbcDialect dialect;
+    private String jdbcUrl;
 
     public RegistrationJdbc(AgentInstance parentAgent) {
         super(parentAgent);
@@ -31,7 +32,7 @@ public class RegistrationJdbc extends RegistrationBase {
     /** run for initialization in classes */
     @Override
     public void onInitialize() {
-        var jdbcUrl = parentAgent.getConfig().getProperty(DistConfig.JDBC_URL);
+        jdbcUrl = parentAgent.getConfig().getProperty(DistConfig.JDBC_URL);
         var jdbcDriver = parentAgent.getConfig().getProperty(DistConfig.JDBC_DRIVER, "");
         var jdbcUser = parentAgent.getConfig().getProperty(DistConfig.JDBC_USER, "");
         var jdbcPass = parentAgent.getConfig().getProperty(DistConfig.JDBC_PASS, "");
@@ -102,6 +103,12 @@ public class RegistrationJdbc extends RegistrationBase {
         dao.executeUpdateQuery(dialect.checkAgentRegisters(), new Object[0]);
         return new AgentPingResponse();
     }
+
+    /** get normalized URL for this registration */
+    public String getUrl() {
+        return jdbcUrl;
+    }
+
     /** add issue for registration */
     public void addIssue(DistIssue issue) {
         try {
@@ -120,6 +127,7 @@ public class RegistrationJdbc extends RegistrationBase {
                     serv.serverport, serv.serverurl, serv.createddate, serv.isactive, serv.lastpingdate });
         } catch (Exception ex) {
             log.warn("Cannot register server at JDBC, reason: " + ex.getMessage(), ex);
+            parentAgent.getAgentIssues().addIssue("RegistrationJdbc.addServer", ex);
         }
     }
     /** unregister server for communication */

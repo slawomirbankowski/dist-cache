@@ -45,6 +45,11 @@ public class RegistrationElasticsearch extends RegistrationBase {
         // TODO: refresh document in elasticsearch with current date
         return null;
     }
+
+    /** get normalized URL for this registration */
+    public String getUrl() {
+        return "";
+    }
     /** add issue for registration */
     public void addIssue(DistIssue issue) {
     }

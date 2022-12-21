@@ -26,7 +26,7 @@ public class AgentServerSocket implements AgentServer, Runnable {
     /** date ant time of creation */
     private final LocalDateTime createDate = LocalDateTime.now();
     /** GUID of server */
-    private final String serverGuid = CacheUtils.generateServerGuid("AgentServerSocket");
+    private final String serverGuid;
     /** if server has been closed */
     private boolean closed = false;
     private final Agent parentAgent;
@@ -43,10 +43,12 @@ public class AgentServerSocket implements AgentServer, Runnable {
     /** creates new server for communication based on socket */
     public AgentServerSocket(Agent parentAgent) {
         this.parentAgent = parentAgent;
+        this.workingPort = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SOCKET_PORT, DistConfig.AGENT_SOCKET_PORT_VALUE_SEQ.incrementAndGet());;
+        this.serverGuid = CacheUtils.generateServerGuid("AgentServerSocket_" + workingPort);
+        initializeServer();
     }
-    public void initializeServer(int workingPort) {
+    public void initializeServer() {
         try {
-            this.workingPort = workingPort;
             // open socket port
             log.info("Starting socket for incoming connections from other clients on port " + workingPort + ", server UID: " + serverGuid);
             // TODO: create SocketServer and thread for accepting sockets

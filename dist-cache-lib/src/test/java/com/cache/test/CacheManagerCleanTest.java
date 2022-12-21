@@ -58,7 +58,7 @@ public class CacheManagerCleanTest {
             log.info("Objects in cache: " + cache.getObjectsCount() + ", keys: " + cache.getCacheKeys("" + ", key_refresh: " + cache.getObject("key_refresh")));
             CacheUtils.sleep(300);
         }
-        List<CacheObjectInfo> objs = cache.getCacheValues("");
+        List<CacheObjectInfo> objs = cache.getCacheInfos("");
         assertTrue(objs.size() > 20, "There should be at least 20 objects in cache");
         assertTrue(objs.size() < 30, "There should be at most 30 objects in cache");
         log.info("Cache getItemsCount: " + cache.getItemsCount() + ", keys: " + cache.getCacheKeys("") + ", key_refresh: " + cache.getObject("key_refresh"));

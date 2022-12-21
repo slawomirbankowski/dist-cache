@@ -55,7 +55,7 @@ public abstract class CacheBase implements Cache {
     public CacheBase(DistConfig cfg, CachePolicy policy) {
         this.cacheCfg = cfg;
         this.policy = policy;
-        //policy = CachePolicyBuilder.empty().parse(cfg.getProperty(DistConfig.CACHE_POLICY, "")).create();
+        CachePolicyBuilder.empty().parse(cfg.getProperty(DistConfig.CACHE_POLICY, "")).create().getItems();
         // add all callback functions
         initializeEncoder();
         initializeSerializer();
@@ -72,7 +72,6 @@ public abstract class CacheBase implements Cache {
     public DistConfig getConfig() {
         return cacheCfg;
     }
-
     /** get type of service: cache, measure, report, */
     public DistServiceType getServiceType() {
         return DistServiceType.cache;
@@ -80,6 +79,15 @@ public abstract class CacheBase implements Cache {
     /** get unique ID of this service */
     public String getServiceUid() {
         return cacheManagerGuid;
+    }
+
+    /** get basic information about service */
+    public DistServiceInfo getServiceInfo() {
+        return new DistServiceInfo(getServiceType(), getClass().getName(), getServiceUid(), createdDateTime, isClosed, Map.of());
+    }
+    /** get key encoder - this is a class to encode key to protect passwords, secrets of a key */
+    public CacheKeyEncoder getKeyEncoder() {
+        return keyEncoder;
     }
 
     /** get value of cache configuration */

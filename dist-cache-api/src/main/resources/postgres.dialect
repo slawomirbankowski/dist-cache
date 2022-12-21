@@ -7,7 +7,7 @@ createDistCacheItemTable=create table distcacheitem(cachekey varchar(4000), cach
 createCacheItemIndex=create unique index idx_distcacheitem_cachekey on distcacheitem(cachekey)
 selectFindCacheItems=select * from distcacheitem tables where cachekey like ?
 ddlSelectCacheItemByKey=select * from distcacheitem tables where cachekey=? limit 1
-insertUpdateCacheItem=insert into distcacheitem(cachekey, cachevalue, objectclassname, inserteddate, cacheguid, lastusedate) values ('key1', 'value1', now(), 'GUID', now()) on conflict (cachekey) do update set cachevalue = EXCLUDED.cachevalue, lastUseDate=EXCLUDED.lastUseDate
+insertUpdateCacheItem=insert into distcacheitem(cachekey, cachevalue, objectclassname, inserteddate, cacheguid, lastusedate, enddate, createdtimems, objectseq, objsize, acquiretimems, cachemode, cachepriority, groupslist) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) on conflict (cachekey) do update set cachevalue = EXCLUDED.cachevalue, lastUseDate=EXCLUDED.lastUseDate
 deleteOldCacheItemsTemplate=delete from distcacheitem where cachekey in (?)
 
 selectAgentRegisterTable=select * from information_schema.tables where table_name = 'distagentregister'

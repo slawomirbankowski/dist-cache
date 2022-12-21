@@ -47,10 +47,18 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
         return localCache.keySet().stream().filter(x -> x.contains(containsStr)).collect(Collectors.toSet());
     }
     /** get info values */
-    public List<CacheObjectInfo> getValues(String containsStr) {
+    public List<CacheObjectInfo> getInfos(String containsStr) {
         return localCache.values()
                 .stream()
+                .filter(x -> x.getKey().contains(containsStr))
                 .map(CacheObject::getInfo)
+                .collect(Collectors.toList());
+    }
+    /** get values of cache objects that contains given String in key */
+    public List<CacheObject> getValues(String containsStr) {
+        return localCache.values()
+                .stream()
+                .filter(x -> x.getKey().contains(containsStr))
                 .collect(Collectors.toList());
     }
     public void onTimeClean(long checkSeq) {
@@ -89,9 +97,14 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
         }
     }
     /** clear caches with given clear cache method */
-    public int clearCache(int clearMode) {
+    public int clearCacheForGroup(String groupName) {
         // TODO: implement clearing caches with given mode
         return 0;
+    }
+    /** clear cache by given mode
+     * returns estimated of elements cleared */
+    public int clearCache(CacheClearMode clearMode) {
+        return -1;
     }
 
     /** clear cache contains given partial key */

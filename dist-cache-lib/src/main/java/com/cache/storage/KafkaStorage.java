@@ -1,5 +1,6 @@
 package com.cache.storage;
 
+import com.cache.api.CacheClearMode;
 import com.cache.api.CacheObject;
 import com.cache.api.CacheObjectInfo;
 import com.cache.api.StorageInitializeParameter;
@@ -8,6 +9,8 @@ import com.cache.base.CacheStorageBase;
 import java.util.*;
 
 /** cache with Kafka topic - key would be key for object
+ *
+ * TODO: Implement storage saving cache objects in Kafka
  * */
 public class KafkaStorage extends CacheStorageBase {
 
@@ -46,17 +49,27 @@ public class KafkaStorage extends CacheStorageBase {
         return new HashSet<String>();
     }
     /** get info values */
-    public List<CacheObjectInfo> getValues(String containsStr) {
+    public List<CacheObjectInfo> getInfos(String containsStr) {
         return new LinkedList<CacheObjectInfo>();
     }
+
+    /** get values of cache objects that contains given String in key */
+    public List<CacheObject> getValues(String containsStr) {
+        return new LinkedList<CacheObject>();
+    }
     /** clear caches with given clear cache */
-    public int clearCache(int clearMode) {
+    public int clearCacheForGroup(String groupName) {
 
         return 1;
     }
     /** clear cache contains given partial key */
     public int clearCacheContains(String str) {
         return 1;
+    }
+    /** clear cache by given mode
+     * returns estimated of elements cleared */
+    public int clearCache(CacheClearMode clearMode) {
+        return -1;
     }
     /** check cache every X seconds to clear TTL caches */
     public void onTimeClean(long checkSeq) {

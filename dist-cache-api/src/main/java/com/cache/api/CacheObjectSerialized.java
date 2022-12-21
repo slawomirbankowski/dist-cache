@@ -131,7 +131,10 @@ public class CacheObjectSerialized implements Serializable {
     public Set<String> getGroups() {
         return groups;
     }
-
+    /** get list of all groups - comma separated */
+    public String getGroupsList() {
+        return "" + String.join(",", groups) + "";
+    }
     public CacheObject toCacheObject(DistSerializer serializer) {
         Object obj = serializer.deserializeFromString(objectClassName, objectInCache);
         Function<String, ?> mta = (key) -> obj;

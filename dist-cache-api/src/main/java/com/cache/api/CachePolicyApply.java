@@ -1,12 +1,24 @@
 package com.cache.api;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 /** apply of single item rule to CacheObject */
 public abstract class CachePolicyApply {
+    private String _value;
+    public CachePolicyApply(String value) {
+        this._value = value;
+    }
     /** apply this rule to CacheObject */
     public abstract void apply(CacheObject co);
+    public String toString() {
+        return getClass().getSimpleName() + "=" + _value;
+    }
 }
 class CachePolicyApplyEmpty extends CachePolicyApply {
     public CachePolicyApplyEmpty(String value) {
+        super(value);
     }
     /** apply this rule to CacheObject */
     public void apply(CacheObject co) {
@@ -15,6 +27,7 @@ class CachePolicyApplyEmpty extends CachePolicyApply {
 class CachePolicyApplyPrioritySet extends CachePolicyApply {
     private int value;
     public CachePolicyApplyPrioritySet(String value) {
+        super(value);
         this.value = Integer.parseInt(value);
     }
     /** apply this rule to CacheObject */
@@ -25,6 +38,7 @@ class CachePolicyApplyPrioritySet extends CachePolicyApply {
 class CachePolicyApplyPriorityIncrease extends CachePolicyApply {
     private int value;
     public CachePolicyApplyPriorityIncrease(String value) {
+        super(value);
         this.value = Integer.parseInt(value);
     }
     /** apply this rule to CacheObject */
@@ -35,6 +49,7 @@ class CachePolicyApplyPriorityIncrease extends CachePolicyApply {
 class CachePolicyApplyPriorityDecrease extends CachePolicyApply {
     private int value;
     public CachePolicyApplyPriorityDecrease(String value) {
+        super(value);
         this.value = Integer.parseInt(value);
     }
     /** apply this rule to CacheObject */
@@ -46,6 +61,7 @@ class CachePolicyApplyPriorityDecrease extends CachePolicyApply {
 class CachePolicyApplySizeAdd extends CachePolicyApply {
     private int value;
     public CachePolicyApplySizeAdd(String value) {
+        super(value);
         this.value = Integer.parseInt(value);
     }
     /** apply this rule to CacheObject */
@@ -56,6 +72,7 @@ class CachePolicyApplySizeAdd extends CachePolicyApply {
 class CachePolicyApplySizeMultiply extends CachePolicyApply {
     private int value;
     public CachePolicyApplySizeMultiply(String value) {
+        super(value);
         this.value = Integer.parseInt(value);
     }
     /** apply this rule to CacheObject */
@@ -67,6 +84,7 @@ class CachePolicyApplySizeMultiply extends CachePolicyApply {
 class CachePolicyApplyTtlMultiply extends CachePolicyApply {
     private int value;
     public CachePolicyApplyTtlMultiply(String value) {
+        super(value);
         this.value = Integer.parseInt(value);
     }
     /** apply this rule to CacheObject */
@@ -77,6 +95,7 @@ class CachePolicyApplyTtlMultiply extends CachePolicyApply {
 class CachePolicyApplyTtlDivide extends CachePolicyApply {
     private double value;
     public CachePolicyApplyTtlDivide(String value) {
+        super(value);
         this.value = Double.parseDouble(value);
         if (this.value == 0) {
             throw new IllegalArgumentException("TTL divide cannot be zero");
@@ -90,6 +109,7 @@ class CachePolicyApplyTtlDivide extends CachePolicyApply {
 class CachePolicyApplyTtlAdd extends CachePolicyApply {
     private long value;
     public CachePolicyApplyTtlAdd(String value) {
+        super(value);
         this.value = Long.parseLong(value);
     }
     /** apply this rule to CacheObject */
@@ -101,17 +121,18 @@ class CachePolicyApplyTtlAdd extends CachePolicyApply {
 class CachePolicyApplyMode extends CachePolicyApply {
     private CacheMode.Mode mode;
     public CachePolicyApplyMode(String value) {
+        super(value);
         mode = CacheMode.Mode.valueOf(value);
     }
     /** apply this rule to CacheObject */
     public void apply(CacheObject co) {
-
-        co.setSize(co.getSize());
+        co.setMode(mode);
     }
 }
 class CachePolicyApplyStorageInternal extends CachePolicyApply {
     private boolean value;
     public CachePolicyApplyStorageInternal(String value) {
+        super(value);
         this.value = Boolean.parseBoolean(value);
     }
     /** apply this rule to CacheObject */
@@ -120,6 +141,7 @@ class CachePolicyApplyStorageInternal extends CachePolicyApply {
 }
 class CachePolicyApplyStorageExternal extends CachePolicyApply {
     public CachePolicyApplyStorageExternal(String value) {
+        super(value);
     }
     /** apply this rule to CacheObject */
     public void apply(CacheObject co) {
@@ -127,16 +149,20 @@ class CachePolicyApplyStorageExternal extends CachePolicyApply {
 }
 class CachePolicyApplyStorageSet extends CachePolicyApply {
     public CachePolicyApplyStorageSet(String value) {
+        super(value);
     }
     /** apply this rule to CacheObject */
     public void apply(CacheObject co) {
     }
 }
 class CachePolicyApplyGroupSet extends CachePolicyApply {
-
+    private Set<String> groups;
     public CachePolicyApplyGroupSet(String value) {
+        super(value);
+        groups = Arrays.stream(value.split("\\|")).collect(Collectors.toSet());
     }
     /** apply this rule to CacheObject */
     public void apply(CacheObject co) {
+        co.setGroups(groups);
     }
 }
