@@ -1,9 +1,6 @@
 package com.cache.storage;
 
-import com.cache.api.CacheClearMode;
-import com.cache.api.CacheObject;
-import com.cache.api.CacheObjectInfo;
-import com.cache.api.StorageInitializeParameter;
+import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
 
 import java.util.*;
@@ -21,6 +18,10 @@ public class KafkaStorage extends CacheStorageBase {
     }
     /** Kafka is external storage */
     public  boolean isInternal() { return false; }
+    /** get type of this storage */
+    public CacheStorageType getStorageType() {
+        return CacheStorageType.kafka;
+    }
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
         return false;

@@ -2,7 +2,9 @@ package com.cache.api;
 
 import java.time.LocalDateTime;
 
-/** representing management object for agent */
+/** representing management object for agent
+ * class is utilized in keeping Agent list in other Agent, that list can be used to communicate with this agent
+ * */
 public class AgentObject {
 
     /** create date of this object representing agent */

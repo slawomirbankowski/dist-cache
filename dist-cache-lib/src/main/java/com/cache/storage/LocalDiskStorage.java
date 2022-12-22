@@ -26,6 +26,10 @@ public class LocalDiskStorage extends CacheStorageBase {
     }
     /** Local Disk is external storage */
     public  boolean isInternal() { return false; }
+    /** get type of this storage */
+    public CacheStorageType getStorageType() {
+        return CacheStorageType.disk;
+    }
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
         return false;

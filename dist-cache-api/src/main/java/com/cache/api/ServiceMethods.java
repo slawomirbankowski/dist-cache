@@ -2,7 +2,9 @@ package com.cache.api;
 
 import com.cache.utils.CacheStats;
 
-/** available methods inside services */
+/** available methods inside services - each method can be called with Distributed Messages
+ *
+ * */
 public class ServiceMethods {
     public static final ServiceMethod agentCacheClear = new ServiceMethod(DistServiceType.agent, "clearCache", String.class, String.class);
     public static ServiceMethod agentGetStorages = new ServiceMethod(DistServiceType.agent, "getStorages", Object.class, StorageInfos.class);

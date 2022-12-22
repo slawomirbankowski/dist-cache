@@ -211,6 +211,10 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
   public boolean isInternal() {
     return true;
   }
+  /** get type of this storage */
+  public CacheStorageType getStorageType() {
+    return CacheStorageType.memory;
+  }
 
   private OverLimit overLimit(int itemCount) {
     return new OverLimit(

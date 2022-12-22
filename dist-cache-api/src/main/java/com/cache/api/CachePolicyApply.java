@@ -137,6 +137,7 @@ class CachePolicyApplyStorageInternal extends CachePolicyApply {
     }
     /** apply this rule to CacheObject */
     public void apply(CacheObject co) {
+        co.setSupportedStorages(CacheStorageType.internalStorages);
     }
 }
 class CachePolicyApplyStorageExternal extends CachePolicyApply {
@@ -145,14 +146,19 @@ class CachePolicyApplyStorageExternal extends CachePolicyApply {
     }
     /** apply this rule to CacheObject */
     public void apply(CacheObject co) {
+        co.setSupportedStorages(CacheStorageType.externalStorages);
     }
 }
 class CachePolicyApplyStorageSet extends CachePolicyApply {
+
+    private Set<CacheStorageType> storageTypes;
     public CachePolicyApplyStorageSet(String value) {
         super(value);
+        storageTypes = CacheStorageType.parseStorages(value);
     }
     /** apply this rule to CacheObject */
     public void apply(CacheObject co) {
+        co.setSupportedStorages(storageTypes);
     }
 }
 class CachePolicyApplyGroupSet extends CachePolicyApply {

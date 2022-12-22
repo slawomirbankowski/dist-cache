@@ -48,6 +48,10 @@ public class JdbcStorage extends CacheStorageBase {
 
     /** JDBC is external storage */
     public  boolean isInternal() { return false; }
+    /** get type of this storage */
+    public CacheStorageType getStorageType() {
+        return CacheStorageType.jdbc;
+    }
 
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {

@@ -17,6 +17,10 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
     }
     /** HashMap is internal storage */
     public boolean isInternal() { return true; }
+    /** get type of this storage */
+    public CacheStorageType getStorageType() {
+        return CacheStorageType.memory;
+    }
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
         return localCache.containsKey(key);

@@ -9,7 +9,7 @@ import java.util.function.Supplier;
 
 /** base interface for cache that is allowing to operate on cache objects
  * cashe could help with keeping local copy with much less latency to get it, so reading object could be very efficient
- * there could be many different storages to keep cache object: HashMap in JVM memory, Redis, Elasticsearch, local disk
+ * there could be different storages to keep cache object: HashMap in JVM memory, Redis, Elasticsearch, local disk
  * there are two main storage types: internal (in the same JVM memory), external (somewhere not internal)
  * internal storages could keep complicated objects,
  * external storages could be local (visible only for this agent) or global (visible globally for all agents)

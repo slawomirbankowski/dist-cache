@@ -2,6 +2,7 @@ package com.cache.base;
 
 import com.cache.api.*;
 import com.cache.interfaces.CacheKeyEncoder;
+import com.cache.interfaces.CacheStorage;
 import com.cache.interfaces.DistSerializer;
 import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
@@ -17,7 +18,7 @@ import java.util.Set;
  * internal (HashMap, WeakHashMap) - kept in local JVM memory
  * external (Elasticsearch, Redis) - kept somewhere outside JVM memory
  * */
-public abstract class CacheStorageBase {
+public abstract class CacheStorageBase implements CacheStorage {
     protected static final Logger log = LoggerFactory.getLogger(CacheStorageBase.class);
     /** unique identifier of this storage */
     private final String storageUid;
@@ -45,7 +46,14 @@ public abstract class CacheStorageBase {
 
     /** get unique storage ID */
     public String getStorageUid() { return storageUid; }
+    /** get UID of parent cache */
     public String getCacheUid() { return initParams.cache.getCacheGuid(); }
+    /** get type of this storage */
+    public abstract CacheStorageType getStorageType();
+    /** get name of this storage - by default it is simple name of this class */
+    public String getStorageName() {
+        return getClass().getSimpleName();
+    }
     /** get information about this storage */
     public StorageInfo getStorageInfo() {
         return new StorageInfo(storageUid, storageCreatedDate, this.getClass().getName(),

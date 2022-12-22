@@ -1,6 +1,9 @@
 package com.cache.interfaces;
 
-/** interface for serializers to serialize data for external cache storages */
+/** interface for serializers to serialize data for external cache storages
+ * Serialization could be used to save CacheObjects in external storages like JDBC, Redis, Elasticsearch,
+ * also it could be used to transfer messages with any Object from Agent to Agent.
+ * */
 public interface DistSerializer {
     /** serialize Object to byte[] */
     byte[] serialize(Object obj);

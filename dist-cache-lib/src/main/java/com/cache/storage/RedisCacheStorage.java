@@ -1,9 +1,6 @@
 package com.cache.storage;
 
-import com.cache.api.CacheClearMode;
-import com.cache.api.CacheObject;
-import com.cache.api.CacheObjectInfo;
-import com.cache.api.StorageInitializeParameter;
+import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
 //import redis.clients.jedis.Jedis;
 
@@ -26,13 +23,15 @@ public class RedisCacheStorage extends CacheStorageBase {
         Jedis jedis = new Jedis(host, port);
         log.info("Redis client ID: " + jedis.clientId());
         log.info("Redis client info: " + jedis.clientInfo());
-
        // jedis.
-
 */
     }
     /** Redis is external storage */
     public  boolean isInternal() { return false; }
+    /** get type of this storage */
+    public CacheStorageType getStorageType() {
+        return CacheStorageType.redis;
+    }
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
         return false;

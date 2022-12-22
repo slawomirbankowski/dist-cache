@@ -33,10 +33,12 @@ public class CachePolicy {
         return items.size();
     }
     /** */
-    public List<String> getItems() {
+    public List<String> getItemsDefinitions() {
         return items.stream().map(i -> i.toString()).collect(Collectors.toList());
     }
-
+    public List<CachePolicyItem> getItems() {
+        return items;
+    }
     /** create String from given policy*/
     public String toString() {
         return String.join(";", items.stream().map(x -> x.toString()).collect(Collectors.toList()));

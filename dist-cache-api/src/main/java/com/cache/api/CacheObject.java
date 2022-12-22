@@ -45,6 +45,8 @@ public class CacheObject {
     private int priority;
     /** set of groups to identify cache with, these groups are helpful with clearing caches */
     private Set<String> groups;
+    /** get storage types */
+    private Set<CacheStorageType> storageTypes = CacheStorageType.allStorages;
 
     /** creates object from deserialization */
     public CacheObject(long objectSeq, long createdTimeMs, long lastUseTime, long lastRefreshTime, String key,
@@ -101,6 +103,10 @@ public class CacheObject {
                 objectInCache.getClass().getName());
     }
 
+    /** get list of supported storages for this cache object */
+    public Set<CacheStorageType> getSupportedStorages() {
+        return storageTypes;
+    }
     /** try to calculate size of this object as estimated number of objects */
     private void calculateSize() {
         this.objSize = CacheUtils.estimateSize(objectInCache);
@@ -160,6 +166,10 @@ public class CacheObject {
     }
     void setPriority(int priority) {
         this.priority = priority;
+    }
+    /** set supported storages */
+    void setSupportedStorages(Set<CacheStorageType> stTypes) {
+        this.storageTypes = stTypes;
     }
     /** */
     void setGroups(Set<String> grs) {

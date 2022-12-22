@@ -23,7 +23,7 @@ public class CachePolicyBuildTest {
         CachePolicy policy = CachePolicyBuilder.empty().fromString(fullPolicy).create();
 
         log.info("Policy items count: " + policy.getItemsCount());
-        log.info("Policy items: " + policy.getItems());
+        log.info("Policy items: " + policy.getItemsDefinitions());
         log.info("Policy: " + policy);
 
         long currTime = System.currentTimeMillis();
@@ -35,10 +35,10 @@ public class CachePolicyBuildTest {
                 obj, x -> obj, objSize, acquireTimeMs, 0, 0, CacheMode.Mode.TTL, 5, 1000000, Set.of());
 
         CacheStats stats = new CacheStats();
-        stats.refreshMemory();
-        stats.keyRead(key);
-        stats.keyMiss(key);
-        stats.keyRead(key);
+        stats.refresh();
+        //stats.keyRead(key);
+        //stats.keyMiss(key);
+        //stats.keyRead(key);
 
         policy.checkAndApply(co, stats);
 

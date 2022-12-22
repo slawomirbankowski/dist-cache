@@ -6,6 +6,7 @@ import com.cache.interfaces.Cache;
 import com.cache.interfaces.CacheKeyEncoder;
 import com.cache.interfaces.DistSerializer;
 import com.cache.utils.CacheHitRatio;
+import com.cache.utils.CacheStats;
 import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,12 +29,11 @@ public abstract class CacheBase implements Cache {
     protected String cacheManagerGuid = CacheUtils.generateCacheGuid();
     /** creation date and time of this cache manager */
     protected LocalDateTime createdDateTime = LocalDateTime.now();
-    /** check sequence - this is number of executions of onTime() method */
-    protected AtomicLong checkSequence = new AtomicLong();
-    /** sequence of added items into this cache */
-    protected AtomicLong addedItemsSequence = new AtomicLong();
-    /** class to register hit/miss ratio with historical records */
-    protected CacheHitRatio hitRatio = new CacheHitRatio();
+    /** stats about this cache manager - long term diagnostic information
+     * statistics can be persisted and continued when agent is on
+     * statistics could be shared with other agents to make global key statistics to beter manage cache objects
+     * */
+    protected final CacheStats cacheStats = new CacheStats();
     /** if cache has been already closed */
     protected boolean isClosed = false;
     /** cache properties to initialize all storages, agent, policies, */
@@ -55,7 +55,9 @@ public abstract class CacheBase implements Cache {
     public CacheBase(DistConfig cfg, CachePolicy policy) {
         this.cacheCfg = cfg;
         this.policy = policy;
-        CachePolicyBuilder.empty().parse(cfg.getProperty(DistConfig.CACHE_POLICY, "")).create().getItems();
+        var stringPolicyItems = CachePolicyBuilder.empty().parse(cfg.getProperty(DistConfig.CACHE_POLICY, "")).create().getItems();
+        addEvent(new CacheEvent(this, "initializePolicies", CacheEvent.EVENT_INITIALIZE_POLICIES));
+        policy.addItems(stringPolicyItems);
         // add all callback functions
         initializeEncoder();
         initializeSerializer();
@@ -107,21 +109,20 @@ public abstract class CacheBase implements Cache {
     }
     /** get info about cache */
     public CacheInfo getCacheInfo() {
-        return new CacheInfo(cacheManagerGuid, createdDateTime, checkSequence.get(),
-            addedItemsSequence.get(), isClosed,
+        return new CacheInfo(cacheManagerGuid, createdDateTime, cacheStats.checksCount(),
+                cacheStats.addedItemsCount(), isClosed,
             getAgent().getAgentIssues().getIssues().size(), getAgent().getAgentEvents().getEvents().size(),
             getItemsCount(), getObjectsCount(), getStoragesInfo());
     }
     /** initialize key encoder to encode secrets */
     private void initializeEncoder() {
-        // TODO: initialize encoder for secrets and passwords in key
+        // initialize encoder for secrets and passwords in key
         keyEncoder = new KeyEncoderNone();
     }
 
     /** initialize serializer used for serialization of an object into byte[] or String to be saved in external storages */
     private void initializeSerializer() {
         String serializerDef = cacheCfg.getProperty(DistConfig.SERIALIZER_DEFINITION, DistConfig.SERIALIZER_DEFINITION_SERIALIZABLE_VALUE);
-
         //serializer = new ComplexSerializer(serializerDef);
     }
 
@@ -129,6 +130,7 @@ public abstract class CacheBase implements Cache {
      * issue could be Exception, Error, problem with connecting to storage,
      * internal error, not consistent state that is unknown and could be used by parent manager */
     public void addIssue(DistIssue issue) {
+        cacheStats.addIssue();
         getAgent().getAgentIssues().addIssue(issue);
     }
     /** add issue with method and exception */

@@ -1,5 +1,8 @@
 package com.cache.api;
 
+/** information class to keep timer attributes
+ * Timers with tasks are defined in Dist services to perform repetitive work like cleaning cache
+ * */
 public class AgentTimerInfo {
     private String timerClassName;
     private long timerRunSeq;

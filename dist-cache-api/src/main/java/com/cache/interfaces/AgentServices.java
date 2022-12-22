@@ -10,7 +10,9 @@ import java.util.Set;
 
 /** interface for service manager
  * there are many services that would be working with Dist system, example:
- * cache, reports, flow, measures, space, scheduler, security, config */
+ * cache, reports, flow, measures, space, scheduler, security, config
+ * Full list of services are in DistServiceType.
+ * */
 public interface AgentServices {
 
     /** return all services assigned to this agent */
