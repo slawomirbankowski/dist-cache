@@ -2,7 +2,7 @@ package com.cache.api;
 
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.DistService;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
 import java.time.LocalDateTime;
 import java.util.function.Function;
@@ -121,7 +121,7 @@ public class DistMessageBuilder {
 
     /** build final message to be sent */
     public DistMessageFull build() {
-        DistMessage msg = new DistMessage(CacheUtils.generateMessageGuid(), LocalDateTime.now(),
+        DistMessage msg = new DistMessage(DistUtils.generateMessageGuid(), LocalDateTime.now(),
                 messageType, fromAgent, fromService, toAgent, toService, requestMethod, responseMethod, message, tags, validTill, DistMessageStatus.init);
         return new DistMessageFull(msg, callbacks);
     }

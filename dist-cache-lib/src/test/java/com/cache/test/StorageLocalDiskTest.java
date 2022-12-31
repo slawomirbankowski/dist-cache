@@ -21,7 +21,7 @@ public class StorageLocalDiskTest {
         log.info("START------");
         Cache cache = DistFactory.buildEmptyFactory()
                 .withName("GlobalCacheTest")
-                .withStorageLocalDisk("../../")
+                .withCacheStorageLocalDisk("../../")
                 .withSerializerDefault()
                 .withSerializer("java.lang.String=StringSerializer,default=ObjectStreamSerializer")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
@@ -30,7 +30,7 @@ public class StorageLocalDiskTest {
                 .createCacheInstance();
 
         var storageKeys = cache.getStorageKeys();
-        log.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Storage keys:" + storageKeys);
+        log.info("Storage keys:" + storageKeys);
         assertEquals(1, storageKeys.size(), "There should be exactly one storage");
 
         cache.clearCacheContains("");

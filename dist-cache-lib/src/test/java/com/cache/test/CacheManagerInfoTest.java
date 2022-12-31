@@ -3,7 +3,7 @@ package com.cache.test;
 import com.cache.DistFactory;
 import com.cache.api.*;
 import com.cache.interfaces.Cache;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,15 +20,15 @@ public class CacheManagerInfoTest {
         log.info("START------");
         Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
-                .withStorageHashMap()
+                .withCacheStorageHashMap()
                 .withMaxObjectAndItems(30, 100)
                 .createCacheInstance();
         assertNotNull(cache, "Created cache should not be null");
         for (int i=0; i<50; i++) {
             // get 30 times the same value
-            String currKey = "key" + CacheUtils.randomInt(10);
+            String currKey = "key" + DistUtils.randomInt(10);
             String v = cache.withCache(currKey, key -> {
-                CacheUtils.sleep(10);
+                DistUtils.sleep(10);
                 return "value ";
             }, CacheMode.modeTtlFiveMinutes);
         }

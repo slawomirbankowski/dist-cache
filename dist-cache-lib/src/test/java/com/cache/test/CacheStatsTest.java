@@ -2,17 +2,12 @@ package com.cache.test;
 
 import com.cache.DistFactory;
 import com.cache.api.CacheMode;
-import com.cache.api.CacheObjectInfo;
-import com.cache.api.CacheStorageType;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.Cache;
 import com.cache.utils.CacheStats;
-import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -24,9 +19,9 @@ public class CacheStatsTest {
         log.info("START ------ clean test");
         Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
-                .withStorageHashMap()
+                .withCacheStorageHashMap()
                 .withObjectTimeToLive(CacheMode.TIME_FIVE_SECONDS)
-                .withTimer(1000L, 1000L)
+                .withTimerStorageClean(1000L)
                 .withMaxObjectAndItems(30, 100)
                 .createCacheInstance();
 

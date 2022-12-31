@@ -3,7 +3,7 @@ package com.cache.storage;
 import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
 import com.cache.util.measure.TimedResult;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +43,7 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
 
   @Override
   public Optional<CacheObject> setObject(CacheObject o) {
-    var itemCount = CacheUtils.itemCount(o);
+    var itemCount = DistUtils.itemCount(o);
 
     withWriteLock(() -> {
       log.trace("Set object {} with {} items, thread {} got the lock", o.getKey(), itemCount, Thread.currentThread().getId());
@@ -61,12 +61,12 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
   }
 
   @Override
-  public void removeObjectsByKeys(List<String> keys) {
+  public void removeObjectsByKeys(Collection<String> keys) {
     withWriteLock(() -> {
       var counters = new int[]{0, 0};
       keys.forEach(k -> {
         counters[0] += 1;
-        counters[1] += CacheUtils.itemCount(byKey.get(k));
+        counters[1] += DistUtils.itemCount(byKey.get(k));
         byKey.remove(k);
       });
       objCount.addAndGet(-counters[0]);
@@ -156,7 +156,7 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
       keysToDelete.forEach(k -> {
         var removed = byKey.remove(k);
         counters[0] += 1;
-        counters[1] += CacheUtils.itemCount(removed);
+        counters[1] += DistUtils.itemCount(removed);
       });
       log.debug("removed {} objects and {} items", counters[0], counters[1]);
       this.objCount.addAndGet(-counters[0]);
@@ -193,7 +193,7 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
         var co = byKey.get(c);
         if (co != null && co.isOutdated()) {
           counters[0] += 1;
-          counters[1] += CacheUtils.itemCount(co);
+          counters[1] += DistUtils.itemCount(co);
           removeObjectByKey(co.getKey());
         } else {
           log.debug("Candidate {} not found, or it has been renewed in the meantime", c);
@@ -255,7 +255,7 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
 
         if (removed != null) {
           this.objCount.decrementAndGet();
-          this.itemCount.addAndGet(-CacheUtils.itemCount(removed));
+          this.itemCount.addAndGet(-DistUtils.itemCount(removed));
         }
         if (byPriority.firstEntry().getValue().isEmpty()) byPriority.pollFirstEntry();
       } else {
@@ -273,7 +273,7 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
               byPriority.remove(currentKey);
               break;
             } else {
-              var itemsRemoved = CacheUtils.itemCount(byKey.get(keyToRemove));
+              var itemsRemoved = DistUtils.itemCount(byKey.get(keyToRemove));
               removedSoFar += itemsRemoved;
               keysToRemove.add(keyToRemove);
             }

@@ -23,5 +23,6 @@ public enum DistServiceType {
     config,
     schedule,
     security,
+    remote,
     custom
 }

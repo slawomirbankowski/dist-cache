@@ -1,6 +1,6 @@
 package com.cache.api;
 
-/** class represending single method in service can can be called */
+/** class representing single method in service can can be called */
 public class ServiceMethod {
     private DistServiceType service;
     private String methodName;

@@ -1,6 +1,6 @@
 package com.cache.test.model;
 
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
 public class Order extends BaseTable {
 
@@ -25,8 +25,8 @@ public class Order extends BaseTable {
     public static Order[] createOrders(User[] users, Warehouse[] warehouses, int totalOrders) {
         Order[] objs = new Order[totalOrders];
         for (int i=0; i<totalOrders; i++) {
-            User user = users[CacheUtils.randomInt(users.length)];
-            Warehouse warehouse = warehouses[CacheUtils.randomInt(warehouses.length)];
+            User user = users[DistUtils.randomInt(users.length)];
+            Warehouse warehouse = warehouses[DistUtils.randomInt(warehouses.length)];
             objs[i] = createOrder(i, i, "order"+i, user.userLogin, warehouse.warehouseCode);
         }
         return objs;

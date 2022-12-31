@@ -2,18 +2,16 @@ package com.cache.base;
 
 import com.cache.api.*;
 import com.cache.encoders.KeyEncoderNone;
+import com.cache.interfaces.Agent;
 import com.cache.interfaces.Cache;
 import com.cache.interfaces.CacheKeyEncoder;
-import com.cache.interfaces.DistSerializer;
-import com.cache.utils.CacheHitRatio;
 import com.cache.utils.CacheStats;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -21,23 +19,17 @@ import java.util.function.Supplier;
  * to perform clean based on time
  * replace all cache with fresh objects
  * */
-public abstract class CacheBase implements Cache {
+public abstract class CacheBase extends ServiceBase implements Cache {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(CacheBase.class);
-    /** UUID for cache manager - globally unique */
-    protected String cacheManagerGuid = CacheUtils.generateCacheGuid();
-    /** creation date and time of this cache manager */
-    protected LocalDateTime createdDateTime = LocalDateTime.now();
+
     /** stats about this cache manager - long term diagnostic information
      * statistics can be persisted and continued when agent is on
      * statistics could be shared with other agents to make global key statistics to beter manage cache objects
      * */
     protected final CacheStats cacheStats = new CacheStats();
-    /** if cache has been already closed */
-    protected boolean isClosed = false;
-    /** cache properties to initialize all storages, agent, policies, */
-    protected DistConfig cacheCfg = null;
+
     /**default mode for cache objects added without mode */
     protected CacheMode defaultMode = CacheMode.modeTtlTenSeconds;
 
@@ -46,22 +38,22 @@ public abstract class CacheBase implements Cache {
     /** policy to add cache Objects to storages and changing mode, ttl, priority, tags */
     protected CachePolicy policy;
 
-    public CacheBase() {
-        this(DistConfig.buildEmptyConfig(), CachePolicyBuilder.empty().create());
-    }
     /** initialize current manager with properties
      * this is creating storages, connecting to storages
      * creating cache policy, create agent and connecting to other cache agents */
-    public CacheBase(DistConfig cfg, CachePolicy policy) {
-        this.cacheCfg = cfg;
+    public CacheBase(Agent parentAgent, CachePolicy policy) {
+        super(parentAgent);
         this.policy = policy;
-        var stringPolicyItems = CachePolicyBuilder.empty().parse(cfg.getProperty(DistConfig.CACHE_POLICY, "")).create().getItems();
-        addEvent(new CacheEvent(this, "initializePolicies", CacheEvent.EVENT_INITIALIZE_POLICIES));
+        var stringPolicyItems = CachePolicyBuilder.empty().parse(parentAgent.getConfig().getProperty(DistConfig.CACHE_POLICY, "")).create().getItems();
         policy.addItems(stringPolicyItems);
         // add all callback functions
         initializeEncoder();
         initializeSerializer();
-        log.info("--------> Creating new cache with GUID: " + cacheManagerGuid + ", CONFIG: " + cfg.getConfigGuid() + ", properties: " + cfg.getProperties().size());
+        log.info("--------> Created new cache with GUID: " + guid + ", CONFIG: " + getConfig().getConfigGuid() + ", properties: " + getConfig().getProperties().size());
+    }
+    /** create new service UID for this service */
+    protected String createServiceUid() {
+        return DistUtils.generateCacheGuid();
     }
     /** create new message builder starting this agent */
     public DistMessageBuilder createMessageBuilder() {
@@ -70,17 +62,10 @@ public abstract class CacheBase implements Cache {
 
     /** get date and time of creating service */
     public LocalDateTime getCreateDate() { return createdDateTime; }
-    /** get configuration for cache */
-    public DistConfig getConfig() {
-        return cacheCfg;
-    }
+
     /** get type of service: cache, measure, report, */
     public DistServiceType getServiceType() {
         return DistServiceType.cache;
-    }
-    /** get unique ID of this service */
-    public String getServiceUid() {
-        return cacheManagerGuid;
     }
 
     /** get basic information about service */
@@ -94,10 +79,10 @@ public abstract class CacheBase implements Cache {
 
     /** get value of cache configuration */
     public String getConfigValue(String cfgName) {
-        return cacheCfg.getProperty(cfgName);
+        return getConfig().getProperty(cfgName);
     }
     /** get unique identifier for this CacheManager object */
-    public String getCacheGuid() { return cacheManagerGuid; }
+    public String getCacheGuid() { return guid; }
     /** get item from cache as String if exists or None */
     public String getCacheObjectAsString(String key) {
         Optional<CacheObject> co = getCacheObject(key);
@@ -109,7 +94,7 @@ public abstract class CacheBase implements Cache {
     }
     /** get info about cache */
     public CacheInfo getCacheInfo() {
-        return new CacheInfo(cacheManagerGuid, createdDateTime, cacheStats.checksCount(),
+        return new CacheInfo(guid, createdDateTime, cacheStats.checksCount(),
                 cacheStats.addedItemsCount(), isClosed,
             getAgent().getAgentIssues().getIssues().size(), getAgent().getAgentEvents().getEvents().size(),
             getItemsCount(), getObjectsCount(), getStoragesInfo());
@@ -122,7 +107,7 @@ public abstract class CacheBase implements Cache {
 
     /** initialize serializer used for serialization of an object into byte[] or String to be saved in external storages */
     private void initializeSerializer() {
-        String serializerDef = cacheCfg.getProperty(DistConfig.SERIALIZER_DEFINITION, DistConfig.SERIALIZER_DEFINITION_SERIALIZABLE_VALUE);
+        String serializerDef = getConfig().getProperty(DistConfig.SERIALIZER_DEFINITION, DistConfig.SERIALIZER_DEFINITION_SERIALIZABLE_VALUE);
         //serializer = new ComplexSerializer(serializerDef);
     }
 
@@ -184,12 +169,5 @@ public abstract class CacheBase implements Cache {
 
     /** check if cache has been already closed and deinitialized */
     public boolean getClosed() { return isClosed; }
-    /** close all items in cache */
-    protected abstract void onClose();
-    /** close and deinitialize cache - remove all items, disconnect from all storages, stop all timers*/
-    public void close() {
-        isClosed = true;
-        log.info("Closing cache for GUID: " + getCacheGuid());
-        onClose();
-    }
+
 }

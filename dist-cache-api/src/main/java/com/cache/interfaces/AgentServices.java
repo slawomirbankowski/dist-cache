@@ -1,9 +1,6 @@
 package com.cache.interfaces;
 
-import com.cache.api.AgentWebApiRequest;
-import com.cache.api.AgentWebApiResponse;
-import com.cache.api.DistMessage;
-import com.cache.api.DistServiceInfo;
+import com.cache.api.*;
 
 import java.util.List;
 import java.util.Set;
@@ -17,6 +14,10 @@ public interface AgentServices {
 
     /** return all services assigned to this agent */
     List<DistService> getServices();
+    /** set new policy for services */
+    void setPolicy(CachePolicy policy);
+    /** get or create cache connected with this Agent */
+    Cache getCache();
     /** get number of services */
     int getServicesCount();
     /** get keys of registered services */

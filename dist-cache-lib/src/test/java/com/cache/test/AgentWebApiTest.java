@@ -1,12 +1,9 @@
 package com.cache.test;
 
 import com.cache.DistFactory;
-import com.cache.api.DistCallbackType;
-import com.cache.api.DistCallbacks;
-import com.cache.api.DistServiceType;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.Cache;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,8 +21,11 @@ public class AgentWebApiTest {
                 .withName("GlobalAgent")
                 .withWebApiPort(9999)
                 .withServerSocketPort(9001)
-                .withStorageHashMap()
-                .withStorageJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
+                .withCacheStorageHashMap()
+                .withTimerStorageClean(10000)
+                .withTimerServerPeriod(10000)
+                .withTimerRegistrationPeriod(10000)
+                .withCacheStorageJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "cache_password123")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "cache_password123")
@@ -36,9 +36,12 @@ public class AgentWebApiTest {
         Cache cache2 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
                 .withWebApiPort(9998)
+                .withTimerStorageClean(10000)
+                .withTimerServerPeriod(10000)
+                .withTimerRegistrationPeriod(10000)
                 .withServerSocketPort(9002)
-                .withStorageHashMap()
-                .withStorageJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
+                .withCacheStorageHashMap()
+                .withCacheStorageJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "cache_password123")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "cache_password123")
@@ -48,9 +51,10 @@ public class AgentWebApiTest {
 
         assertNotNull(agent1, "Created agent1 should not be null");
         assertNotNull(agent2, "Created agent2 should not be null");
+
         for (int i=0; i<6; i++) {
             log.info("SLEEPING................................");
-            CacheUtils.sleep(60000);
+            DistUtils.sleep(30000);
             log.info("========-------------------------------------------------------------------------------------========================");
             log.info("========-----> Agent1: " + agent1.getAgentInfo());
             log.info("========-----> Agent2: " + agent2.getAgentInfo());

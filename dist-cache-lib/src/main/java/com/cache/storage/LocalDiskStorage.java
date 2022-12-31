@@ -2,11 +2,12 @@ package com.cache.storage;
 
 import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -26,13 +27,21 @@ public class LocalDiskStorage extends CacheStorageBase {
     }
     /** Local Disk is external storage */
     public  boolean isInternal() { return false; }
+    /** returns true if base file path is folder with write access */
+    public boolean isOperable() {
+        try {
+            return new File(filePrefixName).isDirectory();
+        } catch (Exception ex) {
+            return false;
+        }
+    }
     /** get type of this storage */
     public CacheStorageType getStorageType() {
         return CacheStorageType.disk;
     }
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
-        return false;
+        return getObject(key).isPresent();
     }
 
     /** read CacheObject from given cache file */
@@ -53,7 +62,7 @@ public class LocalDiskStorage extends CacheStorageBase {
     public Optional<CacheObject> getObject(String key) {
         // try to read object from disk
         try {
-            String encodedKey = CacheUtils.stringToHex(getKeyEncoder().encodeKey(key));
+            String encodedKey = DistUtils.stringToHex(getKeyEncoder().encodeKey(key));
             String fileEnds = encodedKey + ".cache";
             File[] filesForKey = findFiles(name -> name.endsWith(fileEnds));
             if (filesForKey.length > 0) {
@@ -72,22 +81,22 @@ public class LocalDiskStorage extends CacheStorageBase {
     public Optional<CacheObject> setObject(CacheObject o) {
         Optional<CacheObject> curr = getObject(o.getKey());
         try {
-            String expireDateString = CacheUtils.formatDateAsYYYYMMDDHHmmss(new java.util.Date(System.currentTimeMillis() + o.timeToLive()));
+            String expireDateString = DistUtils.formatDateAsYYYYMMDDHHmmss(new java.util.Date(System.currentTimeMillis() + o.timeToLive()));
             String encodedKeyFileEnd = encodeKeyToFileEnd(o.getKey());
-            String cacheObjectFileName = filePrefixName + "tmp.EXPDATE" + expireDateString + encodedKeyFileEnd;
+            String cacheObjectFileName = filePrefixName + "tmp.EXPIRE" + expireDateString + ".MODE" + o.getMode().name() + ".SIZE" + o.getSize() + encodedKeyFileEnd;
             // create temporary file with content - object
             java.io.File f = new File(cacheObjectFileName);
             java.io.ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(f));
             oos.writeObject(o.serializedFullCacheObject(distSerializer));
             oos.close();
         } catch (Exception ex) {
-            log.info("Cannot serialize CacheObject to LocalDisk storage, key: " + o.getKey() +  ", class: " + o.getClassName() + ", reason: " + ex.getMessage(), ex);
+            log.warn("Cannot serialize CacheObject to LocalDisk storage, key: " + o.getKey() +  ", class: " + o.getClassName() + ", reason: " + ex.getMessage(), ex);
             initParams.cache.addIssue("LocalDiskStorage.setObject", ex);
         }
         return curr;
     }
 
-    /** find files for given name */
+    /** find files for given name defined by filter function */
     private java.io.File[] findFiles(Function<String, Boolean> filterFunction) {
         try {
             log.trace("Find files on base path: " + filePrefixName);
@@ -98,7 +107,7 @@ public class LocalDiskStorage extends CacheStorageBase {
                     return filterFunction.apply(name);
                 }
             });
-            log.trace("Find files on base path: " + files.length);
+            log.trace("Found files on base path: " + files.length);
             return files;
         } catch (Exception ex) {
             log.warn("Cannot find files in LocalDisk storage, reason: " + ex.getMessage(), ex);
@@ -107,7 +116,7 @@ public class LocalDiskStorage extends CacheStorageBase {
         }
     }
     /** remove objects in cache storage by keys */
-    public void removeObjectsByKeys(List<String> keys) {
+    public void removeObjectsByKeys(Collection<String> keys) {
         try {
             List<String> keysEncoded = keys.stream().map(key -> encodeKeyToFileEnd(key)).collect(Collectors.toList());
             File[] filesToRemove = findFiles(x -> keysEncoded.stream().anyMatch(keyEn -> x.endsWith(keyEn)));
@@ -122,7 +131,7 @@ public class LocalDiskStorage extends CacheStorageBase {
         try {
             String encodedKey = encodeKeyToFileEnd(key);
             File[] filesToRemove = findFiles(x -> x.endsWith(encodedKey));
-            Arrays.stream(filesToRemove).forEach(f ->f.delete());
+            Arrays.stream(filesToRemove).forEach(File::delete);
         } catch (Exception ex) {
             log.info("Cannot remove file for key: " + key + " in LocalDisk storage, reason: " + ex.getMessage(), ex);
             initParams.cache.addIssue("LocalDiskStorage.removeObjectsByKeys", ex);
@@ -132,7 +141,7 @@ public class LocalDiskStorage extends CacheStorageBase {
     public  int getItemsCount() {
         try {
             File[] files =  findFiles(n -> n.endsWith(".cache"));
-            return getObjectsCount() + (int)Arrays.stream(files).mapToLong(x -> x.length()).sum() / 1024;
+            return getObjectsCount() + (int)Arrays.stream(files).mapToLong(File::length).sum() / 1024;
         } catch (Exception ex) {
             log.info("Cannotcount files with cache in LocalDisk storage on base path: " + filePrefixName + ", reason: " + ex.getMessage(), ex);
             return 0;
@@ -147,7 +156,7 @@ public class LocalDiskStorage extends CacheStorageBase {
         try {
             String enKey = encodeKey(containsStr);
             File[] files =  findFiles(n -> n.contains(enKey) && n.endsWith(".cache"));
-            return Arrays.stream(files).map(x -> x.getName()).collect(Collectors.toSet());
+            return Arrays.stream(files).map(File::getName).collect(Collectors.toSet());
         } catch (Exception ex) {
             log.info("Cannot get keys for LocalStorage in folder: " + filePrefixName + ", reason: " + ex.getMessage(), ex);
             return Set.of();
@@ -155,18 +164,17 @@ public class LocalDiskStorage extends CacheStorageBase {
     }
     /** get info values */
     public List<CacheObjectInfo> getInfos(String containsStr) {
-        return getValues(containsStr).stream().map(c -> c.getInfo()).collect(Collectors.toList());
+        return getValues(containsStr).stream().map(CacheObject::getInfo).collect(Collectors.toList());
     }
     /** get values of cache objects that contains given String in key */
     public List<CacheObject> getValues(String containsStr) {
         try {
             String enKey = encodeKey(containsStr);
             File[] files =  findFiles(n -> n.contains(enKey) && n.endsWith(".cache"));
-            var cacheObjects = Arrays.stream(files).flatMap(f -> readObjectFromFile(f).stream()).collect(Collectors.toList());
-            return cacheObjects;
+            return Arrays.stream(files).flatMap(f -> readObjectFromFile(f).stream()).collect(Collectors.toList());
         } catch (Exception ex) {
             log.info("Cannot get values for LocalStorage in folder: " + filePrefixName + ", reason: " + ex.getMessage(), ex);
-            return new LinkedList<CacheObject>();
+            return new LinkedList<>();
         }
     }
     /** clear caches with given clear cache */
@@ -183,7 +191,7 @@ public class LocalDiskStorage extends CacheStorageBase {
         try {
             String keyEn = encodeKey(str);
             File[] files =  findFiles(name -> name.contains(keyEn) && name.endsWith(".cache"));
-            Arrays.stream(files).forEach(fileToDelete -> fileToDelete.delete());
+            Arrays.stream(files).forEach(File::delete);
             return files.length;
         } catch (Exception ex) {
             log.info("Cannot clear cache for LocalStorage in folder: " + filePrefixName + ", reason: " + ex.getMessage(), ex);
@@ -193,11 +201,24 @@ public class LocalDiskStorage extends CacheStorageBase {
     /** clear cache by given mode
      * returns estimated of elements cleared */
     public int clearCache(CacheClearMode clearMode) {
-
+        // TODO: implement clearing folder with cache files for given mode
         return -1;
     }
     /** check cache every X seconds to clear TTL caches */
     public void onTimeClean(long checkSeq) {
+        var now = LocalDateTime.now();
+        // find all files that should expire now
+        File[] files =  findFiles(n -> n.endsWith(".cache") && decodeExpireFromFile(n, now).isAfter(now));
+        Arrays.stream(files).forEach(File::delete);
+    }
+    /** */
+    private LocalDateTime decodeExpireFromFile(String cacheFileName, LocalDateTime defaultValue) {
+        Arrays.stream(cacheFileName.split("\\."))
+                .filter(filePart -> filePart.startsWith("EXPIRE"))
+                .findAny()
+                .map(filePart -> DistUtils.parseLocalDateTimeFromYYYYMMDDHHmmss(filePart.substring(6), defaultValue))
+                .orElseGet(() -> LocalDateTime.now());
 
+        return LocalDateTime.now();
     }
 }

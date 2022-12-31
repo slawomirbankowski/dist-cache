@@ -67,6 +67,8 @@ public interface Cache extends DistService {
     int clearCaches(CacheClearMode clearMode);
     /** clear cache contains given partial key */
     int clearCacheContains(String str);
+    /** remove object from cache by given key */
+    int removeObjectByKey(String key);
     /** get first object in cache for given key
      * if many storages has the same object - only first one is retrieved */
     <T> Optional<T> getObject(String key);
@@ -77,6 +79,8 @@ public interface Cache extends DistService {
     /** get item from cache if exists or None */
     CacheSetBack setCacheObject(String key, Object value, CacheMode mode, Set<String> groups);
     CacheSetBack setCacheObject(String key, Object value, CacheMode mode);
+    /** set object to cache */
+    CacheSetBack setCacheObject(CacheObject co);
     CacheSetBack setCacheObject(String key, Object value);
     /** get all recent issues with cache,
      * issues might be caused by internal Exception, connection problems, incorrect usage

@@ -42,8 +42,8 @@ public class AgentSimplified {
         return port;
     }
 
-    public LocalDateTime getCreateDate() {
-        return createDate;
+    public String getCreateDate() {
+        return createDate.toString();
     }
 
     public void update(AgentSimplified newAgent) {

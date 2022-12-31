@@ -1,9 +1,6 @@
 package com.cache.test;
 
-import com.cache.DistFactory;
-import com.cache.interfaces.Agent;
-import com.cache.interfaces.Cache;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,9 +17,9 @@ public class GlobalUtilsTest {
     public void agentRegisterSimpleTest() {
         log.info("START ------ agent register test test");
 
-        Set<Class> classes = CacheUtils.findAllClassesUsingClassLoader("com.cache.utils", ClassLoader.getSystemClassLoader());
+        Set<Class> classes = DistUtils.findAllClassesUsingClassLoader("com.cache.utils", ClassLoader.getSystemClassLoader());
 
-        log.info(" Date time: " + CacheUtils.getDateTimeYYYYMMDDHHmmss());
+        log.info(" Date time: " + DistUtils.getDateTimeYYYYMMDDHHmmss());
 
         log.info(" Classes count: " + classes.size());
         for (Class cl: classes) {

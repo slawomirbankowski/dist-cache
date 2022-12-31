@@ -1,10 +1,11 @@
 package com.cache.api;
 
 import com.cache.interfaces.DistSerializer;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
 import java.io.*;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -71,7 +72,7 @@ public class CacheObject {
     /** creates new object in memory */
     public CacheObject(String key, Object o, long acqTimeMs, Function<String, ?> method, CacheMode cm, Set<String> groups) {
         this.key = key;
-        this.objSize = CacheUtils.estimateSize(o);
+        this.objSize = DistUtils.estimateSize(o);
         this.objectInCache = o;
         this.acquireTimeMs = acqTimeMs;
         this.methodToAcquire = method;
@@ -81,7 +82,10 @@ public class CacheObject {
         this.groups = groups;
         calculateSize();
     }
-
+    /** creates new object in memory */
+    public CacheObject(String key, Object o, CacheMode cm, Set<String> groups) {
+        this(key, o, 0, k -> o, cm, groups);
+    }
     /** creates new object in memory */
     public CacheObject(String key, Object o, long acqTimeMs, CacheMode mode, Set<String> groups) {
         this(key, o, acqTimeMs, k -> o, mode, groups);
@@ -94,7 +98,10 @@ public class CacheObject {
     public CacheObject(String key, Object o, long ackTimeMs) {
         this(key, o, ackTimeMs, CacheMode.modeTtlOneHour);
     }
-
+    /** creates new object in memory */
+    public CacheObject(String key, Object o) {
+        this(key, o, 0, CacheMode.modeTtlOneHour);
+    }
     /** get simple serializable information about this object in cache */
     public CacheObjectInfo getInfo() {
         return new CacheObjectInfo(key, createdTimeMs, objectSeq, objSize, acquireTimeMs,
@@ -109,7 +116,7 @@ public class CacheObject {
     }
     /** try to calculate size of this object as estimated number of objects */
     private void calculateSize() {
-        this.objSize = CacheUtils.estimateSize(objectInCache);
+        this.objSize = DistUtils.estimateSize(objectInCache);
     }
     /** get key of object in cache */
     public String getKey() {
@@ -143,6 +150,7 @@ public class CacheObject {
      * GC should normally dispose this object */
     public void releaseObject() {
         // TODO: check via reflection if there is any method like close() or dispose() and run it
+
     }
     /** returns true if cache time to live is finished */
     public boolean isOutdated() {
@@ -237,7 +245,7 @@ public class CacheObject {
         return serializer.serialize(objectInCache);
     }
 
-    /** serialize CacheObject */
+    /** serialize CacheObject to CacheObjectSerialized */
     public CacheObjectSerialized serializedFullCacheObject(DistSerializer serializer) {
         String serializedObj = serializer.serializeToString(objectInCache);
         return new CacheObjectSerialized(objectSeq, createdTimeMs, lastUseTime, lastRefreshTime, key,
@@ -246,6 +254,13 @@ public class CacheObject {
                 mode, getTimeToLive(), getPriority(), true, true,
                 groups);
     }
+
+    /** serialize CacheObject to CacheObjectSerialized */
+    public String serializedFullCacheObjectToString(DistSerializer serializer) {
+        CacheObjectSerialized ser = serializedFullCacheObject(serializer);
+        return serializer.serializeToString(ser);
+    }
+
     /** write to Stream as blob, returns number of bytes written OR -1 if there is error while writing */
     public int writeToStream(DistSerializer serializer, OutputStream outStream) {
         try {
@@ -259,6 +274,15 @@ public class CacheObject {
     /** create cache object from serialized CacheObjectSerialized */
     public static CacheObject fromSerialized(DistSerializer serializer, CacheObjectSerialized serialized) {
         return serialized.toCacheObject(serializer);
+    }
+    /**  */
+    public static Optional<CacheObject> fromSerializedString(DistSerializer serializer, String serialized) {
+        try {
+            CacheObjectSerialized cos = (CacheObjectSerialized)serializer.deserializeFromString(CacheObjectSerialized.class.getName(), serialized);
+            return Optional.of(fromSerialized(serializer, cos));
+        } catch (Exception ex) {
+            return Optional.empty();
+        }
     }
 
 }

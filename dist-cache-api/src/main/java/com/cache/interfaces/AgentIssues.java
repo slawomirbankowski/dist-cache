@@ -4,6 +4,9 @@ import com.cache.api.DistIssue;
 
 import java.util.Queue;
 
+/** Interface for Issue manager to have possibilities to add and list issues added by services connected to Agent.
+ * Issues are waiting in a queue with limited size, it means that the oldest issues would be removed forever.
+ * */
 public interface AgentIssues {
 
     /** add issue to cache manager to be revoked by parent

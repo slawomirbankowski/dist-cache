@@ -1,6 +1,6 @@
 package com.cache.api;
 
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
 import java.time.LocalDateTime;
 
@@ -10,7 +10,7 @@ public class AgentThreadObject {
     /** date and time of creation */
     private final LocalDateTime createdDate = LocalDateTime.now();
     /** global unique ID */
-    private final String threadGuid = CacheUtils.generateConnectorGuid(this.getClass().getSimpleName());
+    private final String threadGuid = DistUtils.generateConnectorGuid(this.getClass().getSimpleName());
     /** Thread created in Dist Agent system or Dist Service */
     private Thread thread;
 

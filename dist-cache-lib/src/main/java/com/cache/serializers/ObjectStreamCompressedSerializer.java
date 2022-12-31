@@ -1,7 +1,6 @@
 package com.cache.serializers;
 
 import com.cache.interfaces.DistSerializer;
-import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,8 +10,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.zip.DeflaterInputStream;
-import java.util.zip.DeflaterOutputStream;
 
 /** */
 public class ObjectStreamCompressedSerializer implements DistSerializer {

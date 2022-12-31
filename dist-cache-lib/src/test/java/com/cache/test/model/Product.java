@@ -1,6 +1,6 @@
 package com.cache.test.model;
 
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
 public class Product extends BaseTable {
 
@@ -23,8 +23,8 @@ public class Product extends BaseTable {
     public static Product[] createProducts(int objectsCount, int categoriesCount) {
         Product[] users = new Product[objectsCount];
         for (int i=0; i<objectsCount; i++) {
-            String category = "category" + CacheUtils.randomInt(categoriesCount);
-            double price = CacheUtils.randomDouble()*10;
+            String category = "category" + DistUtils.randomInt(categoriesCount);
+            double price = DistUtils.randomDouble()*10;
             users[i] = createProduct(i, "product" + i, i, "description" + i, category);
         }
         return users;

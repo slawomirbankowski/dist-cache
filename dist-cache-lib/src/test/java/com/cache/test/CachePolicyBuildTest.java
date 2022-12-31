@@ -5,12 +5,13 @@ import com.cache.api.CacheObject;
 import com.cache.api.CachePolicy;
 import com.cache.api.CachePolicyBuilder;
 import com.cache.utils.CacheStats;
-import com.cache.utils.CacheUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CachePolicyBuildTest {
     private static final Logger log = LoggerFactory.getLogger(CachePolicyBuildTest.class);
@@ -26,6 +27,8 @@ public class CachePolicyBuildTest {
         log.info("Policy items: " + policy.getItemsDefinitions());
         log.info("Policy: " + policy);
 
+        assertTrue(policy.getItemsCount() > 0, "There should be policy");
+
         long currTime = System.currentTimeMillis();
         Object obj = "objectInCache";
         String key = "key";
@@ -36,10 +39,6 @@ public class CachePolicyBuildTest {
 
         CacheStats stats = new CacheStats();
         stats.refresh();
-        //stats.keyRead(key);
-        //stats.keyMiss(key);
-        //stats.keyRead(key);
-
         policy.checkAndApply(co, stats);
 
         CachePolicy policy2 = CachePolicyBuilder

@@ -32,7 +32,7 @@ public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
         return Optional.empty();
     }
     /** remove objects in cache storage by keys */
-    public void removeObjectsByKeys(List<String> keys) {
+    public void removeObjectsByKeys(Collection<String> keys) {
     }
     /** remove object in cache storage by key */
     public void removeObjectByKey(String key) {

@@ -84,7 +84,10 @@ public class InternalHashTableCacheStorage extends CacheStorageBase {
             // check if there is too many items in cache even after deleting old ones
             // TODO: implement removing some objects based on policy
             for (Map.Entry<String, CacheObject> e: localCache.entrySet()) {
-                e.getValue().isOld();
+                if (e.getValue().isOld()) {
+
+                    //e.getValue().releaseObject();
+                }
                 // TODO: clear
                 //e.getKey();
                 //e.getValue().releaseObject();
@@ -92,7 +95,7 @@ public class InternalHashTableCacheStorage extends CacheStorageBase {
         }
     }
     /** remove all objects by keys */
-    public void removeObjectsByKeys(List<String> keys) {
+    public void removeObjectsByKeys(Collection<String> keys) {
         // TODO: add removed items
         keys.forEach(keyToRemove -> removeObjectByKey(keyToRemove));
     }

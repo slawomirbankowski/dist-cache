@@ -10,19 +10,20 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedList;
 import java.util.Queue;
 
-/** implementation of issues manager */
-public class AgentIssuesImpl implements AgentIssues {
+/** Implementation of Issues Manager.
+ * Issues could be added in case of incorrect data, Exception, any error or unsupported thing in service
+ * Issues could be stored and analyzed.
+ * */
+public class AgentIssuesImpl extends Agentable implements AgentIssues {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentIssuesImpl.class);
-    /** parent agent for this issues manager */
-    private AgentInstance parentAgent;
     /** queue of issues reported when using cache */
     protected final Queue<DistIssue> issues = new LinkedList<>();
 
     /** */
     public AgentIssuesImpl(AgentInstance parentAgent) {
-        this.parentAgent = parentAgent;
+        super(parentAgent);
     }
 
     /** add issue to cache manager to be revoked by parent

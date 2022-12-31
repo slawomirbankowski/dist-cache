@@ -60,6 +60,11 @@ public class JdbcDialect {
     public String insertAgentRegister() { return getQueryOrEmpty(DialectQueries.insertAgentRegister); }
     public String removeAgentRegister() { return getQueryOrEmpty(DialectQueries.removeAgentRegister); }
     public String checkAgentRegisters() { return getQueryOrEmpty(DialectQueries.checkAgentRegisters); }
+
+    public String updateInactiveAgentRegisters() { return getQueryOrEmpty(DialectQueries.updateInactiveAgentRegisters); }
+    public String deleteInactiveAgentRegisters() { return getQueryOrEmpty(DialectQueries.deleteInactiveAgentRegisters); }
+
+
     public String createAgentConfig() { return getQueryOrEmpty(DialectQueries.createAgentConfig); }
     public String createAgentConfigIndex() { return getQueryOrEmpty(DialectQueries.createAgentConfigIndex); }
     public String selectAgentConfig() { return getQueryOrEmpty(DialectQueries.selectAgentConfig); }
@@ -72,6 +77,9 @@ public class JdbcDialect {
     public String selectAgentServersForAgent() { return getQueryOrEmpty(DialectQueries.selectAgentServersForAgent); }
     public String insertAgentServer() { return getQueryOrEmpty(DialectQueries.insertAgentServer); }
     public String deleteAgentServer() { return getQueryOrEmpty(DialectQueries.deleteAgentServer); }
+    public String pingAgentServer() { return getQueryOrEmpty(DialectQueries.pingAgentServer); }
+    public String checkAgentServer() { return getQueryOrEmpty(DialectQueries.checkAgentServer); }
+    public String deleteAgentServers() { return getQueryOrEmpty(DialectQueries.deleteAgentServers); }
 
     public String createAgentIssue() { return getQueryOrEmpty(DialectQueries.createAgentIssue); }
     public String insertAgentIssue() { return getQueryOrEmpty(DialectQueries.insertAgentIssue); }

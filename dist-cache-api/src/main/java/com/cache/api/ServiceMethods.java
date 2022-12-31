@@ -14,5 +14,8 @@ public class ServiceMethods {
     public static ServiceMethod agentSetObject = new ServiceMethod(DistServiceType.agent, "setObject", String.class, CacheObjectSerialized.class);
     public static ServiceMethod agentGetObject = new ServiceMethod(DistServiceType.agent, "getObject", String.class, CacheObject.class);
 
+    public static ServiceMethod cacheClearContains = new ServiceMethod(DistServiceType.cache, "clearCacheContains", String.class, String.class);
+    public static ServiceMethod cacheRemoveObjectByKey = new ServiceMethod(DistServiceType.cache, "removeObjectByKey", String.class, String.class);
+
 }
 

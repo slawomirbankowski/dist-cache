@@ -8,6 +8,7 @@ import com.cache.base.dtos.DistAgentServerRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -45,7 +46,15 @@ public class RegistrationElasticsearch extends RegistrationBase {
         // TODO: refresh document in elasticsearch with current date
         return null;
     }
+    /** remove active agents without last ping date for more than X minutes */
+    public boolean removeInactiveAgents(LocalDateTime beforeDate) {
+        return true;
+    }
 
+    /** remove inactive agents with last ping date for more than X minutes */
+    public boolean deleteInactiveAgents(LocalDateTime beforeDate) {
+        return true;
+    }
     /** get normalized URL for this registration */
     public String getUrl() {
         return "";
@@ -63,6 +72,15 @@ public class RegistrationElasticsearch extends RegistrationBase {
     public  List<DistAgentServerRow> getServers() {
         return new LinkedList<>();
     }
+    /** ping given server by GUID */
+    public boolean serverPing(DistAgentServerRow serv) {
+        return false;
+    }
+    /** set active servers with last ping date before given date as inactive */
+    public boolean serversCheck(LocalDateTime inactivateBeforeDate, LocalDateTime deleteBeforeDate) {
+        return false;
+    }
+
     /** get list of agents from connector */
     @Override
     protected List<AgentSimplified> onGetAgents() {

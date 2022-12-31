@@ -3,7 +3,7 @@ package com.cache.test;
 import com.cache.DistFactory;
 import com.cache.interfaces.Cache;
 import com.cache.api.CacheMode;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +21,9 @@ public class CacheManagerRefreshTest {
         log.info("START ------ clean test");
         Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
-                .withStorageHashMap()
+                .withCacheStorageHashMap()
                 .withObjectTimeToLive(CacheMode.TIME_FIVE_SECONDS)
-                .withTimer(1000, 1000)
+                .withTimerStorageClean(1000)
                 .withMaxObjectAndItems(30, 100)
                 .createCacheInstance();
         assertNotNull(cache, "Created cache should not be null");
@@ -33,13 +33,13 @@ public class CacheManagerRefreshTest {
             log.info("Objects in cache: " + cache.getObjectsCount() + ", keys: " + cache.getCacheKeys(""));
         }
 
-        CacheUtils.sleep(11000);
+        DistUtils.sleep(11000);
         assertEquals(cache.getObjectsCount(), 10, "There should be 10 objets in cache");
         for (int i=0; i<10; i++) {
             log.info("Refreshed key= " + i + ", object: " + cache.getCacheObject("key"+i).get().getValue());
         }
 
-        CacheUtils.sleep(11000);
+        DistUtils.sleep(11000);
         for (int i=0; i<10; i++) {
             log.info("Refreshed key= " + i + ", object: " + cache.getCacheObject("key"+i).get().getValue());
         }

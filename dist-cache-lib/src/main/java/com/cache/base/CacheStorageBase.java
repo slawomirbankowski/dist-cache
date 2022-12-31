@@ -4,11 +4,12 @@ import com.cache.api.*;
 import com.cache.interfaces.CacheKeyEncoder;
 import com.cache.interfaces.CacheStorage;
 import com.cache.interfaces.DistSerializer;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -16,7 +17,7 @@ import java.util.Set;
 /** base abstract class for storage to keep caches
  * storage could be:
  * internal (HashMap, WeakHashMap) - kept in local JVM memory
- * external (Elasticsearch, Redis) - kept somewhere outside JVM memory
+ * external (Elasticsearch, Redis, DB, LocalDisk) - kept somewhere outside JVM memory
  * */
 public abstract class CacheStorageBase implements CacheStorage {
     protected static final Logger log = LoggerFactory.getLogger(CacheStorageBase.class);
@@ -38,7 +39,7 @@ public abstract class CacheStorageBase implements CacheStorage {
     /** base constructor to pass initialization parameters */
     public CacheStorageBase(StorageInitializeParameter p) {
         this.initParams = p;
-        this.storageUid = CacheUtils.generateStorageGuid(getClass().getSimpleName());
+        this.storageUid = DistUtils.generateStorageGuid(getClass().getSimpleName());
         this.distSerializer = p.cache.getAgent().getSerializer();
         this.maxObjects = initParams.cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_OBJECTS, 1000);
         this.maxItems = initParams.cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_ITEMS, 1000);
@@ -62,19 +63,20 @@ public abstract class CacheStorageBase implements CacheStorage {
     public CacheKeyEncoder getKeyEncoder() {
         return initParams.cache.getKeyEncoder();
     }
+    /** encode key of cache object to be file name end like .98c1247b349c87238a724.cache */
     protected String encodeKeyToFileEnd(String key) {
-        return "." +  CacheUtils.stringToHex(getKeyEncoder().encodeKey(key)) + ".cache";
+        return "." +  DistUtils.stringToHex(getKeyEncoder().encodeKey(key)) + ".cache";
     }
+    /** */
     protected String encodeKey(String key) {
-        return CacheUtils.stringToHex(getKeyEncoder().encodeKey(key));
+        return DistUtils.stringToHex(getKeyEncoder().encodeKey(key));
     }
-    /** check if object has given key, optional with specific type */
     /** get CacheObject item from cache by full key */
     public abstract Optional<CacheObject> getObject(String key);
     /** set item to cache and get previous item in cache for the same key */
     public abstract Optional<CacheObject> setObject(CacheObject o);
     /** remove objects in cache by keys */
-    public abstract void removeObjectsByKeys(List<String> keys);
+    public abstract void removeObjectsByKeys(Collection<String> keys);
     /** remove single object by key */
     public void removeObjectByKey(String key) {
         removeObjectsByKeys(List.of(key));
@@ -116,6 +118,14 @@ public abstract class CacheStorageBase implements CacheStorage {
     /** returns true if storage is internal and cache objects are kept in local memory
      * false if storage is external and cache objects are kept in any storages like Redis, Elasticsearch, DB*/
     public abstract boolean isInternal();
+    /** returns true if storage is operable and can be used
+     * returns false is this storage cannot be used right now - it might be incorrect or turned off
+     * this is mostly for external cache storages like JDBC DB that might be not connected
+     * */
+    public boolean isOperable() {
+        return true;
+    }
+
     /** dispose this storage if needed */
     public void disposeStorage() {
         // by default no dispose - it could be overridden by any storage

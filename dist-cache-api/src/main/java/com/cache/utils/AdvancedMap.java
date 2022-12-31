@@ -21,19 +21,19 @@ public class AdvancedMap {
         return getString(key, "");
     }
     public long getLong(String key, long defaultValue) {
-        return CacheUtils.parseLong(map.getOrDefault(key, defaultValue).toString(), defaultValue);
+        return DistUtils.parseLong(map.getOrDefault(key, defaultValue).toString(), defaultValue);
     }
     public long getLongOrZero(String key) {
         return getLong(key, 0L);
     }
     public int getInt(String key, int defaultValue) {
-        return CacheUtils.parseInt(""+map.getOrDefault(key, defaultValue), defaultValue);
+        return DistUtils.parseInt(""+map.getOrDefault(key, defaultValue), defaultValue);
     }
     public int getIntOrZero(String key) {
         return getInt(key, 0);
     }
     public double getDouble(String key, double defaultValue) {
-        return CacheUtils.parseDouble(map.getOrDefault(key, defaultValue).toString(), defaultValue);
+        return DistUtils.parseDouble(map.getOrDefault(key, defaultValue).toString(), defaultValue);
     }
     public double getDoubleOrZero(String key, double defaultValue) {
         return getDouble(key, 0.0);

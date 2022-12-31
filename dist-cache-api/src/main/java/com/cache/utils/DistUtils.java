@@ -9,17 +9,20 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /** Utilities for dist-cache - different static methods to be used in projects */
-public class CacheUtils {
+public class DistUtils {
 
     /** time and date of utils creation - this could be considered as date/time of cache initialization first time */
     private static final LocalDateTime createdDate = LocalDateTime.now();
@@ -64,7 +67,6 @@ public class CacheUtils {
     public static String generateConfigGuid() {
         return "CFG_" + hostName + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + configGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
-    private static final AtomicLong cacheGuidSeq = new AtomicLong();
     public static String generateCacheGuid() {
         return "CACHE_" + hostName + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
@@ -121,7 +123,15 @@ public class CacheUtils {
     public static String formatDateAsYYYYMMDDHHmmss(java.util.Date date) {
         return dateToLocalDateTime(date).format(formatFull);
     }
-    /** convert Date to LocalDateTime*/
+    /** */
+    public static LocalDateTime parseLocalDateTimeFromYYYYMMDDHHmmss(String ldStr, LocalDateTime defaultValue) {
+        try {
+            return LocalDateTime.parse(ldStr, formatFull);
+        } catch (DateTimeParseException ex) {
+            return defaultValue;
+        }
+    }
+    /** convert Date to LocalDateTime */
     public static LocalDateTime dateToLocalDateTime(java.util.Date date) {
         return Instant.ofEpochMilli(date.getTime())
                 .atZone(ZoneId.systemDefault())
@@ -184,6 +194,15 @@ public class CacheUtils {
         }
         return splitedItems;
     }
+
+    /** split String into name1=value1;name2=value2;name3=value3 */
+    public static AdvancedMap splitToAdvancedMapBySeparationEqual(String str, String splitChar, char equalsChar, boolean removeEmpty) {
+        HashMap<String, Object> map = new HashMap<>();
+        splitBySeparationEqual(str, splitChar, equalsChar, removeEmpty).stream().forEach(m -> {
+            map.put(m[0], m[1]);
+        });
+        return new AdvancedMap(map);
+    }
     public static String[] splitByChar(String str, char equalsChar) {
         int pos = str.indexOf(equalsChar);
         if (pos > 0) {
@@ -220,7 +239,25 @@ public class CacheUtils {
     }
     public static String hexToString(String hex) {
         // TODO: finish implementation
+
         return hex;
+    }
+    public static String fingerprint(String str) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] messageDigest = md.digest(str.getBytes());
+
+
+            return "";
+        } catch (NoSuchAlgorithmException ex) {
+            return "" + str.hashCode();
+        }
+
+
+    }
+
+    public static String getBasicAuthValue(String user, String pass) {
+        return "Basic " + DistUtils.stringToBase64(user + ":" + pass);
     }
     public static Object[] getValuesForFields(Object obj, Field[] fields) {
         return Arrays.stream(fields).map(f -> {

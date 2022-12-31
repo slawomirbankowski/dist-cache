@@ -1,6 +1,6 @@
 package com.cache.api;
 
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,7 +19,7 @@ public class DistConfig {
         return new DistConfig(initialProperties);
     }
     /** GUID for configuration */
-    private final String configGuid = CacheUtils.generateConfigGuid();
+    private final String configGuid = DistUtils.generateConfigGuid();
     /** all properties to be used for DistCache initialization */
     private Properties props = null;
 
@@ -63,13 +63,13 @@ public class DistConfig {
         }
     }
     public long getPropertyAsLong(String name, long defaultValue) {
-        return CacheUtils.parseLong(getProperty(name), defaultValue);
+        return DistUtils.parseLong(getProperty(name), defaultValue);
     }
     public int getPropertyAsInt(String name, int defaultValue) {
-        return CacheUtils.parseInt(getProperty(name), defaultValue);
+        return DistUtils.parseInt(getProperty(name), defaultValue);
     }
     public double getPropertyAsDouble(String name, double defaultValue) {
-        return CacheUtils.parseDouble(getProperty(name), defaultValue);
+        return DistUtils.parseDouble(getProperty(name), defaultValue);
     }
     /** save to File */
     public void saveToFile(String fileName) {
@@ -78,6 +78,7 @@ public class DistConfig {
     }
     /** save to JSON */
     public String saveToJson() {
+
         // TODO: save Properties to JSON
         return "";
     }
@@ -101,16 +102,26 @@ public class DistConfig {
     /** sequencer for default agent port */
     public static final AtomicInteger AGENT_SOCKET_PORT_VALUE_SEQ = new AtomicInteger(9901);
 
-    /** delay of timer run to clear storages - value in milliseconds */
-    public static String TIMER_DELAY = "TIMER_DELAY";
-    public static long TIMER_DELAY_VALUE = 10000;
-    public static String TIMER_COMMUNICATE_DELAY = "TIMER_COMMUNICATE_DELAY";
-    public static long TIMER_COMMUNICATE_DELAY_VALUE = 60000;
-    public static String TIMER_RATIO_DELAY = "TIMER_RATIO_DELAY";
-    public static long TIMER_RATIO_DELAY_VALUE = 60000;
+    /** */
+    public static final String AGENT_INACTIVATE_AFTER = "AGENT_INACTIVATE_AFTER";
+    public static final long AGENT_INACTIVATE_AFTER_DEFAULT_VALUE = CacheMode.TIME_TEN_MINUTES;
+    public static final String AGENT_DELETE_AFTER = "AGENT_DELETE_AFTER";
+    public static final long AGENT_DELETE_AFTER_DEFAULT_VALUE = CacheMode.TIME_ONE_DAY;
+
     /** period of timer to clear storages - value in milliseconds */
-    public static String TIMER_PERIOD = "TIMER_PERIOD";
-    public static long TIMER_PERIOD_VALUE = 10000;
+    public static String TIMER_CLEAN_STORAGE_PERIOD = "TIMER_CLEAN_STORAGE_PERIOD";
+    public static long TIMER_CLEAN_STORAGE_PERIOD_DELAY_VALUE = CacheMode.TIME_ONE_MINUTE;
+
+    /** timer to refresh statistics */
+    public static String TIMER_STAT_REFRESH_PERIOD = "TIMER_STAT_REFRESH_PERIOD";
+    public static long TIMER_STAT_REFRESH_PERIOD_DELAY_VALUE = CacheMode.TIME_ONE_MINUTE;
+
+    /** timer to check registration objects like agents, servers, new configurations */
+    public static String TIMER_REGISTRATION_PERIOD = "TIMER_REGISTRATION_PERIOD";
+    public static long TIMER_REGISTRATION_PERIOD_DELAY_VALUE = CacheMode.TIME_ONE_MINUTE;
+
+    public static String TIMER_SERVER_CLIENT_PERIOD = "TIMER_REGISTRATION_PERIOD";
+    public static long TIMER_SERVER_CLIENT_PERIOD_DELAY_VALUE = CacheMode.TIME_ONE_MINUTE;
 
     /** */
     public static String AGENT_SERVER_SOCKET_CLIENT_TIMEOUT = "AGENT_SERVER_SOCKET_CLIENT_TIMEOUT";
@@ -163,6 +174,8 @@ public class DistConfig {
     public static String CACHE_STORAGE_VALUE_WEAKHASHMAP = "InternalWeakHashMapCacheStorage";
     public static String CACHE_STORAGE_VALUE_PRIORITYQUEUE = "InternalWithTtlAndPriority";
     public static String CACHE_STORAGE_VALUE_REDIS = "RedisCacheStorage";
+    public static String CACHE_STORAGE_VALUE_MONGO = "MongodbStorage";
+    public static String CACHE_STORAGE_VALUE_CASSANDRA = "CassandraStorage";
     public static String CACHE_STORAGE_VALUE_KAFKA = "KafkaStorage";
     public static String CACHE_STORAGE_VALUE_LOCAL_DISK = "LocalDiskStorage";
     public static String CACHE_STORAGE_VALUE_ELASTICSEARCH = "ElasticsearchCacheStorage";
@@ -187,6 +200,8 @@ public class DistConfig {
 
     /** settings for Elasticsearch storage */
     public static String CACHE_STORAGE_ELASTICSEARCH_URL = "CACHE_STORAGE_ELASTICSEARCH_URL";
+    public static String CACHE_STORAGE_ELASTICSEARCH_USER = "CACHE_STORAGE_ELASTICSEARCH_USER";
+    public static String CACHE_STORAGE_ELASTICSEARCH_PASS = "CACHE_STORAGE_ELASTICSEARCH_PASS";
 
     /** settings for Cassandra storage */
     public static String CACHE_STORAGE_CASSANDRA_HOST = "CACHE_STORAGE_REDIS_HOST";
@@ -211,10 +226,15 @@ public class DistConfig {
     public static String ELASTICSEARCH_PASS = "ELASTICSEARCH_PASS";
 
     /** Kafka brokers */
-    public static String KAFKA_BROKERS = "KAFKA_BROKERS";
-
+    public static String CACHE_STORAGE_KAFKA_BROKERS = "CACHE_STORAGE_KAFKA_BROKERS";
+    public static String CACHE_STORAGE_KAFKA_TOPIC = "CACHE_STORAGE_KAFKA_TOPIC";
+    public static String CACHE_STORAGE_KAFKA_BROKERS_DEFAULT_VALUE = "dist-cache-items";
     /** URL for redis */
-    public static String REDIS_URL = "REDIS_URL";
+    public static String CACHE_STORAGE_REDIS_URL = "REDIS_URL";
+
     public static String REDIS_PORT = "REDIS_PORT";
+
+    public static String CACHE_STORAGE_MONGO_HOST = "CACHE_STORAGE_MONGO_HOST";
+    public static String CACHE_STORAGE_MONGO_PORT = "CACHE_STORAGE_MONGO_PORT";
 
 }

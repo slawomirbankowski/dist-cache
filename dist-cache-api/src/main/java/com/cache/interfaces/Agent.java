@@ -3,6 +3,7 @@ package com.cache.interfaces;
 import com.cache.api.*;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 /** interfaces for agent in distributed environment
  * this is to communicate among all distributed services
@@ -23,6 +24,8 @@ public interface Agent {
     DistConfig getConfig();
     /** get high-level information about this agent */
     AgentInfo getAgentInfo();
+    /** returns unmodificable set of Agent tags */
+    Set<String> getAgentTags();
     /** get serializer/deserializer helper to serialize/deserialize objects when sending through connectors or saving to external storages */
     DistSerializer getSerializer();
     /** returns true if agent has been already closed */
@@ -31,6 +34,8 @@ public interface Agent {
     void initializeAgent();
     /** get date and time of creating this agent */
     LocalDateTime getCreateDate();
+    /** get secret generated or set for this agent */
+    String getAgentSecret();
 
     /** get agent threads manager */
     AgentThreads getAgentThreads();

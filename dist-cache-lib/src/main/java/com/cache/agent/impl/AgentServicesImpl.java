@@ -1,12 +1,13 @@
 package com.cache.agent.impl;
 
 import com.cache.agent.AgentInstance;
-import com.cache.api.AgentWebApiRequest;
-import com.cache.api.AgentWebApiResponse;
-import com.cache.api.DistServiceInfo;
+import com.cache.api.*;
 import com.cache.interfaces.AgentServices;
-import com.cache.api.DistMessage;
+import com.cache.interfaces.Cache;
 import com.cache.interfaces.DistService;
+import com.cache.interfaces.Reports;
+import com.cache.managers.CacheManager;
+import com.cache.report.ReportsImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,23 +16,57 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class AgentServicesImpl implements AgentServices {
+/** */
+public class AgentServicesImpl extends Agentable implements AgentServices {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentServicesImpl.class);
-    /** parent agent for this services manager */
-    private final AgentInstance parentAgent;
     /** all registered services for this agent */
     private final HashMap<String, DistService> services = new HashMap<>();
+    /** policy to add cache Objects to storages and changing mode, ttl, priority, tags */
+    protected CachePolicy policy;
+    /** cache service */
+    private Cache cache;
+    /** service for reports */
+    private Reports reports;
 
     /** creates service manager for agent with parent agent assigned */
     public AgentServicesImpl(AgentInstance parentAgent) {
-        this.parentAgent = parentAgent;
+        super(parentAgent);
     }
-
+    /** set new policy for services */
+    public void setPolicy(CachePolicy policy) {
+        this.policy = policy;
+    }
     /** return all services assigned to this agent */
     public List<DistService> getServices() {
         return services.values().stream().collect(Collectors.toList());
+    }
+    /** get or create cache connected with this Agent */
+    public Cache getCache() {
+        if (cache != null) {
+            return cache;
+        }
+        synchronized (this) {
+            if (cache == null) {
+                cache = new CacheManager(getParentAgent(), policy);
+                registerService(cache);
+            }
+            return cache;
+        }
+    }
+    /** get or create service for reports to create, update, remove or execute reports */
+    public Reports getReports() {
+        if (reports != null) {
+            return reports;
+        }
+        synchronized (this) {
+            if (reports == null) {
+                reports = new ReportsImpl(getParentAgent());
+                registerService(reports);
+            }
+            return reports;
+        }
     }
     /** get number of services */
     public int getServicesCount() {

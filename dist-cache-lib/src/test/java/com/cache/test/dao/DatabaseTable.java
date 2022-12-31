@@ -1,6 +1,6 @@
 package com.cache.test.dao;
 
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import com.cache.test.model.BaseTable;
 
 import java.util.HashMap;
@@ -38,15 +38,15 @@ public class DatabaseTable<T extends BaseTable> {
         }
     }
     public T getById(int id) {
-        CacheUtils.sleep(20);
+        DistUtils.sleep(20);
         return objsById.get(id);
     }
     public T getByKey(String key) {
-        CacheUtils.sleep(40);
+        DistUtils.sleep(40);
         return objsByName.get(key);
     }
     public List<T> search(String str) {
-        CacheUtils.sleep(200);
+        DistUtils.sleep(200);
         return objsByName.entrySet()
                 .stream()
                 .filter(x -> x.getValue().rowSearch(str))
@@ -54,7 +54,7 @@ public class DatabaseTable<T extends BaseTable> {
                 .collect(Collectors.toList());
     }
     public List<T> getByParentKey(String parentKey) {
-        CacheUtils.sleep(200);
+        DistUtils.sleep(200);
         return objsByName.entrySet()
                 .stream()
                 .filter(x -> x.getValue().getParentKey().equals(parentKey))
@@ -62,7 +62,7 @@ public class DatabaseTable<T extends BaseTable> {
                 .collect(Collectors.toList());
     }
     public T getLast() {
-        CacheUtils.sleep(40);
+        DistUtils.sleep(40);
         return obs.getLast();
     }
 

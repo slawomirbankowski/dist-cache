@@ -5,7 +5,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-/** object to get back after set new object in cache */
+/** object to get back after set new object in cache.
+ * It contains current object that have been set AND previous version of objects in cache storages. */
 public class CacheSetBack {
 
     /** previous object in cache */

@@ -17,7 +17,15 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.Executors;
 
-/** simple implementation of this web api for agent */
+/** simple implementation of web api for agent
+ * Web API is simple REST api to access direct agent services with methods
+ * It is creating HTTP server that is redirecting request to proper service based on URI
+ * Agent Web API URI must be like:
+ *  http(s)://host[:port]/SERVICE/METHOD
+ * Where:
+ * SERVICE = agent | cache | report |
+ * METHOD = method in service
+ * */
 public class WebSimpleApi extends AgentWebApi {
 
     /** local logger for this class*/

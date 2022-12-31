@@ -23,6 +23,9 @@ public enum DialectQueries {
     insertAgentRegister,
     removeAgentRegister,
     checkAgentRegisters,
+    updateInactiveAgentRegisters,
+    deleteInactiveAgentRegisters,
+
     createAgentConfig,
     createAgentConfigIndex,
     selectAgentConfig,
@@ -36,6 +39,10 @@ public enum DialectQueries {
     selectAgentServersForAgent,
     insertAgentServer,
     deleteAgentServer,
+    pingAgentServer,
+    checkAgentServer,
+    deleteAgentServers,
+
     createAgentIssue,
     insertAgentIssue,
     selectAgentIssue

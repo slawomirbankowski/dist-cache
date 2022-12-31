@@ -1,27 +1,66 @@
 package com.cache.test;
 
 import com.cache.DistFactory;
-import com.cache.interfaces.Agent;
-import com.cache.utils.CacheUtils;
-import net.bytebuddy.implementation.bytecode.constant.MethodConstant;
+import com.cache.api.CacheMode;
+import com.cache.interfaces.Cache;
+import com.cache.utils.DistUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 //import redis.clients.jedis.Jedis;
 //import redis.clients.jedis.params.SetParams;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StorageRedisSimpleTest {
     private static final Logger log = LoggerFactory.getLogger(StorageRedisSimpleTest.class);
 
     @Test
-    public void redisSimpleTest() {
+    public void redisStorageSimpleTest() {
         log.info("START ------ ");
+
         String host = "localhost";
-        /*
         int port = 6379;
+        Cache cache = DistFactory.buildEmptyFactory()
+                .withName("GlobalCacheTest")
+                .withCacheStorageRedis(host, port)
+                .withObjectTimeToLive(CacheMode.TIME_ONE_DAY)
+                .withTimerStorageClean(CacheMode.TIME_ONE_HOUR)
+                .withMaxObjectAndItems(3000, 10000000)
+                .createCacheInstance();
+
+        cache.clearCacheContains("");
+        assertEquals(0, cache.getObjectsCount(), "There should be NO objects in cache");
+
+        for (int i=0; i<10; i++) {
+            cache.withCache("key" + i, key -> "value", CacheMode.modeTtlOneMinute);
+            assertEquals(i+1, cache.getObjectsCount(), "There should be " + (i+1) + " values in cache");
+            var value = cache.getCacheObject("key" + i);
+            assertTrue(value.isPresent(), "There should be value for key: key" + i);
+            assertEquals("value", value.get().getValue());
+            log.info("Objects in cache: " + cache.getObjectsCount() + ", keys: " + cache.getCacheKeys("") + ", current:" + value.get().getInfo());
+        }
+        for (int i=0; i<10; i++) {
+            int keyNum = DistUtils.randomInt(10);
+            String v = cache.withCache("key"+keyNum, key -> "value" + keyNum, CacheMode.modeTtlOneMinute);
+            log.debug("Objects in cache: " + cache.getObjectsCount());
+        }
+        assertEquals(10, cache.getObjectsCount(), "There should be 10 values in cache");
+
+        assertEquals(1, cache.getCacheKeys("key7", true).size(), "There should be 1 key in cache that contains key7");
+        assertEquals(1, cache.getCacheKeys("key8", true).size(), "There should be 1 key in cache that contains key8");
+
+        cache.clearCacheContains("key7");
+        assertEquals(9, cache.getObjectsCount(), "There should be 9 objects in cache");
+        assertTrue(cache.getCacheKeys("key7", true).isEmpty(), "There should be no cache for key: key7");
+
+        cache.clearCacheContains("key");
+        assertEquals(0, cache.getObjectsCount(), "There should be NO objects in cache");
+
+        cache.clearCacheContains("");
+
+        cache.close();
+/*
         Jedis jedis = new Jedis(host, port);
         log.info("Redis client ID: " + jedis.clientId());
         log.info("Redis client info: " + jedis.clientInfo());
@@ -45,9 +84,10 @@ public class StorageRedisSimpleTest {
         CacheUtils.sleep(11000);
 
         log.info("Redis get2: " + jedis.get("key1"));
+
         jedis.close();
 
-         */
+ */
         log.info("END-----");
     }
 }

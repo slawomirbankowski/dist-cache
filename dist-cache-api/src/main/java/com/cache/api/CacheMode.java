@@ -1,5 +1,8 @@
 package com.cache.api;
 
+import com.cache.utils.AdvancedMap;
+import com.cache.utils.DistUtils;
+
 import java.util.HashMap;
 
 /** cache modes for objects to be kept in cache
@@ -25,6 +28,16 @@ public class CacheMode {
         }
         public boolean isRefresh() {
             return this.equals(REFRESH);
+        }
+        public static Mode parseModeOfDefault(String value) {
+            try {
+                return Mode.valueOf(value);
+            } catch (IllegalArgumentException ex) {
+                // unknown mode - set default TTL
+                return TTL;
+            }
+
+
         }
     }
 
@@ -156,8 +169,14 @@ public class CacheMode {
     /** already parsed modes for simplicity and velocity of parsing */
     private static HashMap<String, CacheMode> parsedModes = new HashMap<>();
     public static CacheMode createModeFromString(String modeStr) {
-        // TODO: parse mode from string, mode could be something like 'mode=1,priority=3,timeToLiveMs=5000,addToInternal=false,addToExternal=true
-        return modeRefreshTenSeconds;
+        // parse mode from string, mode could be something like 'mode=1,priority=3,ttl=5000,internal=false,external=true
+        AdvancedMap map = DistUtils.splitToAdvancedMapBySeparationEqual(modeStr, ",", '=', true);
+        Mode m = Mode.parseModeOfDefault(map.getString("mode", "TTL"));
+        long timeToLiveMs = map.getLong("ttl", 60000);
+        boolean addToInternal = map.getBoolean("internal", true);
+        boolean addToExternal = map.getBoolean("external", true);
+        int priority = map.getInt("priority", 5);
+        return new CacheMode(m, timeToLiveMs, addToInternal, addToExternal, priority);
     }
     /** parse cache mode from String */
     public static CacheMode fromString(String modeStr) {

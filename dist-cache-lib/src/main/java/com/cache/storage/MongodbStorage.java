@@ -3,6 +3,7 @@ package com.cache.storage;
 import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
 
+import java.io.File;
 import java.util.*;
 
 /** cache with MongoDB as storage for objects
@@ -18,6 +19,14 @@ public class MongodbStorage extends CacheStorageBase {
     }
     /** Redis is external storage */
     public  boolean isInternal() { return false; }
+    /** returns true if base file path is folder with write access */
+    public boolean isOperable() {
+        try {
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
     /** get type of this storage */
     public CacheStorageType getStorageType() {
         return CacheStorageType.mongodb;
@@ -34,7 +43,7 @@ public class MongodbStorage extends CacheStorageBase {
         return Optional.empty();
     }
     /** remove objects in cache storage by keys */
-    public void removeObjectsByKeys(List<String> keys) {
+    public void removeObjectsByKeys(Collection<String> keys) {
     }
     /** remove object in cache storage by key */
     public void removeObjectByKey(String key) {
