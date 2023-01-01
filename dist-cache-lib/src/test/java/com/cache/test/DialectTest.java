@@ -19,7 +19,7 @@ public class DialectTest {
             JdbcDialect defaultDialect = JdbcDialect.getDialect("", "");
             JdbcDialect postgres = JdbcDialect.getDialect("com.postgresql.Driver", "");
 
-            assertNotNull(defaultDialect, "Postgres dialect should be non empty");
+            assertNotNull(defaultDialect, "Default dialect should be non empty");
             assertNotNull(postgres, "Postgres dialect should be non empty");
 
             Properties props = new Properties();

@@ -17,6 +17,10 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
     }
     /** HashMap is internal storage */
     public boolean isInternal() { return true; }
+    /** get type of this storage */
+    public CacheStorageType getStorageType() {
+        return CacheStorageType.memory;
+    }
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
         return localCache.containsKey(key);
@@ -32,7 +36,6 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
         if (prev != null) {
             prev.releaseObject();
         }
-        // TODO: need to dispose object after removing from cache - this would be based on policy
         return Optional.empty();
     }
     /** get number of items in cache */
@@ -44,7 +47,9 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
 
     /** get keys for all cache items */
     public Set<String> getKeys(String containsStr) {
-        return localCache.keySet().stream().filter(x -> x.contains(containsStr)).collect(Collectors.toSet());
+        var keys =  localCache.keySet().stream().filter(x -> x.contains(containsStr)).collect(Collectors.toSet());
+        log.info("Try to get keys for InternalHashMap that contains: " + containsStr+", COUNT=" + keys.size());
+        return keys;
     }
     /** get info values */
     public List<CacheObjectInfo> getInfos(String containsStr) {
@@ -78,6 +83,7 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
             // check if there is too many items in cache even after deleting old ones
             // TODO: implement removing some objects based on policy
             for (Map.Entry<String, CacheObject> e: localCache.entrySet()) {
+
                 e.getValue().isOld();
                 // TODO: clear
                 //e.getKey();
@@ -86,7 +92,7 @@ public class InternalHashMapCacheStorage extends CacheStorageBase {
         }
     }
     /** remove all objects by keys */
-    public void removeObjectsByKeys(List<String> keys) {
+    public void removeObjectsByKeys(Collection<String> keys) {
         // TODO: add removed items
         keys.forEach(keyToRemove -> removeObjectByKey(keyToRemove));
     }

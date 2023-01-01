@@ -9,7 +9,7 @@ import java.util.function.Supplier;
 
 /** base interface for cache that is allowing to operate on cache objects
  * cashe could help with keeping local copy with much less latency to get it, so reading object could be very efficient
- * there could be many different storages to keep cache object: HashMap in JVM memory, Redis, Elasticsearch, local disk
+ * there could be different storages to keep cache object: HashMap in JVM memory, Redis, Elasticsearch, local disk
  * there are two main storage types: internal (in the same JVM memory), external (somewhere not internal)
  * internal storages could keep complicated objects,
  * external storages could be local (visible only for this agent) or global (visible globally for all agents)
@@ -67,6 +67,8 @@ public interface Cache extends DistService {
     int clearCaches(CacheClearMode clearMode);
     /** clear cache contains given partial key */
     int clearCacheContains(String str);
+    /** remove object from cache by given key */
+    int removeObjectByKey(String key);
     /** get first object in cache for given key
      * if many storages has the same object - only first one is retrieved */
     <T> Optional<T> getObject(String key);
@@ -77,6 +79,8 @@ public interface Cache extends DistService {
     /** get item from cache if exists or None */
     CacheSetBack setCacheObject(String key, Object value, CacheMode mode, Set<String> groups);
     CacheSetBack setCacheObject(String key, Object value, CacheMode mode);
+    /** set object to cache */
+    CacheSetBack setCacheObject(CacheObject co);
     CacheSetBack setCacheObject(String key, Object value);
     /** get all recent issues with cache,
      * issues might be caused by internal Exception, connection problems, incorrect usage

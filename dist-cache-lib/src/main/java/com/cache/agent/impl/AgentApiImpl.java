@@ -2,38 +2,27 @@ package com.cache.agent.impl;
 
 import com.cache.agent.AgentInstance;
 import com.cache.agent.apis.WebSimpleApi;
-import com.cache.agent.clients.SocketServerClient;
-import com.cache.agent.servers.AgentServerSocket;
 import com.cache.api.*;
 import com.cache.base.AgentWebApi;
-import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.interfaces.*;
-import com.cache.utils.CacheUtils;
-import com.cache.utils.DistMapTimeStorage;
-import com.cache.utils.HashMapMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 /** manager for connections inside agent - servers and clients */
-public class AgentApiImpl implements AgentApi {
+public class AgentApiImpl extends Agentable implements AgentApi {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentApiImpl.class);
-    /** parent agent for this connection manager */
-    private AgentInstance parentAgent;
+
     /** all servers for connections to other agents */
     private final java.util.concurrent.ConcurrentHashMap<String, AgentWebApi> apiConnectors = new java.util.concurrent.ConcurrentHashMap<>();
 
     /** create new connectors */
     public AgentApiImpl(AgentInstance parentAgent) {
-        this.parentAgent = parentAgent;
+        super(parentAgent);
     }
 
     /** get parent agent connected to this API implementation */

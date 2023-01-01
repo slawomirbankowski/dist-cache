@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 public class StorageInfo {
     /** UID for storage */
     private String storageUid;
+    /** storage date and time of creation*/
     private LocalDateTime storageCreatedDate;
     private String storageClassName;
     private int itemsCount;

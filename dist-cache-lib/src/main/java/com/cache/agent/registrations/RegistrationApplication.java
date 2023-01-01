@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -73,6 +74,14 @@ public class RegistrationApplication extends RegistrationBase {
 
         return null;
     }
+    /** remove active agents without last ping date for more than X minutes */
+    public boolean removeInactiveAgents(LocalDateTime beforeDate) {
+        return true;
+    }
+    /** remove inactive agents with last ping date for more than X minutes */
+    public boolean deleteInactiveAgents(LocalDateTime beforeDate) {
+        return true;
+    }
 
     /** get normalized URL for this registration */
     public String getUrl() {
@@ -91,6 +100,14 @@ public class RegistrationApplication extends RegistrationBase {
     /** get all communication servers */
     public  List<DistAgentServerRow> getServers() {
         return new LinkedList<>();
+    }
+    /** ping given server by GUID */
+    public boolean serverPing(DistAgentServerRow serv) {
+        return false;
+    }
+    /** set active servers with last ping date before given date as inactive */
+    public boolean serversCheck(LocalDateTime inactivateBeforeDate, LocalDateTime deleteBeforeDate) {
+        return false;
     }
 
     /** get list of agents from connector */

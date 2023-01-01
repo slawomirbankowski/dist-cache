@@ -1,6 +1,6 @@
 package com.cache.test.model;
 
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
 public class WarehouseStock extends BaseTable {
 
@@ -18,13 +18,13 @@ public class WarehouseStock extends BaseTable {
     public static WarehouseStock[] createStocks(Warehouse[] warehouses, Product[] products, int totalItems, int maxItemsPerProduct) {
         WarehouseStock[] objs = new WarehouseStock[totalItems];
         for (int i=0; i<totalItems; i++) {
-            Product product = products[CacheUtils.randomInt(products.length)];
-            Warehouse warehouse = warehouses[CacheUtils.randomInt(warehouses.length)];
+            Product product = products[DistUtils.randomInt(products.length)];
+            Warehouse warehouse = warehouses[DistUtils.randomInt(warehouses.length)];
             WarehouseStock obj = new WarehouseStock();
             obj.id = i;
             obj.warehouseCode = warehouse.warehouseCode;
             obj.productName = product.productName;
-            obj.itemsCount = CacheUtils.randomInt(maxItemsPerProduct);
+            obj.itemsCount = DistUtils.randomInt(maxItemsPerProduct);
             warehouse.totalItemsCount += obj.itemsCount;
             objs[i] = obj;
         }

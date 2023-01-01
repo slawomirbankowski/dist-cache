@@ -17,7 +17,7 @@ public class CacheManagerFullModelTest {
         Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withRegisterApplication("https://localhost:9999/")
-                .withStorageHashMap()
+                .withCacheStorageHashMap()
                 //.withStorageKafka("")
                 .withMaxObjectAndItems(100, 20000)
                 .createCacheInstance();

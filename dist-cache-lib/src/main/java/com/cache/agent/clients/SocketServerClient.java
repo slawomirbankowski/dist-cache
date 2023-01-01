@@ -1,6 +1,5 @@
 package com.cache.agent.clients;
 
-
 import com.cache.api.DistConfig;
 import com.cache.api.DistMessageType;
 import com.cache.api.DistServiceType;
@@ -9,7 +8,6 @@ import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.AgentClient;
 import com.cache.api.DistMessage;
-import com.cache.utils.CacheUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,9 +20,9 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(SocketServerClient.class);
-    /** socket */
+    /** socket to connect to SockerServer */
     protected Socket socket;
-    /** */
+    /** if this client is directly connected with local server */
     protected boolean isServer;
     /** name of connected host */
     protected String host = "";
@@ -57,7 +55,7 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
             socket = new Socket(srv.serverhost, srv.serverport);
         } catch (Exception ex) {
             parentAgent.getAgentIssues().addIssue("SocketServerClient", ex);
-            log.warn("Cannot initialize socket to host: " + srv.serverhost +", port: " + srv.serverport + ", current agent: " + parentAgent.getAgentGuid() + ", connecting to agent: " + srv.agentguid + ", reason: " + ex.getMessage(), ex);
+            log.warn("Cannot initialize socket to host: " + srv.serverhost +", port: " + srv.serverport + ", current agent: " + parentAgent.getAgentGuid() + ", connecting to agent: " + srv.agentguid + ", reason: " + ex.getMessage());
         }
         initialize();
     }
@@ -141,7 +139,8 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
                 DistMessage receivedMsg = (DistMessage)parentAgent.getSerializer().deserializeFromString(DistMessage.class.getName(), readLine);
                 if (receivedMsg.isWelcome()) {
                     log.info("&&&&&&&&&&&&&&&&&&&&&&&&& Socked client got WELCOME message, client: " + clientGuid + ", " + readLine + ", message: " + receivedMsg.toString());
-                    // TODO:
+                    // TODO: welcome message to SocketClient - set Agent name and initial information from Welcome message
+
                 } else {
                     log.trace("&&&&&&&&&&&&&&&&&&&&&&& Socket client got another message, client: " + clientGuid + ", LINE: " +readLine + ", message: " + receivedMsg.toString());
                     parentAgent.getAgentServices().receiveMessage(receivedMsg);

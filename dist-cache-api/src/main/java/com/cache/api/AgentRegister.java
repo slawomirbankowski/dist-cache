@@ -3,7 +3,8 @@ package com.cache.api;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/** registering object that can be used */
+/** Agent registering object that can be used to register Agent to Registration service
+ * Registration service is keeping list of Agents, Servers, Services in given storage like DB, Elasticsearch, Redis, Kafka, ... */
 public class AgentRegister {
     /** unique ID of this agent */
     public String agentGuid;

@@ -2,7 +2,7 @@ package com.cache.base.dtos;
 
 import com.cache.api.AgentSimplified;
 import com.cache.utils.AdvancedMap;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
 import java.util.Map;
 
@@ -28,7 +28,7 @@ public class DistAgentRegisterRow {
     }
     /** */
     public AgentSimplified toSimplified() {
-        return new AgentSimplified(agentguid, hostname, hostip, portnumber, CacheUtils.dateToLocalDateTime(lastpingdate));
+        return new AgentSimplified(agentguid, hostname, hostip, portnumber, DistUtils.dateToLocalDateTime(lastpingdate));
     }
     public static DistAgentRegisterRow fromMap(Map<String, Object> map) {
         AdvancedMap m = new AdvancedMap(map);

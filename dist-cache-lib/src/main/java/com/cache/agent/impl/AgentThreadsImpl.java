@@ -9,19 +9,16 @@ import org.slf4j.LoggerFactory;
 
 import java.util.stream.Collectors;
 
-public class AgentThreadsImpl implements AgentThreads {
+public class AgentThreadsImpl extends Agentable implements AgentThreads {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentThreadsImpl.class);
-    /** parent agent for this services manager */
-    private AgentInstance parentAgent;
-
     /** all registered threads */
     private final java.util.concurrent.ConcurrentLinkedQueue<AgentThreadObject> registeredThreads = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
     /** creates service manager for agent with parent agent assigned */
     public AgentThreadsImpl(AgentInstance parentAgent) {
-        this.parentAgent = parentAgent;
+        super(parentAgent);
     }
 
     /** get number of threads */

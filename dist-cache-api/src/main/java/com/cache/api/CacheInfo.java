@@ -2,8 +2,6 @@ package com.cache.api;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.atomic.AtomicLong;
 
 /** simple info about cache - this is to be returned in dist-cache application */
 public class CacheInfo {

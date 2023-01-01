@@ -1,9 +1,6 @@
 package com.cache.storage;
 
-import com.cache.api.CacheClearMode;
-import com.cache.api.CacheObject;
-import com.cache.api.CacheObjectInfo;
-import com.cache.api.StorageInitializeParameter;
+import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
 
 import java.util.*;
@@ -21,6 +18,10 @@ public class InternalHashTableCacheStorage extends CacheStorageBase {
     }
     /** Hashtable is internal storage */
     public boolean isInternal() { return true; }
+    /** get type of this storage */
+    public CacheStorageType getStorageType() {
+        return CacheStorageType.memory;
+    }
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
         return localCache.containsKey(key);
@@ -83,7 +84,10 @@ public class InternalHashTableCacheStorage extends CacheStorageBase {
             // check if there is too many items in cache even after deleting old ones
             // TODO: implement removing some objects based on policy
             for (Map.Entry<String, CacheObject> e: localCache.entrySet()) {
-                e.getValue().isOld();
+                if (e.getValue().isOld()) {
+
+                    //e.getValue().releaseObject();
+                }
                 // TODO: clear
                 //e.getKey();
                 //e.getValue().releaseObject();
@@ -91,7 +95,7 @@ public class InternalHashTableCacheStorage extends CacheStorageBase {
         }
     }
     /** remove all objects by keys */
-    public void removeObjectsByKeys(List<String> keys) {
+    public void removeObjectsByKeys(Collection<String> keys) {
         // TODO: add removed items
         keys.forEach(keyToRemove -> removeObjectByKey(keyToRemove));
     }

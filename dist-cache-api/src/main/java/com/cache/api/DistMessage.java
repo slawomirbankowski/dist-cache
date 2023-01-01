@@ -1,10 +1,13 @@
 package com.cache.api;
 
 import com.cache.interfaces.DistService;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 
 /** interface for message sent by dist service to another service between agent
  * message should be serialized and sent using known servers-clients like Socket, Datagram, Kafka, HTTP, ...
@@ -12,7 +15,7 @@ import java.time.LocalDateTime;
 public class DistMessage implements Serializable {
 
     /** unique ID of this message */
-    private String messageUid = CacheUtils.generateMessageGuid();
+    private String messageUid = DistUtils.generateMessageGuid();
     /** date and time of creation of this message */
     private LocalDateTime createdDate = LocalDateTime.now();
     /** type of message - this could be welcome, system, request, response, noOperation, ... */
@@ -76,6 +79,9 @@ public class DistMessage implements Serializable {
     /** get created date */
     public LocalDateTime getCreatedDate() {
         return createdDate;
+    }
+    public long messageCurrentAgeMs() {
+        return createdDate.until(LocalDateTime.now(), ChronoUnit.MILLIS);
     }
     public DistMessageType getMessageType() {
         return messageType;
@@ -198,11 +204,11 @@ public class DistMessage implements Serializable {
 
     public static DistMessage createEmpty() {
         return new DistMessage(DistMessageType.welcome, sendToSelf, DistServiceType.agent,
-                sendToSelf, DistServiceType.agent,  "empty", "empty", "", "", CacheUtils.getCreatedDate(), DistMessageStatus.init);
+                sendToSelf, DistServiceType.agent,  "empty", "empty", "", "", DistUtils.getCreatedDate(), DistMessageStatus.init);
     }
     public static DistMessage createError(String errorDescription, Exception ex) {
         return new DistMessage(DistMessageType.welcome, sendToSelf, DistServiceType.agent,
-                sendToSelf, DistServiceType.agent,  "error", "error", "", "", CacheUtils.getCreatedDate(), DistMessageStatus.init);
+                sendToSelf, DistServiceType.agent,  "error", "error", "", "", DistUtils.getCreatedDate(), DistMessageStatus.init);
     }
     /** creates new message */
     public static DistMessage createMessage(DistMessageType messageType, String fromAgent, DistServiceType fromService, String toAgent, DistServiceType toService, String method, Object message,  String tags, LocalDateTime validTill) {

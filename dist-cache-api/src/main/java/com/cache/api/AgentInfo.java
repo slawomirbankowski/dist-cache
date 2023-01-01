@@ -3,6 +3,7 @@ package com.cache.api;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/** information DTO about Agent - current state */
 public class AgentInfo {
 
     private String agentGuid;

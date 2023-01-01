@@ -28,10 +28,10 @@ public class AgentWebApiRequest {
         this.headers = headers;
         this.content = content;
         String[] pathTab = uri.getPath().split("/");
-        this.serviceName = (pathTab.length>0)?pathTab[1]:"";
-        this.serviceMethod = (pathTab.length>1)?pathTab[2]:"";
-        this.paramOne = (pathTab.length>2)?pathTab[2]:"";
-        this.paramTwo = (pathTab.length>3)?pathTab[3]:"";
+        this.serviceName = (pathTab.length>1)?pathTab[1]:"";
+        this.serviceMethod = (pathTab.length>2)?pathTab[2]:"";
+        this.paramOne = (pathTab.length>3)?pathTab[3]:"";
+        this.paramTwo = (pathTab.length>4)?pathTab[4]:"";
     }
     public long getReqSeq() {
         return reqSeq;

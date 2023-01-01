@@ -1,6 +1,6 @@
 package com.cache.app;
 
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -24,7 +24,7 @@ public class DistCacheApp {
     }
     public static void main(String[] args) {
         commandLineArguments = args;
-        log.info("STARTING DistCache REST application on host: " + CacheUtils.getCurrentHostName() + "/" + CacheUtils.getCurrentHostAddress() + ", GUID: " + CacheUtils.getCacheGuid());
+        log.info("STARTING DistCache REST application on host: " + DistUtils.getCurrentHostName() + "/" + DistUtils.getCurrentHostAddress() + ", GUID: " + DistUtils.getCacheGuid());
         SpringApplication.run(DistCacheApp.class, args);
     }
     @Bean

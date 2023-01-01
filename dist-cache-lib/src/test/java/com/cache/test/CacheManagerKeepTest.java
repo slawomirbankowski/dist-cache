@@ -3,7 +3,7 @@ package com.cache.test;
 import com.cache.DistFactory;
 import com.cache.interfaces.Cache;
 import com.cache.api.CacheMode;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,11 +18,9 @@ public class CacheManagerKeepTest {
         log.info("START ------ clean test");
         Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
-                .withStorageHashMap()
-                //.withStoragePriorityQueue()
-                //.withStoragePriorityQueue()
+                .withCacheStorageHashMap()
                 .withObjectTimeToLive(CacheMode.TIME_FIVE_SECONDS)
-                .withTimer(CacheMode.TIME_FIVE_SECONDS, CacheMode.TIME_FIVE_SECONDS)
+                .withTimerStorageClean(CacheMode.TIME_FIVE_SECONDS)
                 .withMaxObjectAndItems(30, 100)
                 .createCacheInstance();
 
@@ -32,9 +30,9 @@ public class CacheManagerKeepTest {
             String v = cache.withCache("key"+i, key -> "value", CacheMode.modeKeep);
             log.info("Objects in cache: " + cache.getObjectsCount() + ", keys: " + cache.getCacheKeys(""));
         }
-        CacheUtils.sleep(10000);
+        DistUtils.sleep(3000);
         assertEquals(cache.getObjectsCount(), 30, "There should be 30 objets in cache");
-        CacheUtils.sleep(10000);
+        DistUtils.sleep(3000);
         assertEquals(cache.getObjectsCount(), 30, "There should be 30 objets in cache");
         cache.close();
         assertTrue(cache.getClosed(), "Cache should be closed");

@@ -1,7 +1,7 @@
 package com.cache.base;
 
 import com.cache.interfaces.Agent;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -14,7 +14,7 @@ public abstract class AgentClientBase {
     /** */
     protected String connectedAgentGuid = "";
     /** unique ID of this client */
-    protected final String clientGuid = CacheUtils.generateClientGuid(this.getClass().getSimpleName());
+    protected final String clientGuid = DistUtils.generateClientGuid(this.getClass().getSimpleName());
     /** true is this client is still working */
     protected boolean working = true;
     /** tags for this client */

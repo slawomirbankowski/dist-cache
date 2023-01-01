@@ -1,6 +1,6 @@
 package com.cache.api;
 
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -192,7 +192,7 @@ public class CachePolicyBuilder {
 
     /** parse single policy item from String */
     private static CachePolicyItem parsePolicyItem(String itemStr) {
-        List<String[]> rulesStrList = CacheUtils.splitBySeparationEqual(itemStr, ",", '=', true);
+        List<String[]> rulesStrList = DistUtils.splitBySeparationEqual(itemStr, ",", '=', true);
         CachePolicyItem item = new CachePolicyItem();
         for (String[] ruleStr: rulesStrList) {
             String attrName = ruleStr[0].trim();

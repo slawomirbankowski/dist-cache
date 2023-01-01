@@ -1,6 +1,6 @@
 package com.cache.test.model;
 
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
 // user selection of favourite products
 public class UserPreference extends BaseTable {
@@ -23,8 +23,8 @@ public class UserPreference extends BaseTable {
     public static UserPreference[] createPreferences(User[] users, Product[] products, int objectsCount) {
         UserPreference[] prefs = new UserPreference[objectsCount];
         for (int i=0; i<objectsCount; i++) {
-            Product product = products[CacheUtils.randomInt(products.length)];
-            User user = users[CacheUtils.randomInt(users.length)];
+            Product product = products[DistUtils.randomInt(products.length)];
+            User user = users[DistUtils.randomInt(users.length)];
             prefs[i] = createPreference(i, user.userLogin, product.productName);
         }
         return prefs;

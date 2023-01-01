@@ -2,7 +2,11 @@ package com.cache.interfaces;
 
 import com.cache.api.DistMessage;
 
-/** interface for client connected to other agent - this could be any client based on socket, udp, http, Kafka, JDBC, ... */
+/** Interface for client connected to other agent
+ * This could be any client based on socket, udp, http, Kafka, JDBC, ...
+ * Client could be connected to given Agent, so can send message to that Agent only
+ *
+ * */
 public interface AgentClient {
 
     /** initialize client - connecting or reconnecting */

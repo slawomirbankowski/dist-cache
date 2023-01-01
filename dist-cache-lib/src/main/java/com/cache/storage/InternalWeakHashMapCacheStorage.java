@@ -1,9 +1,6 @@
 package com.cache.storage;
 
-import com.cache.api.CacheClearMode;
-import com.cache.api.CacheObject;
-import com.cache.api.CacheObjectInfo;
-import com.cache.api.StorageInitializeParameter;
+import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
 
 import java.util.*;
@@ -15,6 +12,10 @@ public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
     private WeakHashMap<String, CacheObject> localCache = new WeakHashMap<>();
     /** WeakHashMap is internal storage */
     public  boolean isInternal() { return true; }
+    /** get type of this storage */
+    public CacheStorageType getStorageType() {
+        return CacheStorageType.memory;
+    }
     public InternalWeakHashMapCacheStorage(StorageInitializeParameter p) {
         super(p);
     }
@@ -31,7 +32,7 @@ public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
         return Optional.empty();
     }
     /** remove objects in cache storage by keys */
-    public void removeObjectsByKeys(List<String> keys) {
+    public void removeObjectsByKeys(Collection<String> keys) {
     }
     /** remove object in cache storage by key */
     public void removeObjectByKey(String key) {

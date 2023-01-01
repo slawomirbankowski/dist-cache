@@ -10,29 +10,31 @@ import com.cache.base.RegistrationBase;
 import com.cache.base.dtos.DistAgentRegisterRow;
 import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.interfaces.AgentRegistrations;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class AgentRegistrationsImpl implements AgentRegistrations {
+/** Implementation of manager to register this agent, servers and services in global repository using JDBC, Kafka, Elasticsearch or any other central storage.
+ * Central registration could be used to gather information about other agents.
+ *  */
+public class AgentRegistrationsImpl extends Agentable implements AgentRegistrations {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentRegistrationsImpl.class);
-    /** parent agent for this registrations manager */
-    private final AgentInstance parentAgent;
 
-    /* allows to perform ping, get current list of agents and unregister agent */
+    /** list of registration services to register agent, ping agent, register server, register service or unregister items */
     private final java.util.concurrent.ConcurrentHashMap<String, RegistrationBase> registrations = new java.util.concurrent.ConcurrentHashMap<>();
-    /** all connected agents */
+    /** all known agents from registration services */
     private final java.util.concurrent.ConcurrentHashMap<String, AgentSimplified> connectedAgents = new java.util.concurrent.ConcurrentHashMap<>();
-    /** all rows of registered servers */
+    /** all rows of registered and known servers from other agents that this agent should be able to connect */
     private final LinkedList<DistAgentServerRow> registeredServers = new LinkedList<>();
 
     public AgentRegistrationsImpl(AgentInstance parentAgent) {
-        this.parentAgent = parentAgent;
+        super(parentAgent);
     }
 
     /** create initial registration services
@@ -44,17 +46,16 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
         if (parentAgent.getConfig().hasProperty(DistConfig.JDBC_URL)) {
             createAndAddRegistrations(RegistrationJdbc.class.getName());
         }
-        if (parentAgent.getConfig().hasProperty(DistConfig.KAFKA_BROKERS)) {
+        if (parentAgent.getConfig().hasProperty(DistConfig.CACHE_STORAGE_KAFKA_BROKERS)) {
             createAndAddRegistrations(RegistrationKafka.class.getName());
         }
         if (parentAgent.getConfig().hasProperty(DistConfig.ELASTICSEARCH_URL)) {
             createAndAddRegistrations(RegistrationElasticsearch.class.getName());
         }
         log.info("Registered agent " + parentAgent.getAgentGuid() + " to all registration services, count: " + registrations.size());
-        long communicateDelayMs = parentAgent.getConfig().getPropertyAsLong(DistConfig.TIMER_COMMUNICATE_DELAY, DistConfig.TIMER_COMMUNICATE_DELAY_VALUE);
-        long communicatePeriodMs = parentAgent.getConfig().getPropertyAsLong(DistConfig.TIMER_COMMUNICATE_DELAY, DistConfig.TIMER_COMMUNICATE_DELAY_VALUE);
         registerToAll();
-        parentAgent.getAgentTimers().setUpTimer(communicateDelayMs, communicatePeriodMs, x -> onTimeCommunicate());
+        log.info("Set up timer to refresh registration items like agents, servers, agent: " + getParentAgentGuid());
+        parentAgent.getAgentTimers().setUpTimer("TIMER_REGISTRATION", DistConfig.TIMER_REGISTRATION_PERIOD, DistConfig.TIMER_REGISTRATION_PERIOD_DELAY_VALUE, x -> onTimeRegisterRefresh());
     }
     /** get number of registration */
     public int getRegistrationsCount() {
@@ -71,7 +72,6 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
         return registrations.values().stream()
                 .map(RegistrationBase::getInfo)
                 .collect(Collectors.toList());
-
     }
     /** get list of connected agents */
     public List<DistAgentRegisterRow> getAgentsNow() {
@@ -120,14 +120,13 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
             return Optional.empty();
         }
     }
-    /** run by agent every 1 minute */
-    public boolean onTimeCommunicate() {
+    /** run by agent every X seconds */
+    public boolean onTimeRegisterRefresh() {
         try {
             pingAllRegistrations();
             checkActiveAgents();
-            checkServers();
+            removeInactiveAgents();
             // TODO: connect to all nearby agents, check statuses
-            // TODO: implement communication of agent with other cache agents
             log.info("=====----> AGENT REGISTRATION summary for guid: " + parentAgent.getAgentGuid() + ", registrations: " + registrations.size() + ", connected agents: " + connectedAgents.size() + ", registeredServers: " + registeredServers.size());
             return true;
         } catch (Exception ex) {
@@ -135,6 +134,7 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
             parentAgent.getAgentIssues().addIssue("AgentRegistrationsImpl.onTimeCommunicate", ex);
             return false;
         }
+
     }
     /** add issue to registrations */
     public void addIssue(DistIssue issue) {
@@ -172,11 +172,23 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
         });
         log.info("********************>>> AFTER check connected agents for agent: " + parentAgent.getAgentGuid() + ", current count: " + connectedAgents.size() + ", registrations: " + registrations.size() + ", registeredServers: " + registeredServers.size());
     }
-    /** check servers */
-    private void checkServers() {
-        List<DistAgentServerRow> servers = registrations.entrySet().stream().flatMap(e -> e.getValue().getServers().stream()).collect(Collectors.toList());
-        log.info("Check servers for agent: " + parentAgent.getAgentGuid() + ", connectedAgents: " + connectedAgents.size() + ", servers from registrations: " + servers.size());
-        parentAgent.getAgentConnectors().checkActiveServers(servers);
+    public void removeInactiveAgents() {
+        long inactivateBeforeSecondsAgo = getConfig().getPropertyAsLong(DistConfig.AGENT_INACTIVATE_AFTER, DistConfig.AGENT_INACTIVATE_AFTER_DEFAULT_VALUE)/1000;
+        LocalDateTime inactivateBeforeDate = LocalDateTime.now().minusSeconds(inactivateBeforeSecondsAgo);
+        long deleteBeforeSecondsAgo = getConfig().getPropertyAsLong(DistConfig.AGENT_DELETE_AFTER, DistConfig.AGENT_DELETE_AFTER_DEFAULT_VALUE)/1000;
+        LocalDateTime deleteBeforeDate = LocalDateTime.now().minusSeconds(deleteBeforeSecondsAgo);
+        log.info("Inactivate agents that have no ping for last " + (inactivateBeforeSecondsAgo) + " seconds, remove inactive agents with ping before " + deleteBeforeSecondsAgo + " seconds ago");
+        registrations.entrySet().stream().forEach(e -> {
+            e.getValue().removeInactiveAgents(inactivateBeforeDate);
+            e.getValue().deleteInactiveAgents(deleteBeforeDate);
+        });
+        registrations.values().stream().forEach(reg -> {
+            registeredServers.stream().forEach(srv -> {
+                reg.serverPing(srv);
+            });
+            reg.serversCheck(inactivateBeforeDate, deleteBeforeDate);
+        });
+
     }
     /** register this agent to all available connectors
      * this is registering agent itself,  */
@@ -184,7 +196,7 @@ public class AgentRegistrationsImpl implements AgentRegistrations {
         log.info("Registering agent: " + parentAgent.getAgentGuid() + " to all registration objects, registrations: " + registrations.size());
         var agents = getAgents();
         AgentRegister register = new AgentRegister(parentAgent.getAgentGuid(), parentAgent.getAgentSecret(),
-                CacheUtils.getCurrentHostName(), CacheUtils.getCurrentHostAddress(),
+                DistUtils.getCurrentHostName(), DistUtils.getCurrentHostAddress(),
                 9900, parentAgent.getCreateDate(), agents);
         try {
             synchronized (registrations) {

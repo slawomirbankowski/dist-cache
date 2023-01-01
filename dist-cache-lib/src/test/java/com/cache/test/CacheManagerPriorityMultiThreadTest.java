@@ -3,7 +3,7 @@ package com.cache.test;
 import com.cache.DistFactory;
 import com.cache.interfaces.Cache;
 import com.cache.api.CacheMode;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +18,7 @@ public class CacheManagerPriorityMultiThreadTest {
         log.info("START------");
         Cache cache = DistFactory.buildEmptyFactory()
                 .withName("GlobalCacheTest")
-                .withStoragePriorityQueue()
+                .withCacheStoragePriorityQueue()
                 .withObjectTimeToLive(CacheMode.TIME_ONE_HOUR)
                 .withMaxObjectAndItems(100, 1000)
                 .createCacheInstance();
@@ -35,14 +35,14 @@ public class CacheManagerPriorityMultiThreadTest {
         }
         log.info("CURRENT OBJECTS AFTER INSERTING: " + cache.getObjectsCount());
         // test should take 10 seconds
-        CacheUtils.sleep(20000);
+        DistUtils.sleep(20000);
         for (int th=0; th<maxThreads; th++) {
             threaads[th].working = false;
         }
         log.info("CURRENT OBJECTS AFTER 10 seconds: " + cache.getObjectsCount());
         assertTrue(cache.getObjectsCount() <= 1000);
         // wait 1 second to finish all tests
-        CacheUtils.sleep(1000);
+        DistUtils.sleep(1000);
         cache.close();
         log.info("END-----");
     }
@@ -58,10 +58,10 @@ class ReadingWritingPriorityThread extends Thread {
             try {
                 long startTime = System.currentTimeMillis();
                 for (int i=0; i<50; i++) {
-                    String key = "key" + CacheUtils.randomInt(maxKeys);
-                    int priority = CacheUtils.randomInt(10);
+                    String key = "key" + DistUtils.randomInt(maxKeys);
+                    int priority = DistUtils.randomInt(10);
                     String v = cache.withCache(key, k -> {
-                        CacheUtils.sleep(1);
+                        DistUtils.sleep(1);
                         return "value for " + k;
                     }, CacheMode.modePriority(priority));
                     //String keyToClear = "key" + CacheUtils.randomInt(5000);
@@ -71,7 +71,7 @@ class ReadingWritingPriorityThread extends Thread {
             } catch (Exception ex) {
                 log.error("Error while testing multi-thread cache, reason: " + ex.getMessage(), ex);
             }
-            CacheUtils.sleep(1);
+            DistUtils.sleep(1);
         }
     }
 

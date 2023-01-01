@@ -15,12 +15,10 @@ import java.util.Queue;
 import java.util.function.Function;
 
 /** implementation of issues manager */
-public class AgentEventsImpl implements AgentEvents {
+public class AgentEventsImpl extends Agentable implements AgentEvents {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentEventsImpl.class);
-    /** parent agent for this issues manager */
-    private AgentInstance parentAgent;
     /** callbacks - methods to be called when given event is happening
      * only one callback per event type is allowed */
     protected java.util.concurrent.ConcurrentHashMap<String, Function<CacheEvent, String>> callbacks = new java.util.concurrent.ConcurrentHashMap<>();
@@ -29,7 +27,7 @@ public class AgentEventsImpl implements AgentEvents {
 
     /** creates new manager for events in agent */
     public AgentEventsImpl(AgentInstance parentAgent) {
-        this.parentAgent = parentAgent;
+        super(parentAgent);
     }
 
     /** add callback method to call back when there is any event going on */

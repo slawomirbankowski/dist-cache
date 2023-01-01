@@ -1,6 +1,6 @@
 package com.cache.test.model;
 
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
 // user that is ordering items
 public class User extends BaseTable {
@@ -25,7 +25,7 @@ public class User extends BaseTable {
     public static User[] createUsers(int objectsCount, int categoriesCount) {
         User[] users = new User[objectsCount];
         for (int i=0; i<objectsCount; i++) {
-            String category = "category" + CacheUtils.randomInt(categoriesCount);
+            String category = "category" + DistUtils.randomInt(categoriesCount);
             users[i] = createUser(i, "user" + i, "login" + i, category);
         }
         return users;

@@ -11,11 +11,11 @@ import com.cache.jdbc.JdbcTables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- *
- * TODO: implement global agent registration in JDBC database
+ * global agent registration in JDBC database
  * */
 public class RegistrationJdbc extends RegistrationBase {
 
@@ -103,7 +103,27 @@ public class RegistrationJdbc extends RegistrationBase {
         dao.executeUpdateQuery(dialect.checkAgentRegisters(), new Object[0]);
         return new AgentPingResponse();
     }
+    /** remove active agents without last ping date for more than X minutes */
+    public boolean removeInactiveAgents(LocalDateTime beforeDate) {
+        try {
+            dao.executeUpdateQuery(dialect.updateInactiveAgentRegisters(), new Object[] { beforeDate });
+            return true;
+        } catch (Exception ex) {
+            log.warn("Cannot remove inactive agents at JDBC, reason: " + ex.getMessage());
+            return false;
+        }
+    }
 
+    /** remove inactive agents with last ping date for more than X minutes */
+    public boolean deleteInactiveAgents(LocalDateTime beforeDate) {
+        try {
+            dao.executeUpdateQuery(dialect.deleteInactiveAgentRegisters(), new Object[] { beforeDate });
+            return true;
+        } catch (Exception ex) {
+            log.warn("Cannot remove inactive agents at JDBC, reason: " + ex.getMessage());
+            return false;
+        }
+    }
     /** get normalized URL for this registration */
     public String getUrl() {
         return jdbcUrl;
@@ -144,6 +164,21 @@ public class RegistrationJdbc extends RegistrationBase {
     public  List<DistAgentServerRow> getServers() {
         return dao.executeSelectQuery(dialect.selectAgentServersActive(), new Object[0], x -> DistAgentServerRow.fromMap(x));
     }
+    /** ping given server by GUID */
+    public boolean serverPing(DistAgentServerRow serv) {
+        dao.executeUpdateQuery(dialect.pingAgentServer(),
+                new Object[] { serv.agentguid, serv.serverguid });
+        return true;
+    }
+    /** set active servers with last ping date before given date as inactive */
+    public boolean serversCheck(LocalDateTime inactivateBeforeDate, LocalDateTime deleteBeforeDate) {
+        dao.executeUpdateQuery(dialect.checkAgentServer(),
+                new Object[] { inactivateBeforeDate });
+        dao.executeUpdateQuery(dialect.deleteAgentServers(),
+                new Object[] { deleteBeforeDate });
+        return true;
+    }
+
     /** get agents from registration services */
     public  List<DistAgentRegisterRow> getAgentsNow() {
         return dao.executeSelectQuery(dialect.selectAgentServersActive(), new Object[0], x -> DistAgentRegisterRow.fromMap(x));

@@ -6,16 +6,16 @@ import java.util.Map;
 /** class to keep information about Dist Service */
 public class DistServiceInfo {
     private DistServiceType serviceType;
-    private String getServiceClass;
+    private String serviceClass;
     private String serviceGuid;
     private LocalDateTime createdDateTime;
     private boolean closed;
     private Map<String, String> customAttributes;
 
     /** */
-    public DistServiceInfo(DistServiceType serviceType, String getServiceClass, String serviceGuid, LocalDateTime createdDateTime, boolean closed, Map<String, String> customAttributes) {
+    public DistServiceInfo(DistServiceType serviceType, String serviceClass, String serviceGuid, LocalDateTime createdDateTime, boolean closed, Map<String, String> customAttributes) {
         this.serviceType = serviceType;
-        this.getServiceClass = getServiceClass;
+        this.serviceClass = serviceClass;
         this.serviceGuid = serviceGuid;
         this.createdDateTime = createdDateTime;
         this.closed = closed;
@@ -26,8 +26,8 @@ public class DistServiceInfo {
         return serviceType;
     }
 
-    public String getGetServiceClass() {
-        return getServiceClass;
+    public String getServiceClass() {
+        return serviceClass;
     }
 
     public String getServiceGuid() {

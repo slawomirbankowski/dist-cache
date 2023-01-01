@@ -8,6 +8,7 @@ import com.cache.base.dtos.DistAgentServerRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,7 +29,7 @@ public class RegistrationKafka extends RegistrationBase {
     /** run for initialization in classes */
     @Override
     protected void onInitialize() {
-        var kafkaBrokers = parentAgent.getConfig().getProperty(DistConfig.KAFKA_BROKERS);
+        var kafkaBrokers = parentAgent.getConfig().getProperty(DistConfig.CACHE_STORAGE_KAFKA_BROKERS);
         try {
             log.info("Register to Kafka: " + kafkaBrokers);
             // TODO: register to Kafka, push agent info, read other agents
@@ -51,7 +52,14 @@ public class RegistrationKafka extends RegistrationBase {
     protected AgentPingResponse onAgentPing(AgentPing ping) {
         return null;
     }
-
+    /** remove active agents without last ping date for more than X minutes */
+    public boolean removeInactiveAgents(LocalDateTime beforeDate) {
+        return true;
+    }
+    /** remove inactive agents with last ping date for more than X minutes */
+    public boolean deleteInactiveAgents(LocalDateTime beforeDate) {
+        return true;
+    }
     /** get normalized URL for this registration */
     public String getUrl() {
         return kafkaBrokers;
@@ -69,6 +77,15 @@ public class RegistrationKafka extends RegistrationBase {
     public  List<DistAgentServerRow> getServers() {
         return new LinkedList<>();
     }
+    /** ping given server by GUID */
+    public boolean serverPing(DistAgentServerRow serv) {
+        return false;
+    }
+    /** set active servers with last ping date before given date as inactive */
+    public boolean serversCheck(LocalDateTime inactivateBeforeDate, LocalDateTime deleteBeforeDate) {
+        return false;
+    }
+
     /** get list of agents from connector */
     @Override
     protected List<AgentSimplified> onGetAgents() {

@@ -1,19 +1,11 @@
 package com.cache.test;
 
-import com.cache.DistFactory;
-import com.cache.api.CacheMode;
-import com.cache.api.CacheObjectInfo;
 import com.cache.api.DistMessage;
 import com.cache.api.DistMessageStatus;
-import com.cache.interfaces.Agent;
-import com.cache.interfaces.Cache;
-import com.cache.utils.CacheUtils;
 import com.cache.utils.DistMessageProcessor;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 

@@ -35,7 +35,7 @@ public class JdbcStorage extends CacheStorageBase {
         dao = new DaoBase(jdbcUrl, jdbcDriver, jdbcUser, jdbcPass, initConnections, maxActiveConnections);
         initializeConnectionAndCreateTables();
     }
-    /** */
+    /** create table with cache items if not exists */
     private void initializeConnectionAndCreateTables() {
         var tables = dao.executeSelectQuery(dialect.selectCacheTables());
         if (tables.size() == 0) {
@@ -48,11 +48,23 @@ public class JdbcStorage extends CacheStorageBase {
 
     /** JDBC is external storage */
     public  boolean isInternal() { return false; }
+    /** returns true if JDBC database is connected and there is cache table */
+    public boolean isOperable() {
+        try {
+            return dao.isConnected() && dao.executeSelectQuery(dialect.selectCacheTables()).size() == 1;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+    /** get type of this storage */
+    public CacheStorageType getStorageType() {
+        return CacheStorageType.jdbc;
+    }
 
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
         var items = dao.executeSelectQuery(dialect.selectFindCacheItems(),
-                new Object[] { "%" + key + "%" }, x -> DistCacheItemRow.fromMap(x));
+                new Object[] { "%" + key + "%" }, DistCacheItemRow::fromMap);
         return !items.isEmpty();
     }
 
@@ -83,7 +95,7 @@ public class JdbcStorage extends CacheStorageBase {
     }
 
     /** remove objects in cache storage by keys */
-    public void removeObjectsByKeys(List<String> keys) {
+    public void removeObjectsByKeys(Collection<String> keys) {
         var sqlParams = String.join(",", keys.stream().map(x -> "?").collect(Collectors.toList()));
         dao.executeUpdateQuery("delete from distcacheitem where cachekey in (" + sqlParams + ")", keys.toArray());
     }
@@ -101,21 +113,20 @@ public class JdbcStorage extends CacheStorageBase {
     }
     /** get keys for all cache items */
     public Set<String> getKeys(String containsStr) {
-        log.info("Get cache keys ");
         var rows = dao.executeSelectQuery("select cacheKey as key from distcacheitem where cachekey like ?", new Object[] { "%" + containsStr + "%" });
-        log.info("Got cache keys: " + rows.size());
+        log.info("Got cache keysfor JDBC storage: " + rows.size() + ", contains: " + containsStr);
         return rows.stream().map(x -> ""+x.get("key")).collect(Collectors.toSet());
     }
     /** get info values */
     public List<CacheObjectInfo> getInfos(String containsStr) {
-        return getValues(containsStr).stream().map(c -> c.getInfo()).collect(Collectors.toList());
+        return getValues(containsStr).stream().map(CacheObject::getInfo).collect(Collectors.toList());
     }
     /** get values of cache objects that contains given String in key */
     public List<CacheObject> getValues(String containsStr) {
         log.info("GET VALUES -=======> " + dialect.selectFindCacheItems());
         var items = dao.executeSelectQuery(dialect.selectFindCacheItems(),
                 new Object[] { "%" + containsStr + "%" }, x -> CacheObjectSerialized.fromMap(x).toCacheObject(distSerializer));
-        return items.stream().collect(Collectors.toList());
+        return new ArrayList<>(items);
     }
     /** clear caches for given group */
     public int clearCacheForGroup(String groupName) {
@@ -129,12 +140,17 @@ public class JdbcStorage extends CacheStorageBase {
     /** clear cache by given mode
      * returns estimated of elements cleared */
     public int clearCache(CacheClearMode clearMode) {
+        // TODO: implement clearing cache for given mode
+        if (clearMode == CacheClearMode.ALL_ELEMENTS) {
 
+        } else {
+
+        }
         return -1;
     }
     /** check cache every X seconds to clear TTL caches */
     public void onTimeClean(long checkSeq) {
-        // dao.executeAnyQuery("delete from distcacheitem where enddate < now()", new Object[0]);
+        dao.executeAnyQuery("delete from distcacheitem where enddate < now()", new Object[0]);
     }
     public void disposeStorage() {
         if (dao != null) {

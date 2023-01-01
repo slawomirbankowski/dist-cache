@@ -1,7 +1,7 @@
 package com.cache.app.controllers;
 
 import com.cache.api.AppGlobalInfo;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import com.cache.api.CacheVersion;
 import com.cache.app.services.CacheService;
 import org.slf4j.Logger;
@@ -46,7 +46,7 @@ public class ManagementController {
 
     @GetMapping("/info")
     public AppGlobalInfo info() {
-        return CacheUtils.getInfo();
+        return DistUtils.getInfo();
     }
 
     @GetMapping("/beans")

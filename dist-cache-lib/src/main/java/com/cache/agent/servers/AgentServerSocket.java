@@ -4,16 +4,11 @@ import com.cache.agent.clients.SocketServerClient;
 import com.cache.api.DistConfig;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.AgentServer;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -44,14 +39,14 @@ public class AgentServerSocket implements AgentServer, Runnable {
     public AgentServerSocket(Agent parentAgent) {
         this.parentAgent = parentAgent;
         this.workingPort = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SOCKET_PORT, DistConfig.AGENT_SOCKET_PORT_VALUE_SEQ.incrementAndGet());;
-        this.serverGuid = CacheUtils.generateServerGuid("AgentServerSocket_" + workingPort);
+        this.serverGuid = DistUtils.generateServerGuid("AgentServerSocket_" + workingPort);
         initializeServer();
     }
     public void initializeServer() {
         try {
             // open socket port
             log.info("Starting socket for incoming connections from other clients on port " + workingPort + ", server UID: " + serverGuid);
-            // TODO: create SocketServer and thread for accepting sockets
+            // create SocketServer and thread for accepting sockets
             serverSocket = new java.net.ServerSocket(workingPort);
             serverSocket.setSoTimeout(2000);
             log.info("Starting socket server on port: " + workingPort);
@@ -80,7 +75,7 @@ public class AgentServerSocket implements AgentServer, Runnable {
             } catch (Exception ex) {
                 log.error("!!!!! Unknown exception on Socket server wotking on port " + workingPort);
             }
-            CacheUtils.sleep(2000);
+            DistUtils.sleep(2000);
         }
     }
     private void closeClient() {
@@ -105,7 +100,7 @@ public class AgentServerSocket implements AgentServer, Runnable {
 
     @Override
     public void close() {
-        // TODO: close socket server and all clients
+        // close socket server and all clients
         closed = true;
         threads.stream().forEach(th -> {
             try {

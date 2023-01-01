@@ -1,16 +1,28 @@
 package com.cache.encoders;
 
 import com.cache.interfaces.CacheKeyEncoder;
+import com.cache.utils.DistUtils;
 
-/** encoding everything after 'secret:' key */
+/** encoding everything after 'secret:' or 'password:' key */
 public class KeyEncoderStarting implements CacheKeyEncoder {
+    private static final String FINGERPRINT_CONST = "0142x8k20397r8zx23047rzxmh203487gzmh08347ygzxhfio43hfxe35gxc";
     @Override
     public String encodeKey(String key) {
         int secretPos = key.indexOf("secret:");
         if (secretPos >= 0) {
-            return key.substring(0, secretPos) + key.substring(secretPos);
+            return encodeFrom(key, secretPos);
         } else {
-            return key;
+            secretPos = key.indexOf("password:");
+            if (secretPos > 0) {
+                return encodeFrom(key, secretPos);
+            } else {
+                return key;
+            }
         }
     }
+    private String encodeFrom(String key, int secretPos) {
+        String secretPart = key.substring(secretPos);
+        return key.substring(0, secretPos) + DistUtils.fingerprint(FINGERPRINT_CONST + secretPart + FINGERPRINT_CONST);
+    }
+
 }

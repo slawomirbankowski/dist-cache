@@ -1,0 +1,104 @@
+package com.cache.test;
+
+import com.cache.DistFactory;
+import com.cache.api.CacheMode;
+import com.cache.interfaces.Cache;
+import com.cache.utils.DistUtils;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class CacheDistributeClearTest {
+    private static final Logger log = LoggerFactory.getLogger(CacheDistributeClearTest.class);
+
+    AtomicLong seq = new AtomicLong();
+    @Test
+    public void cacheClearDistributedTest() {
+        log.info("START ------ clean test");
+
+        Cache cache1 = DistFactory.buildDefaultFactory()
+                .withName("GlobalCacheTest")
+                .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
+                        "cache_user", "cache_password123")
+                .withCacheStorageHashMap()
+                .withServerSocketPort(9991)
+                .withWebApiPort(9999)
+                .withObjectTimeToLive(CacheMode.TIME_TEN_MINUTES)
+                .withTimerStorageClean(1000)
+                .withTimerRegistrationPeriod(500)
+                .withTimerServerPeriod(500)
+                .withMaxObjectAndItems(100, 1000)
+                .createCacheInstance();
+
+        Cache cache2 = DistFactory.buildDefaultFactory()
+                .withName("GlobalCacheTest")
+                .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
+                        "cache_user", "cache_password123")
+                .withCacheStorageHashMap()
+                .withServerSocketPort(9992)
+                .withWebApiPort(9998)
+                .withObjectTimeToLive(CacheMode.TIME_TEN_MINUTES)
+                .withTimerStorageClean(1000)
+                .withTimerRegistrationPeriod(1000)
+                .withTimerServerPeriod(1000)
+                .withMaxObjectAndItems(100, 1000)
+                .createCacheInstance();
+
+        assertNotNull(cache1, "Created cache should not be null");
+        assertNotNull(cache2, "Created cache should not be null");
+
+        log.info("Test waiting for Agent registrations and servers");
+
+        DistUtils.sleep(2000);
+
+        assertEquals(1, cache1.getAgent().getAgentConnectors().getServersCount(), "There should be 1 server for agent1");
+        assertEquals(1, cache2.getAgent().getAgentConnectors().getServersCount(), "There should be 1 server for agent2");
+
+        DistUtils.sleep(2000);
+        assertEquals(1, cache1.getAgent().getAgentConnectors().getClientsCount(), "There should be 1 client for agent1");
+        assertEquals(1, cache2.getAgent().getAgentConnectors().getClientsCount(), "There should be 1 client for agent2");
+
+        log.info("Empty caches");
+        assertEquals(cache1.getObjectsCount(), 0, "There should be no objects in cache");
+        assertEquals(cache2.getObjectsCount(), 0, "There should be no objects in cache");
+
+        log.info("Adding Objects to cache1");
+        for (int i=0; i<10; i++) {
+            String v = cache1.withCache("key"+i, key -> getNextValue(key), CacheMode.modeRefreshTenSeconds);
+        }
+
+        log.info("Adding Objects to cache2");
+        for (int i=0; i<10; i++) {
+            String v = cache2.withCache("key"+i, key -> getNextValue(key), CacheMode.modeRefreshTenSeconds);
+        }
+
+        assertEquals(cache1.getObjectsCount(), 10, "There should be 10 objets in cache1");
+        assertEquals(cache1.getObjectsCount(), 10, "There should be 10 objets in cache2");
+
+        log.info("Clearing cache1 for key7");
+        cache1.clearCacheContains("key7");
+
+        log.info("Clearing cache2 for key5");
+        cache2.clearCacheContains("key5");
+
+        DistUtils.sleep(1000);
+
+        log.info("After clear cache in agents, cache1: " + cache1.getObjectsCount() + ", cache2: " + cache1.getObjectsCount());
+        assertEquals(cache1.getObjectsCount(), 8, "There should be 8 objets in cache1");
+        assertEquals(cache1.getObjectsCount(), 8, "There should be 8 objets in cache2");
+
+        cache1.close();
+        cache2.close();
+        assertTrue(cache1.getClosed(), "Cache1 should be closed");
+        assertTrue(cache2.getClosed(), "Cache2 should be closed");
+
+        log.info("END-----");
+    }
+    public String getNextValue(String key) {
+        return "value" + seq.incrementAndGet();
+    }
+}

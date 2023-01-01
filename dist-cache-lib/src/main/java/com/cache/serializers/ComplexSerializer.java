@@ -1,9 +1,8 @@
 package com.cache.serializers;
 
 import com.cache.interfaces.DistSerializer;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 
-import javax.swing.text.html.Option;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -70,7 +69,7 @@ public class ComplexSerializer implements DistSerializer {
     /** */
     public static HashMap<String, DistSerializer> parseSerializers(String serializersDef) {
         HashMap<String, DistSerializer> serializers = new HashMap<>();
-        var definitions = CacheUtils.splitBySeparationEqual(serializersDef, ",", '=', true);
+        var definitions = DistUtils.splitBySeparationEqual(serializersDef, ",", '=', true);
         definitions.stream().forEach(d -> {
             Optional<DistSerializer> ser = createSerializer("com.cache.serializers." + d[1]);
             if (ser.isPresent()) {

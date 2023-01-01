@@ -23,7 +23,7 @@ public class StorageJdbcTest {
         log.info("START------");
         Cache cache = DistFactory.buildEmptyFactory()
                 .withName("GlobalCacheTest")
-                .withStorageJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
+                .withCacheStorageJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "cache_password123")
                 .withSerializerDefault()
                 .withSerializer("java.lang.String=StringSerializer,default=ObjectStreamSerializer")

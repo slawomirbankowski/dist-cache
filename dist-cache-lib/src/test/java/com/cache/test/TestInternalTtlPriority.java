@@ -1,15 +1,12 @@
 package com.cache.test;
 
 import com.cache.DistFactory;
-import com.cache.agent.servers.AgentServerSocket;
 import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
 import com.cache.storage.InternalWithTtlAndPriority;
 import com.cache.util.measure.Stopwatch;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -83,14 +80,14 @@ public class TestInternalTtlPriority {
 
     assertThat(storage.getObjectsCount(), equalTo(600));
 
-    CacheUtils.sleep(400);
+    DistUtils.sleep(400);
     storage.onTimeClean(0);
     System.out.printf("First cleanup finished at t=%d\n", System.currentTimeMillis() - t0);
 
     var keysAfterFirstClean = storage.getKeys("");
     assertThat(storage.getObjectsCount(), equalTo(400));
 
-    CacheUtils.sleep(400);
+    DistUtils.sleep(400);
     storage.onTimeClean(0);
     System.out.printf("Second cleanup finished at t=%d\n", System.currentTimeMillis() - t0);
 
@@ -99,7 +96,7 @@ public class TestInternalTtlPriority {
     var keysAfterSecondClean = storage.getKeys("");
     assertThat(storage.getObjectsCount(), equalTo(200));
 
-    CacheUtils.sleep(400);
+    DistUtils.sleep(400);
     storage.onTimeClean(0);
     System.out.printf("Third cleanup finished at t=%d\n", System.currentTimeMillis() - t0);
 
@@ -131,7 +128,7 @@ public class TestInternalTtlPriority {
     System.out.printf("Inserted in %s\n", stopwatch.tickPretty());
 
     for (int i = 0; i < 10; i++) {
-      CacheUtils.sleep(1000);
+      DistUtils.sleep(1000);
       storage.onTimeClean(0);
       System.out.printf("Cleanup no.%d done at t=%s\n", i + 1, stopwatch.tickPretty());
     }

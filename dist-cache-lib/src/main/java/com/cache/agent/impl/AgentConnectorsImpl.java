@@ -8,7 +8,7 @@ import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.interfaces.AgentClient;
 import com.cache.interfaces.AgentConnectors;
 import com.cache.interfaces.AgentServer;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import com.cache.utils.DistMapTimeStorage;
 import com.cache.utils.HashMapMap;
 import org.slf4j.Logger;
@@ -21,12 +21,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 /** manager for connections inside agent - servers and clients */
-public class AgentConnectorsImpl implements AgentConnectors {
+public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentConnectorsImpl.class);
-    /** parent agent for this connection manager */
-    private AgentInstance parentAgent;
     /** all servers for connections to other agents */
     private final java.util.concurrent.ConcurrentHashMap<String, AgentServer> servers = new java.util.concurrent.ConcurrentHashMap<>();
     /** all servers for connections to other agents */
@@ -50,7 +48,7 @@ public class AgentConnectorsImpl implements AgentConnectors {
     private final DistMapTimeStorage<DistMessageFull> sentMessages = new DistMapTimeStorage();
     /** create new connectors */
     public AgentConnectorsImpl(AgentInstance parentAgent) {
-        this.parentAgent = parentAgent;
+        super(parentAgent);
     }
     /** open servers for communication  */
     public void openServers() {
@@ -61,11 +59,31 @@ public class AgentConnectorsImpl implements AgentConnectors {
             servers.put(serv.getServerGuid(), serv);
             // register server for communication
             var createdDate = new java.util.Date();
-            var hostName = CacheUtils.getCurrentHostName();
-            var hostIp = CacheUtils.getCurrentHostAddress();
+            var hostName = DistUtils.getCurrentHostName();
+            var hostIp = DistUtils.getCurrentHostAddress();
             var servDto = new DistAgentServerRow(parentAgent.getAgentGuid(), serv.getServerGuid(), "socket", hostName, hostIp, portNum,
                     "socket://" + hostName + ":" + portNum + "/", createdDate, 1, createdDate);
             parentAgent.getAgentRegistrations().registerServer(servDto);
+        }
+        log.info("Set up timer to check servers and clients for agent: " + getParentAgentGuid());
+        parentAgent.getAgentTimers().setUpTimer("TIMER_SERVER_CLIENT", DistConfig.TIMER_SERVER_CLIENT_PERIOD, DistConfig.TIMER_SERVER_CLIENT_PERIOD_DELAY_VALUE, x -> onTimeServersCheck());
+    }
+
+    /** run by agent every X seconds to check servers and clients */
+    public boolean onTimeServersCheck() {
+        try {
+            List<DistAgentServerRow> servers = getParentAgent().getAgentRegistrations().getServers();
+            List connectedAgents = getParentAgent().getAgentRegistrations().getAgents();
+            log.info("Check servers for agent: " + parentAgent.getAgentGuid() + ", connectedAgents: " + connectedAgents.size() + ", servers from registrations: " + servers.size());
+            parentAgent.getAgentConnectors().checkActiveServers(servers);
+            // TODO: connect to all nearby agents, check statuses
+            // TODO: implement communication of agent with other cache agents
+            log.info("=====----> AGENT REGISTRATION summary for guid: " + parentAgent.getAgentGuid() + ", registrations: " + getParentAgent().getAgentRegistrations().getRegistrationsCount() + ", connected agents: " + connectedAgents.size() + ", registeredServers: " + servers.size());
+            return true;
+        } catch (Exception ex) {
+            log.warn("Cannot communicate with other agents, reason: " + ex.getMessage(), ex);
+            parentAgent.getAgentIssues().addIssue("AgentRegistrationsImpl.onTimeCommunicate", ex);
+            return false;
         }
     }
 
@@ -97,12 +115,16 @@ public class AgentConnectorsImpl implements AgentConnectors {
             if (!srv.agentguid.equals(parentAgent.getAgentGuid())) {
                 Optional<AgentClient> client = serverConnectors.getValue(srv.agentguid, srv.serverguid);
                 if (client.isEmpty()) {
-                    log.info("%%%%%%%%%%%%%%>>> Connectors from agent: " + parentAgent.getAgentGuid() +  ", NO client to agent: " + srv.agentguid + ", server: " + srv.serverguid + ", type" + srv.servertype + ", creating NEW ONE !!!!!!!!!");
-                    var createdClient = createClient(srv);
-                    if (createdClient.isPresent()) {
-                        serverConnectors.add(srv.agentguid, srv.serverguid, createdClient.get());
-                        clientQueue.add(createdClient.get());
-                        clientTable.add(createdClient.get());
+                    try {
+                        log.info("%%%%%%%%%%%%%%>>> Connectors from agent: " + parentAgent.getAgentGuid() +  ", NO client to agent: " + srv.agentguid + ", server: " + srv.serverguid + ", type" + srv.servertype + ", creating NEW ONE !!!!!!!!!");
+                        var createdClient = createClient(srv);
+                        if (createdClient.isPresent()) {
+                            serverConnectors.add(srv.agentguid, srv.serverguid, createdClient.get());
+                            clientQueue.add(createdClient.get());
+                            clientTable.add(createdClient.get());
+                        }
+                    } catch (Exception ex) {
+                        log.warn("Cannot create client to server: " + srv.serverguid + ", reason: " + ex.getMessage());
                     }
                 } else {
                     // client.get().send("CHECK SERVERS - PING AGENT FROM " + parentAgent.getAgentGuid());
@@ -154,7 +176,7 @@ public class AgentConnectorsImpl implements AgentConnectors {
         // TODO: add to message queue and map for responses
         synchronized (clientTable) {
             if (clientTable.size() > 0) {
-                int clientId = CacheUtils.randomInt(clientTable.size());
+                int clientId = DistUtils.randomInt(clientTable.size());
                 AgentClient cl = clientTable.get(clientId);
                 if (cl != null) {
                     cl.send(msg.getMessage());
@@ -216,17 +238,17 @@ public class AgentConnectorsImpl implements AgentConnectors {
 
     /** close all connectors, clients, servers  */
     public void close() {
-        log.info("Closing connectors for agent: " + this.parentAgent.getAgentGuid() + ", servers: " + servers.size() + ", clients: " + serverConnectors.totalSize());
+        log.info("Closing connectors for agent: " + parentAgent.getAgentGuid() + ", servers: " + servers.size() + ", clients: " + serverConnectors.totalSize());
         servers.values().stream().forEach(serv -> {
             serv.close();
         });
         serverConnectors.getAllValues().stream().forEach(cli -> cli.close());
-        log.info("Closed all connectors for agent: " + this.parentAgent.getAgentGuid());
+        log.info("Closed all connectors for agent: " + parentAgent.getAgentGuid());
     }
 
     /** create new client that would be used for connecting to given server */
     private Optional<AgentClient> createClient(DistAgentServerRow srv) {
-        // TODO: create client based on server
+        // TODO: create client using factory based on server
         if (srv.servertype.equals("socket")) {
             log.info("%%%%%%%%%%%>>> Creating new socket client that would be connected to agent: " + srv.agentguid + ", type: " + srv.servertype + ", host: " + srv.serverhost);
             var client = new SocketServerClient(parentAgent, srv);

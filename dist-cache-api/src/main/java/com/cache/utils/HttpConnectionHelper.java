@@ -103,10 +103,15 @@ public class HttpConnectionHelper {
     public HttpResponseContent callHttpPut(String appendUrl, String body) {
         return callHttp(appendUrl, METHOD_PUT, Optional.of(body), applicationJsonHeaders, defaultTimeout);
     }
+    public HttpResponseContent callHttpPut(String appendUrl, Map<String, String> headers, String body) {
+        return callHttp(appendUrl, METHOD_PUT, Optional.of(body), headers, defaultTimeout);
+    }
     public HttpResponseContent callHttpDelete(String appendUrl) {
         return callHttp(appendUrl, METHOD_DELETE, Optional.empty(), applicationJsonHeaders, defaultTimeout);
     }
-
+    public HttpResponseContent callHttpDelete(String appendUrl, Map<String, String> headers) {
+        return callHttp(appendUrl, METHOD_DELETE, Optional.empty(), headers, defaultTimeout);
+    }
     public static final Map<String, String> emptyHeaders = Map.of();
     public static final Map<String, String> applicationJsonHeaders = Map.of("Content-Type", "application/json");
 

@@ -1,7 +1,7 @@
 package com.cache.base;
 
 import com.cache.utils.AdvancedMap;
-import com.cache.utils.CacheUtils;
+import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -217,7 +217,7 @@ public class DaoBase {
             String sql = getSqlForClass(sampleObj, tableName);
             log.debug("SAVING objects to DB, count: " + objs.size() +  "; SQL: " + sql);
             Field[] fields = sampleObj.getClass().getDeclaredFields();
-            List<Object[]> params = objs.stream().map(o -> CacheUtils.getValuesForFields(o, fields)).collect(Collectors.toList());
+            List<Object[]> params = objs.stream().map(o -> DistUtils.getValuesForFields(o, fields)).collect(Collectors.toList());
             return executeUpdateQuery(sql, params);
         }
     }
