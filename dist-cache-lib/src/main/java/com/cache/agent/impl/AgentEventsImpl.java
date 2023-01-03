@@ -3,12 +3,10 @@ package com.cache.agent.impl;
 import com.cache.agent.AgentInstance;
 import com.cache.api.CacheEvent;
 import com.cache.api.DistConfig;
-import com.cache.api.DistIssue;
 import com.cache.interfaces.AgentEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;

@@ -33,25 +33,72 @@ Cache could be used as:
 To be added:
 - Remove methods with registered objects
 - Cache Mongodb storage
-- UDP server to exchange messages
-- HTTP server to exchange messages
-
+- Kafka to exchange messages 
 - Registration with Kafka
 - Registration with Elasticsearch
-
 - hit ratio of cache usage - advanced possibilities to check what is percentage of hit/miss for cache object usage
 - cache blacklist - initial list of keys that should NOT be stored in cache
-
-- cache re-set while working
 - Integrate Swagger or any other REST Doc API into dist-cache-app
 - Security to Spring application for REST endpoints
-
 - Application version - currently there is no versioning of this app, there should be semantic versioning
 - Gradle task to build docker image after build of app jar file
 - cache object group and mode, acquire time, refresh time, methods to get next value for model
 
 
+* How to use Agent Distribute System with services like Cache, Reports, Storages, Remote
 
+To create new Agent:
+Agent agent = DistFactory.buildEmptyFactory()
+    .withName("GlobalAgent") // give it any name; OPTIONAL - without this it should be OK
+    .withRegistrationXXX(...) // set-up global registration for agents as central point to exchange list of available agents; MANDATORY - Agents needs at least one common registration service
+    .withTimerYYY(...) // set up some timers to perform system tasks, checks, clean-ups; OPTIONAL - by default it is 1 minute which should be OK for most of cases
+    .withServerZZZ(...) // set up servers; MANDATORY - there should be at least Server/Client to exchange information between Agents
+    .withWebApi(...) // set-up Web API as REST-full endpoints for this Agent; OPTIONAL - 
+    .withTags(...) // give some tags to easier group Agents; OPTIONAL - for small agent systems tags are not needed
+    .withResolver(...) // add resolvers for configuration options from Command-Line, Envarionment variables, Vault, Resource file, ...; OPTIONAL - by default it is ENV variables 
+    .withCacheStorageVVV(...) // add storage to cache; 
+    .withCachePolicy(...) // create policy for cache objects; OPTIONAL - 
+    .withMaxIssues(...) // set maximum number of issues kept in Agent; OPTIONAL - by default it is 1000
+    .withMaxEvents(...) // set maximum number of events kept in Agent system; OPTIONAL - by default it is 1000
+    .withCallback(...) // add callbacks in case of events of given types
+    .createAgentInstance(); // finally create Agent with all these
 
+Configuration of Agent could be loaded from different sources:
+Agent agent = DistFactory.buildEmptyFactory()
+    .withEnvironmentVariables() // load properties from environment variables
+    .withCommandLineArguments(String[] args) // load from command line arguments in format of: --name1 value1 --name2 value2 --name3 value3
+    .withMap(Map<String, String> initialFactoryProperties) // load from Map
+    .withJson(String jsonDefinition) // load from Map in JSON given by String
+    .withPropertiesFile(String propertiesFile) // load from properties like with name given
+    .withPropertiesUrl(String urlWithProperties) // load from properties file on URL connection
 
+Configuration from Agent could be saved:
+    agent.getConfig().saveToFile(String fileName)
+    agent.getConfig().saveToJson()
+    agent.getConfig().saveToMap()
 
+From Agent - it is possible to get different services:
+    Cache cache = agent.getCache();
+    Reports reports = agent.getReports();
+    Storages storages = agent.getStorages();
+
+These Agents could be created in many places, many applications and have different services turned on.
+At first - Agent is connecting to Registration Services (JDBC, Elasticsearch, Kafka, ...) and register itself, servers and services.
+Then, Agent is opening Servers for communication with other clients.
+Next, Agent is opening Web API for custom connections.
+The last - Agent is checking other Agent connected to Registration Services and 
+
+To close Agent, unregister and free all resources, just call:
+    agent.close();
+
+Each Agent has:
+- Registrations - agent1.getAgentRegistrations() - global repository of agents, servers, clients, issues, events, configurations
+- Connectors - agent.getAgentConnectors() - clients and servers to connect to other agents
+- Services - agent.getAgentServices() - all services like Cache, Reports, Storages, Spaces, ...
+- Serializer - agent.getSerializer() - serializer to serialize and deserialize messages and other objects in Agent
+- Configuration - agent1.getConfig() - properties to create Agent and services
+- Issues - agent.getAgentIssues() - issues like errors and exceptions from Agent and dependent services
+- Events - agent.getAgentEvents() - events 
+- Threads - agent.getAgentThreads() - 
+- Timers - agent1.getAgentTimers() - 
+- Tags - agent1.getAgentTags() - set of custom String values to classify agent

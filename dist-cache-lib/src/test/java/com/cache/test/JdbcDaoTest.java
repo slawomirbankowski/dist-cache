@@ -1,6 +1,6 @@
 package com.cache.test;
 
-import com.cache.base.DaoBase;
+import com.cache.base.DaoJdbcBase;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +11,7 @@ public class JdbcDaoTest {
     @Test
     public void cleanTest() {
         log.info("START ------ clean test");
-        DaoBase dao = new DaoBase("jdbc:postgresql://localhost:5432/cache01",
+        DaoJdbcBase dao = new DaoJdbcBase("jdbc:postgresql://localhost:5432/cache01",
                 "org.postgresql.Driver",
                 "cache_user",
                 "cache_password123", 2, 5);

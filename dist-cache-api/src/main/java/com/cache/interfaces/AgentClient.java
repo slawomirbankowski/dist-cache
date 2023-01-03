@@ -1,5 +1,6 @@
 package com.cache.interfaces;
 
+import com.cache.api.DistClientType;
 import com.cache.api.DistMessage;
 
 /** Interface for client connected to other agent
@@ -17,11 +18,14 @@ public interface AgentClient {
     boolean isWorking();
     /** get GUID for this client */
     String getClientGuid();
+    /** get type of client - socket, http, datagram, ... */
+    DistClientType getClientType();
+    /** get unified URL of this client */
+    String getUrl();
     /** check if this client has given tag */
     boolean hasTag(String tag);
     /** check if this client has any of tags given */
     boolean hasTags(String[] tags);
-
-    /** send message to this client */
+    /** send message using this client */
     boolean send(DistMessage msg);
 }

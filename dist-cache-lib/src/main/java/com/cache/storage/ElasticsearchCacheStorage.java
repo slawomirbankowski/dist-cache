@@ -2,7 +2,8 @@ package com.cache.storage;
 
 import com.cache.api.*;
 import com.cache.base.CacheStorageBase;
-import com.cache.util.JsonUtils;
+import com.cache.interfaces.HttpCallable;
+import com.cache.utils.JsonUtils;
 import com.cache.utils.DistUtils;
 import com.cache.utils.HttpConnectionHelper;
 
@@ -22,7 +23,7 @@ public class ElasticsearchCacheStorage extends CacheStorageBase {
     private String elasticIndex;
 
     /** HTTP client to Elasticsearch */
-    private HttpConnectionHelper conn;
+    private HttpCallable conn;
     /** default header for Elasticsearch requests */
     private Map<String, String> header;
 
@@ -39,7 +40,7 @@ public class ElasticsearchCacheStorage extends CacheStorageBase {
             header = Map.of("Content-Type", "application/json");
         }
         log.debug("Connection to Elasticsearch storage URL: " + elasticsearchUrl + ", index with cache objects: " + elasticIndex);
-        conn = new HttpConnectionHelper(elasticsearchUrl);
+        conn = HttpConnectionHelper.createHttpClient(elasticsearchUrl);
     }
     /** Elasticsearch is external storage */
     public  boolean isInternal() { return false; }
@@ -56,7 +57,7 @@ public class ElasticsearchCacheStorage extends CacheStorageBase {
     }
     /** TODO: get item from Elasticsearch */
     public Optional<CacheObject> getObject(String key) {
-        var res = conn.callHttpGet("/" + elasticIndex + "/_doc/" + encodeKey(key), header);
+        var res = conn.callGet("/" + elasticIndex + "/_doc/" + encodeKey(key), header);
         if (res.isOk()) {
 
             return Optional.empty();
@@ -66,7 +67,7 @@ public class ElasticsearchCacheStorage extends CacheStorageBase {
     }
     public Optional<CacheObject> setObject(CacheObject o) {
         var prevObj = getObject(encodeKey(o.getKey()));
-        conn.callHttpPut("/" + elasticIndex+ "/_doc/" + encodeKey(o.getKey()), header, JsonUtils.serialize(o.serializedFullCacheObject(distSerializer)));
+        conn.callPut("/" + elasticIndex+ "/_doc/" + encodeKey(o.getKey()), header, JsonUtils.serialize(o.serializedFullCacheObject(distSerializer)));
         //CacheUtils.baseToString()
         return prevObj;
     }
@@ -76,7 +77,7 @@ public class ElasticsearchCacheStorage extends CacheStorageBase {
     }
     /** remove object in cache storage by key */
     public void removeObjectByKey(String key) {
-        conn.callHttpDelete("/" + elasticIndex + "/_doc/" + encodeKey(key), header);
+        conn.callDelete("/" + elasticIndex + "/_doc/" + encodeKey(key), header);
     }
     /** get number of items in cache */
     public int getItemsCount() {

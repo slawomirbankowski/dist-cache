@@ -21,20 +21,20 @@ public class AgentRegisterTest {
                 .withName("GlobalAgent")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "cache_password123")
+                .withServerSocketPort(9901)
                 .withTimerStorageClean(1000)
                 .withTimerRegistrationPeriod(1000)
                 .withTimerServerPeriod(1000)
-                .withServerSocketPort(9901)
                 .createAgentInstance();
 
         Agent agent2 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "cache_password123")
+                .withServerSocketPort(9902)
                 .withTimerStorageClean(1000)
                 .withTimerRegistrationPeriod(1000)
                 .withTimerServerPeriod(1000)
-                .withServerSocketPort(9902)
                 .createAgentInstance();
 
         assertNotNull(agent1, "Created agent1 should not be null");
@@ -50,6 +50,9 @@ public class AgentRegisterTest {
 
         assertEquals(2, agent1.getAgentRegistrations().getAgents().size(), "There should be 2 agents known by agent1");
         assertEquals(2, agent2.getAgentRegistrations().getAgents().size(), "There should be 2 agents known by agent2");
+
+        log.info("========-----> Agent1 client keys: " + agent1.getAgentConnectors().getClientKeys());
+        log.info("========-----> Agent2 client keys: " + agent2.getAgentConnectors().getClientKeys());
 
         assertEquals(1, agent1.getAgentConnectors().getClientsCount(), "There should be 1 client in agent1");
         assertEquals(1, agent2.getAgentConnectors().getClientsCount(), "There should be 1 client in agent2");

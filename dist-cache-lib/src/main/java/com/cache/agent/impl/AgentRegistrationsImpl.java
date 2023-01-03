@@ -43,13 +43,13 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
         if (parentAgent.getConfig().hasProperty(DistConfig.CACHE_APPLICATION_URL)) {
             createAndAddRegistrations(RegistrationApplication.class.getName());
         }
-        if (parentAgent.getConfig().hasProperty(DistConfig.JDBC_URL)) {
+        if (parentAgent.getConfig().hasProperty(DistConfig.AGENT_REGISTRATION_JDBC_URL)) {
             createAndAddRegistrations(RegistrationJdbc.class.getName());
         }
         if (parentAgent.getConfig().hasProperty(DistConfig.CACHE_STORAGE_KAFKA_BROKERS)) {
             createAndAddRegistrations(RegistrationKafka.class.getName());
         }
-        if (parentAgent.getConfig().hasProperty(DistConfig.ELASTICSEARCH_URL)) {
+        if (parentAgent.getConfig().hasProperty(DistConfig.AGENT_REGISTRATION_ELASTICSEARCH_URL)) {
             createAndAddRegistrations(RegistrationElasticsearch.class.getName());
         }
         log.info("Registered agent " + parentAgent.getAgentGuid() + " to all registration services, count: " + registrations.size());
@@ -127,7 +127,7 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
             checkActiveAgents();
             removeInactiveAgents();
             // TODO: connect to all nearby agents, check statuses
-            log.info("=====----> AGENT REGISTRATION summary for guid: " + parentAgent.getAgentGuid() + ", registrations: " + registrations.size() + ", connected agents: " + connectedAgents.size() + ", registeredServers: " + registeredServers.size());
+            log.info("AGENT REGISTRATION summary for guid: " + parentAgent.getAgentGuid() + ", registrations: " + registrations.size() + ", connected agents: " + connectedAgents.size() + ", registeredServers: " + registeredServers.size());
             return true;
         } catch (Exception ex) {
             log.warn("Cannot communicate with other agents, reason: " + ex.getMessage(), ex);
@@ -155,22 +155,22 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
     }
     /** check all active agents from all registrations */
     private void checkActiveAgents() {
-        log.info("********************>>> Check connected agents for agent: " + parentAgent.getAgentGuid() + ", current count: " + connectedAgents.size() + ", registrations: " + registrations.size() + ", registeredServers: " + registeredServers.size());
+        log.info("Check connected agents for agent: " + parentAgent.getAgentGuid() + ", current count: " + connectedAgents.size() + ", registrations: " + registrations.size() + ", registeredServers: " + registeredServers.size());
         registrations.entrySet().stream().forEach(e -> {
             List<AgentSimplified> activeAgents = e.getValue().getAgentsActive();
-            log.info("********************>>> Get agents for register, agent: " + parentAgent.getAgentGuid() + ", registration: " + e.getKey() +", activeAgents: " + activeAgents.size());
+            log.info("Get agents for register, agent: " + parentAgent.getAgentGuid() + ", registration: " + e.getKey() +", activeAgents: " + activeAgents.size());
             activeAgents.stream().forEach(ag -> {
                 AgentSimplified existingAgent = connectedAgents.get(ag.agentGuid);
                 if (existingAgent != null) {
                     existingAgent.update(ag);
-                    log.info("********************>>> Existing client for agent: " + parentAgent.getAgentGuid() + ", update: " + ag.agentGuid);
+                    log.info("Existing client for agent: " + parentAgent.getAgentGuid() + ", update: " + ag.agentGuid);
                 } else {
-                    log.info("****************>>> Adding new client for agent: " + parentAgent.getAgentGuid() + ", connected to: " + ag.agentGuid);
+                    log.info("Adding new client for agent: " + parentAgent.getAgentGuid() + ", connected to: " + ag.agentGuid);
                     connectedAgents.put(ag.agentGuid, ag);
                 }
             });
         });
-        log.info("********************>>> AFTER check connected agents for agent: " + parentAgent.getAgentGuid() + ", current count: " + connectedAgents.size() + ", registrations: " + registrations.size() + ", registeredServers: " + registeredServers.size());
+        log.info("AFTER check connected agents for agent: " + parentAgent.getAgentGuid() + ", current count: " + connectedAgents.size() + ", registrations: " + registrations.size() + ", registeredServers: " + registeredServers.size());
     }
     public void removeInactiveAgents() {
         long inactivateBeforeSecondsAgo = getConfig().getPropertyAsLong(DistConfig.AGENT_INACTIVATE_AFTER, DistConfig.AGENT_INACTIVATE_AFTER_DEFAULT_VALUE)/1000;
@@ -193,7 +193,7 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
     /** register this agent to all available connectors
      * this is registering agent itself,  */
     private void registerToAll() {
-        log.info("Registering agent: " + parentAgent.getAgentGuid() + " to all registration objects, registrations: " + registrations.size());
+        log.info("Registering agent to all registration objects, GUID: " + parentAgent.getAgentGuid() + ", registrations: " + registrations.size());
         var agents = getAgents();
         AgentRegister register = new AgentRegister(parentAgent.getAgentGuid(), parentAgent.getAgentSecret(),
                 DistUtils.getCurrentHostName(), DistUtils.getCurrentHostAddress(),
@@ -206,7 +206,7 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
                 });
             }
         } catch (Exception ex) {
-            log.warn("Cannot register agent " + parentAgent.getAgentGuid() + " to connectors, reason: " + ex.getMessage(), ex);
+            log.warn("Cannot register agent " + parentAgent.getAgentGuid() + " to registration services, reason: " + ex.getMessage(), ex);
             parentAgent.getAgentIssues().addIssue("AgentRegistrationsImpl.registerToAll", ex);
         }
     }
@@ -224,7 +224,7 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
                 });
             }
         } catch (Exception ex) {
-            log.warn("Cannot register agents to connectors, reason: " + ex.getMessage(), ex);
+            log.warn("Cannot unregister agent, reason: " + ex.getMessage(), ex);
             parentAgent.getAgentIssues().addIssue("AgentRegistrationsImpl.unregisterFromAll", ex);
         }
     }

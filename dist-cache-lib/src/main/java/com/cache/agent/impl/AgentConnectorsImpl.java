@@ -1,9 +1,14 @@
 package com.cache.agent.impl;
 
 import com.cache.agent.AgentInstance;
+import com.cache.agent.clients.DatagramClient;
+import com.cache.agent.clients.HttpClient;
 import com.cache.agent.clients.SocketServerClient;
+import com.cache.agent.servers.AgentDatagramServer;
+import com.cache.agent.servers.AgentHttpServer;
 import com.cache.agent.servers.AgentServerSocket;
 import com.cache.api.*;
+import com.cache.base.ServerBase;
 import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.interfaces.AgentClient;
 import com.cache.interfaces.AgentConnectors;
@@ -52,21 +57,23 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     }
     /** open servers for communication  */
     public void openServers() {
-        if (parentAgent.getConfig().hasProperty(DistConfig.AGENT_SOCKET_PORT)) {
-            int portNum = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SOCKET_PORT, DistConfig.AGENT_SOCKET_PORT_VALUE_SEQ.incrementAndGet());
-            log.info("SERVER SOCKET opening for agent: " + parentAgent.getAgentGuid() + " at port: " + portNum + ", current servers: " + servers.size());
-            AgentServerSocket serv = new AgentServerSocket(parentAgent);
-            servers.put(serv.getServerGuid(), serv);
-            // register server for communication
-            var createdDate = new java.util.Date();
-            var hostName = DistUtils.getCurrentHostName();
-            var hostIp = DistUtils.getCurrentHostAddress();
-            var servDto = new DistAgentServerRow(parentAgent.getAgentGuid(), serv.getServerGuid(), "socket", hostName, hostIp, portNum,
-                    "socket://" + hostName + ":" + portNum + "/", createdDate, 1, createdDate);
-            parentAgent.getAgentRegistrations().registerServer(servDto);
+        if (parentAgent.getConfig().hasProperty(DistConfig.AGENT_SERVER_SOCKET_PORT)) {
+            addNewServer(new AgentServerSocket(parentAgent));
         }
-        log.info("Set up timer to check servers and clients for agent: " + getParentAgentGuid());
+        if (parentAgent.getConfig().hasProperty(DistConfig.AGENT_SERVER_HTTP_PORT)) {
+            addNewServer(new AgentHttpServer(parentAgent));
+        }
+        if (parentAgent.getConfig().hasProperty(DistConfig.AGENT_SERVER_DATAGRAM_PORT)) {
+            addNewServer(new AgentDatagramServer(parentAgent));
+        }
+        log.info("Set up timer to check servers and clients for agent: " + getParentAgentGuid() +", servers count: " + servers.size());
         parentAgent.getAgentTimers().setUpTimer("TIMER_SERVER_CLIENT", DistConfig.TIMER_SERVER_CLIENT_PERIOD, DistConfig.TIMER_SERVER_CLIENT_PERIOD_DELAY_VALUE, x -> onTimeServersCheck());
+    }
+
+    /** add new server - put in map of servers and register server to registration services */
+    private void addNewServer(ServerBase serv) {
+        servers.put(serv.getServerGuid(), serv);
+        parentAgent.getAgentRegistrations().registerServer(serv.createServerRow());
     }
 
     /** run by agent every X seconds to check servers and clients */
@@ -78,7 +85,7 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
             parentAgent.getAgentConnectors().checkActiveServers(servers);
             // TODO: connect to all nearby agents, check statuses
             // TODO: implement communication of agent with other cache agents
-            log.info("=====----> AGENT REGISTRATION summary for guid: " + parentAgent.getAgentGuid() + ", registrations: " + getParentAgent().getAgentRegistrations().getRegistrationsCount() + ", connected agents: " + connectedAgents.size() + ", registeredServers: " + servers.size());
+            log.info("AGENT REGISTRATION summary for guid: " + parentAgent.getAgentGuid() + ", registrations: " + getParentAgent().getAgentRegistrations().getRegistrationsCount() + ", connected agents: " + connectedAgents.size() + ", registeredServers: " + servers.size());
             return true;
         } catch (Exception ex) {
             log.warn("Cannot communicate with other agents, reason: " + ex.getMessage(), ex);
@@ -106,7 +113,7 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     }
     /** check list of active servers and connect to the server if this is still not connected */
     public void checkActiveServers(List<DistAgentServerRow> activeServers) {
-        log.info("%%%%%%%%%%%%%%>>> Connectors updating servers from registers for agent: " + parentAgent.getAgentGuid() + ", count: " + activeServers.size() + ", agentServers: " + agentServers.size() + ", servers: " + servers.size() + ", clients: " + serverConnectors.totalSize());
+        log.info("Connectors updating servers from registers for agent: " + parentAgent.getAgentGuid() + ", count: " + activeServers.size() + ", agentServers: " + agentServers.size() + ", servers: " + servers.size() + ", clients: " + serverConnectors.totalSize());
         for (DistAgentServerRow srv: activeServers) {
             agentServers.putIfAbsent(srv.serverguid, srv);
         }
@@ -116,7 +123,7 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
                 Optional<AgentClient> client = serverConnectors.getValue(srv.agentguid, srv.serverguid);
                 if (client.isEmpty()) {
                     try {
-                        log.info("%%%%%%%%%%%%%%>>> Connectors from agent: " + parentAgent.getAgentGuid() +  ", NO client to agent: " + srv.agentguid + ", server: " + srv.serverguid + ", type" + srv.servertype + ", creating NEW ONE !!!!!!!!!");
+                        log.info("Connectors from agent: " + parentAgent.getAgentGuid() +  ", NO client to agent: " + srv.agentguid + ", server: " + srv.serverguid + ", type" + srv.servertype + ", creating NEW ONE !!!!!!!!!");
                         var createdClient = createClient(srv);
                         if (createdClient.isPresent()) {
                             serverConnectors.add(srv.agentguid, srv.serverguid, createdClient.get());
@@ -131,7 +138,7 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
                 }
             }
         });
-        log.info("%%%%%%%%%%%%%%>>> Connectors AFTER check servers for agent: " + parentAgent.getAgentGuid() + ", agentServers: " + agentServers.size() + ", servers: " + servers.size() + ", clients: " + serverConnectors.totalSize());
+        log.info("Connectors AFTER check servers for agent: " + parentAgent.getAgentGuid() + ", agentServers: " + agentServers.size() + ", servers: " + servers.size() + ", clients: " + serverConnectors.totalSize());
     }
     /** register new client created local as part of server */
     public void registerLocalClient(AgentClient client) {
@@ -144,7 +151,7 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     }
     /** message send to agents, directed to services, selected method, add callbacks to be called when response would be back */
     public void sendMessage(DistMessageFull msg) {
-        log.debug("...................Sending message: " + msg.getMessage().toString());
+        log.debug("Sending some message from agent: " + parentAgent.getAgentGuid() + ", message: " + msg.getMessage().toString());
         if (msg.getMessage().isTypeRequest()) {
             sentMessages.addItem(msg.getMessage().getMessageUid(), msg, msg.getMessage().getValidTill());
         }
@@ -164,7 +171,7 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     public void sendMessageBroadcast(DistMessageFull msg) {
         // sending broadcast - to all known agents
         var allClients = serverConnectors.getAllValues();
-        log.info("..................Sending broadcast message to all clients: " + allClients.size() + ", message UID: " + msg.getMessage().getMessageUid());
+        log.info("Sending broadcast message from agent: " + parentAgent.getAgentGuid() + " to all clients: " + allClients.size() + ", message UID: " + msg.getMessage().getMessageUid());
         allClients.stream().forEach(client -> {
             var res = client.send(msg.getMessage());
             msg.addClient(client);
@@ -249,11 +256,21 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     /** create new client that would be used for connecting to given server */
     private Optional<AgentClient> createClient(DistAgentServerRow srv) {
         // TODO: create client using factory based on server
-        if (srv.servertype.equals("socket")) {
-            log.info("%%%%%%%%%%%>>> Creating new socket client that would be connected to agent: " + srv.agentguid + ", type: " + srv.servertype + ", host: " + srv.serverhost);
+        log.info(" Creating new client that would be connected to agent: " + srv.agentguid + ", type: " + srv.servertype + ", host: " + srv.serverhost);
+        DistMessage welcomeMsg = DistMessage.createMessage(DistMessageType.system, parentAgent.getAgentGuid(), DistServiceType.agent, srv.agentguid, DistServiceType.agent, "welcome",  "");
+        if (srv.servertype.equals(DistClientType.socket.name())) {
+            log.info("Creating new socket client that would be connected to agent: " + srv.agentguid + ", type: " + srv.servertype + ", host: " + srv.serverhost);
             var client = new SocketServerClient(parentAgent, srv);
-            // DistMessageType messageType, String fromAgent, DistServiceType fromService, String toAgent, DistServiceType toService, String method, Object message
-            DistMessage welcomeMsg = DistMessage.createMessage(DistMessageType.welcome, parentAgent.getAgentGuid(), DistServiceType.agent, srv.agentguid, DistServiceType.agent, "welcome",  "");
+            client.send(welcomeMsg);
+            return Optional.of(client);
+        } else if (srv.servertype.equals(DistClientType.http.name())) {
+            log.info("Creating new socket client that would be connected to agent: " + srv.agentguid + ", type: " + srv.servertype + ", host: " + srv.serverhost);
+            var client = new HttpClient(parentAgent, srv);
+            client.send(welcomeMsg);
+            return Optional.of(client);
+        } else if (srv.servertype.equals(DistClientType.datagram.name())) {
+            log.info("Creating new datagram client that would be connected to agent: " + srv.agentguid + ", type: " + srv.servertype + ", host: " + srv.serverhost);
+            var client = new DatagramClient(parentAgent, srv);
             client.send(welcomeMsg);
             return Optional.of(client);
         }

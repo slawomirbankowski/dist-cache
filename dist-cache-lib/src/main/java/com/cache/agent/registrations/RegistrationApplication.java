@@ -5,6 +5,7 @@ import com.cache.api.*;
 import com.cache.base.RegistrationBase;
 import com.cache.base.dtos.DistAgentRegisterRow;
 import com.cache.base.dtos.DistAgentServerRow;
+import com.cache.interfaces.HttpCallable;
 import com.cache.utils.HttpConnectionHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -23,7 +24,7 @@ public class RegistrationApplication extends RegistrationBase {
 
     private String urlString;
     /** HTTP connection helper */
-    private HttpConnectionHelper applicationConn = null;
+    private HttpCallable applicationConn = null;
 
     public RegistrationApplication(AgentInstance parentAgent) {
         super(parentAgent);
@@ -34,7 +35,7 @@ public class RegistrationApplication extends RegistrationBase {
         urlString = parentAgent.getConfig().getProperty(DistConfig.CACHE_APPLICATION_URL);
         try {
             log.info("Connecting to dist-cache application, URL: " + urlString);
-            applicationConn = new HttpConnectionHelper(urlString);
+            applicationConn = HttpConnectionHelper.createHttpClient(urlString);
         } catch (Exception ex) {
             parentAgent.getAgentIssues().addIssue("AgentTimersImpl.onInitialize", ex);
             log.warn("Cannot connect to dist-cache application, reason: " + ex.getMessage(), ex);
@@ -53,9 +54,9 @@ public class RegistrationApplication extends RegistrationBase {
                     .findAndAddModules()
                     .build();
             String registerBody = mapper.writeValueAsString(register);
-            applicationConn = new HttpConnectionHelper(urlString);
+            applicationConn = HttpConnectionHelper.createHttpClient(urlString);
             log.info("Try to register agent with endpoint /agent and body: " + registerBody);
-            var response = applicationConn.callHttpPut("/v1/agent", registerBody);
+            var response = applicationConn.callPut("/v1/agent", registerBody);
             // TODO: save response from application
             log.info("Got registration response from APP: " + response.getInfo());
             return null;
@@ -113,7 +114,7 @@ public class RegistrationApplication extends RegistrationBase {
     /** get list of agents from connector */
     @Override
     protected List<AgentSimplified> onGetAgents() {
-        applicationConn.callHttpGet("");
+        // applicationConn.callGet("");
 
         return null;
     }

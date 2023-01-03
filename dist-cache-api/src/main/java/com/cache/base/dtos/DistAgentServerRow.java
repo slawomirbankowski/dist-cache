@@ -35,6 +35,18 @@ public class DistAgentServerRow {
         this.isactive = isactive;
         this.lastpingdate = lastpingdate;
     }
+    public Map<String, String> toMap() {
+        return Map.of("type", "server",
+                "agentguid", agentguid,
+                "serverguid", serverguid,
+                "servertype", servertype,
+                "serverhost", serverhost,
+                "serverip", serverip,
+                "serverport", "" + serverport,
+                "serverurl", serverurl,
+                "createddate", createddate.toString(),
+                "lastpingdate", lastpingdate.toString());
+    }
     public static DistAgentServerRow fromMap(Map<String, Object> map) {
         AdvancedMap m = new AdvancedMap(map);
         return new DistAgentServerRow(

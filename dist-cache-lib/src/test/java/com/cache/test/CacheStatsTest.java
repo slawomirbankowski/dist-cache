@@ -20,9 +20,9 @@ public class CacheStatsTest {
         Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withCacheStorageHashMap()
-                .withObjectTimeToLive(CacheMode.TIME_FIVE_SECONDS)
+                .withCacheObjectTimeToLive(CacheMode.TIME_FIVE_SECONDS)
                 .withTimerStorageClean(1000L)
-                .withMaxObjectAndItems(30, 100)
+                .withCacheMaxObjectsAndItems(30, 100)
                 .createCacheInstance();
 
         CacheStats stats = new CacheStats();

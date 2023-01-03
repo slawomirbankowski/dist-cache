@@ -1,16 +1,17 @@
 package com.cache.client;
 
+import com.cache.interfaces.HttpCallable;
 import com.cache.utils.HttpConnectionHelper;
 
 /** client to connect to standalone Cache Application and provide cache through REST endpoints OR direct Socket connections */
 public class DistCacheClient {
 
     private String baseUrl;
-    private HttpConnectionHelper connectionHelper;
+    private HttpCallable connectionHelper;
 
     public DistCacheClient(String baseUrl) {
         this.baseUrl = baseUrl;
-        this.connectionHelper = new HttpConnectionHelper(baseUrl);
+        this.connectionHelper = HttpConnectionHelper.createHttpClient(baseUrl);
     }
 
     /** check connection */
@@ -19,7 +20,7 @@ public class DistCacheClient {
     }
     /** ping application, should returns: pong */
     public String ping() {
-        return connectionHelper.callHttpGet("/api/v1/ping").getOutObject().toString();
+        return connectionHelper.callGet("/api/v1/ping").getOutObject().toString();
     }
 
 }

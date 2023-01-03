@@ -2,10 +2,7 @@ package com.cache.agent.impl;
 
 import com.cache.agent.AgentInstance;
 import com.cache.api.*;
-import com.cache.interfaces.AgentServices;
-import com.cache.interfaces.Cache;
-import com.cache.interfaces.DistService;
-import com.cache.interfaces.Reports;
+import com.cache.interfaces.*;
 import com.cache.managers.CacheManager;
 import com.cache.report.ReportsImpl;
 import org.slf4j.Logger;
@@ -29,6 +26,12 @@ public class AgentServicesImpl extends Agentable implements AgentServices {
     private Cache cache;
     /** service for reports */
     private Reports reports;
+    /** service for storages */
+    private Storages storages;
+    /** service for spaces */
+    private Spaces spaces;
+    /** service for security */
+    private Security security;
 
     /** creates service manager for agent with parent agent assigned */
     public AgentServicesImpl(AgentInstance parentAgent) {

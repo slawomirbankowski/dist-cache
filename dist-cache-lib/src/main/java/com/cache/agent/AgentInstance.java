@@ -4,7 +4,7 @@ import com.cache.agent.impl.*;
 import com.cache.api.*;
 import com.cache.interfaces.*;
 import com.cache.serializers.ComplexSerializer;
-import com.cache.util.JsonUtils;
+import com.cache.utils.JsonUtils;
 import com.cache.utils.DistUtils;
 import com.cache.utils.DistMessageProcessor;
 import com.cache.utils.DistWebApiProcessor;
@@ -43,9 +43,11 @@ public class AgentInstance implements Agent, DistService {
     private final AgentServices agentServices = new AgentServicesImpl(this);
     /** manager for agent connections to other agents */
     private final AgentConnectors agentConnectors = new AgentConnectorsImpl(this);
-    /** manager for registrations */
+    /** manager for events from Agent and all services
+     *  */
     private final AgentEvents agentEvents = new AgentEventsImpl(this);
-    /** manager for registrations */
+    /** manager for issues gathered from Agent and all services
+     * Issues could be viewed or checked by any external code */
     private final AgentIssues agentIssues = new AgentIssuesImpl(this);
     /** manager for Web API Objects to direct synchronous communication with this agent*/
     private final AgentApi agentApi = new AgentApiImpl(this);

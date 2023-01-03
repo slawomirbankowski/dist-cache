@@ -42,6 +42,7 @@ public class CacheService {
         synchronized (caches) {
             log.info("Initializing cache for guid: " + register.cacheGuid + ", properties: " + register.properties.size());
             Cache currentCache = caches.get(register.cacheGuid);
+
             if (currentCache == null) {
                 log.info("New cache to be created for guid: " + register.cacheGuid);
                 Cache cache = DistFactory.buildEmptyFactory().withMap(register.properties).createCacheInstance();

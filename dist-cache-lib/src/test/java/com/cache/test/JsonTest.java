@@ -1,7 +1,7 @@
 package com.cache.test;
 
 import com.cache.api.CacheObjectRequest;
-import com.cache.util.JsonUtils;
+import com.cache.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

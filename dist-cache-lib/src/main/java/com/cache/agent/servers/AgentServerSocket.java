@@ -1,7 +1,9 @@
 package com.cache.agent.servers;
 
 import com.cache.agent.clients.SocketServerClient;
+import com.cache.api.DistClientType;
 import com.cache.api.DistConfig;
+import com.cache.base.ServerBase;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.AgentServer;
 import com.cache.utils.DistUtils;
@@ -10,21 +12,14 @@ import org.slf4j.LoggerFactory;
 
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-public class AgentServerSocket implements AgentServer, Runnable {
+public class AgentServerSocket extends ServerBase implements AgentServer, Runnable {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentServerSocket.class);
-    /** date ant time of creation */
-    private final LocalDateTime createDate = LocalDateTime.now();
-    /** GUID of server */
-    private final String serverGuid;
-    /** if server has been closed */
-    private boolean closed = false;
-    private final Agent parentAgent;
+
     /** socket server for connections from other agents */
     private java.net.ServerSocket serverSocket = null;
     /** all threads initialized */
@@ -37,10 +32,24 @@ public class AgentServerSocket implements AgentServer, Runnable {
 
     /** creates new server for communication based on socket */
     public AgentServerSocket(Agent parentAgent) {
+        super(parentAgent);
         this.parentAgent = parentAgent;
-        this.workingPort = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SOCKET_PORT, DistConfig.AGENT_SOCKET_PORT_VALUE_SEQ.incrementAndGet());;
-        this.serverGuid = DistUtils.generateServerGuid("AgentServerSocket_" + workingPort);
+        this.workingPort = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SERVER_SOCKET_PORT, DistConfig.AGENT_SOCKET_PORT_VALUE_SEQ.incrementAndGet());;
+        log.info("SERVER SOCKET opening for agent: " + parentAgent.getAgentGuid() + " at port: " + workingPort);
         initializeServer();
+    }
+
+    /** get type of clients to be connected to this server */
+    public DistClientType getClientType() {
+        return DistClientType.socket;
+    }
+    /** get port of this server */
+    public int getPort() {
+        return workingPort;
+    }
+    /** get port of this server */
+    public String getUrl() {
+        return "";
     }
     public void initializeServer() {
         try {
@@ -59,7 +68,7 @@ public class AgentServerSocket implements AgentServer, Runnable {
             log.warn("Cannot run socket server on port: " + workingPort + ", reason: " + ex.getMessage());
         }
     }
-    /** run in separated thread to accept */
+    /** run in separated thread to accept new Sockets */
     public void run() {
         log.info("......... Accepting connections on port " + workingPort);
         while (!closed) {
@@ -73,30 +82,12 @@ public class AgentServerSocket implements AgentServer, Runnable {
                 }
             } catch (SocketTimeoutException ex) {
             } catch (Exception ex) {
-                log.error("!!!!! Unknown exception on Socket server wotking on port " + workingPort);
+                log.error("!!!!! Unknown exception on Socket server working on port " + workingPort);
             }
             DistUtils.sleep(2000);
         }
     }
-    private void closeClient() {
 
-    }
-    @Override
-    public String getServerGuid() {
-        return serverGuid;
-    }
-    @Override
-    public DistConfig getConfig() {
-        return parentAgent.getConfig();
-    }
-    @Override
-    public boolean isClosed() {
-        return closed;
-    }
-    @Override
-    public LocalDateTime getCreateDate() {
-        return createDate;
-    }
 
     @Override
     public void close() {

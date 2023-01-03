@@ -2,6 +2,7 @@ package com.cache.api;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /** Agent registering object that can be used to register Agent to Registration service
  * Registration service is keeping list of Agents, Servers, Services in given storage like DB, Elasticsearch, Redis, Kafka, ... */
@@ -61,5 +62,15 @@ public class AgentRegister {
     }
     public List<AgentSimplified> getAgents() {
         return agents;
+    }
+    public Map<String, String> toMap() {
+        return Map.of("type", "agent",
+                "active", "true",
+                "agentGuid", agentGuid,
+                "hostName", hostName,
+                "hostIp", hostIp,
+                "port", "" + port,
+                "lastPingDate", LocalDateTime.now().toString(),
+                "createDate", createDate.toString());
     }
 }

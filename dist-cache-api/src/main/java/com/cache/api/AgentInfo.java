@@ -1,10 +1,11 @@
 package com.cache.api;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
 /** information DTO about Agent - current state */
-public class AgentInfo {
+public class AgentInfo implements Serializable {
 
     private String agentGuid;
     private LocalDateTime createDate;

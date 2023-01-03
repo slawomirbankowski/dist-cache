@@ -1,7 +1,17 @@
 package com.cache.api;
 
 import com.cache.utils.DistUtils;
+import com.cache.utils.JsonUtils;
+import com.cache.utils.StringValueResolver;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,12 +32,19 @@ public class DistConfig {
     private final String configGuid = DistUtils.generateConfigGuid();
     /** all properties to be used for DistCache initialization */
     private Properties props = null;
+    /** resolver for String values in properties */
+    private StringValueResolver resolver;
 
     public DistConfig(Properties p) {
         this.props = p;
-        props.setProperty("", configGuid);
+        this.resolver = new StringValueResolver();
+        props.setProperty("CONFIG_GUID", configGuid);
     }
-
+    public DistConfig(Properties p, StringValueResolver resolver) {
+        this.props = p;
+        this.resolver = resolver;
+        props.setProperty("CONFIG_GUID", configGuid);
+    }
     /** get current properties */
     public Map getProperties() {
         return Collections.unmodifiableMap(props);
@@ -46,7 +63,7 @@ public class DistConfig {
     }
     /** get cache property for given name */
     public String getProperty(String name) {
-        return props.getProperty(name);
+        return resolver.resolve(props.getProperty(name));
     }
 
     /** configuration contains property for given name */
@@ -71,16 +88,37 @@ public class DistConfig {
     public double getPropertyAsDouble(String name, double defaultValue) {
         return DistUtils.parseDouble(getProperty(name), defaultValue);
     }
-    /** save to File */
-    public void saveToFile(String fileName) {
-
-        // TODO: save Properties into file for given name
+    /** save to File as JSON format */
+    public boolean saveToJsonFile(String fileName) {
+        try {
+            Files.writeString(Path.of(""), toJsonString(), StandardOpenOption.CREATE);
+            return true;
+        } catch (IOException ex) {
+            return false;
+        }
     }
-    /** save to JSON */
-    public String saveToJson() {
-
-        // TODO: save Properties to JSON
-        return "";
+    /** save to file as Properties format */
+    public boolean saveToPropertiesFile(String fileName) {
+        try {
+            props.store(new FileWriter(fileName), "");
+            return true;
+        } catch (IOException ex) {
+            return false;
+        }
+    }
+    /** save properties from this configuration to JSON as String */
+    public String toJsonString() {
+        return JsonUtils.serialize(props);
+    }
+    /** save properties from this configuration to Properties as String */
+    public String toPropertiesString() {
+        try {
+            ByteArrayOutputStream outStr = new ByteArrayOutputStream();
+            props.store(outStr, "");
+            return new String(outStr.toByteArray());
+        } catch (IOException ex) {
+            return null;
+        }
     }
     /** name of group - all caches connecting together should be having the same group
      * name of group could be like GlobalAppCache */
@@ -95,12 +133,43 @@ public class DistConfig {
     /** port of cache for extending and distributed join */
     public static String AGENT_API_PORT = "AGENT_API_PORT";
 
-    /** port of cache for extending and distributed join */
-    public static String AGENT_SOCKET_PORT = "AGENT_SOCKET_PORT";
+
+    /** JDBC connection for agent registration */
+    public static String AGENT_REGISTRATION_JDBC_URL = "AGENT_REGISTRATION_JDBC_URL";
+    public static String AGENT_REGISTRATION_JDBC_DRIVER = "AGENT_REGISTRATION_JDBC_DRIVER";
+    public static String AGENT_REGISTRATION_JDBC_USER = "AGENT_REGISTRATION_JDBC_USER";
+    public static String AGENT_REGISTRATION_JDBC_PASS = "AGENT_REGISTRATION_JDBC_PASS";
+    public static String AGENT_REGISTRATION_JDBC_DIALECT = "AGENT_REGISTRATION_JDBC_DIALECT";
+    public static String AGENT_REGISTRATION_JDBC_INIT_CONNECTIONS = "AGENT_REGISTRATION_JDBC_INIT_CONNECTIONS";
+    public static String AGENT_REGISTRATION_JDBC_MAX_ACTIVE_CONNECTIONS = "AGENT_REGISTRATION_JDBC_MAX_ACTIVE_CONNECTIONS";
+
+    /** elasticsearch registration parameters */
+    public static String AGENT_REGISTRATION_ELASTICSEARCH_URL = "AGENT_REGISTRATION_ELASTICSEARCH_URL";
+    public static String AGENT_REGISTRATION_ELASTICSEARCH_USER = "AGENT_REGISTRATION_ELASTICSEARCH_USER";
+    public static String AGENT_REGISTRATION_ELASTICSEARCH_PASS = "AGENT_REGISTRATION_ELASTICSEARCH_PASS";
+
     /** */
-    public static int AGENT_SOCKET_PORT_DEFAULT_VALUE = 9901;
+    public static String REDIS_PORT = "REDIS_PORT";
+
+
+    /** port of cache for extending and distributed join */
+    public static String AGENT_SERVER_SOCKET_PORT = "AGENT_SERVER_SOCKET_PORT";
+    /** */
+    public static int AGENT_SERVER_SOCKET_PORT_DEFAULT_VALUE = 9901;
     /** sequencer for default agent port */
     public static final AtomicInteger AGENT_SOCKET_PORT_VALUE_SEQ = new AtomicInteger(9901);
+
+    /** */
+    public static String AGENT_SERVER_HTTP_PORT = "AGENT_SERVER_HTTP_PORT";
+    public static int AGENT_SERVER_HTTP_PORT_DEFAULT_VALUE = 9901;
+
+    public static String AGENT_SERVER_DATAGRAM_PORT = "AGENT_SERVER_DATAGRAM_PORT";
+    public static int AGENT_SERVER_DATAGRAM_PORT_DEFAULT_VALUE = 9933;
+    public static String AGENT_SERVER_DATAGRAM_TIMEOUT = "AGENT_SERVER_DATAGRAM_TIMEOUT";
+
+    /** Server for agent communication based on Kafka */
+    public static String AGENT_SERVER_KAFKA_BROKERS = "AGENT_SERVER_KAFKA_BROKERS";
+    public static String AGENT_SERVER_KAFKA_TOPIC = "AGENT_SERVER_KAFKA_TOPIC";
 
     /** */
     public static final String AGENT_INACTIVATE_AFTER = "AGENT_INACTIVATE_AFTER";
@@ -181,7 +250,7 @@ public class DistConfig {
     public static String CACHE_STORAGE_VALUE_ELASTICSEARCH = "ElasticsearchCacheStorage";
     public static String CACHE_STORAGE_VALUE_JDBC = "JdbcStorage";
 
-    /** settings for JDBC storage */
+    /** CACHE STORAGE - settings for JDBC storage */
     public static String CACHE_STORAGE_JDBC_URL = "CACHE_STORAGE_JDBC_URL";
     public static String CACHE_STORAGE_JDBC_DRIVER = "CACHE_STORAGE_JDBC_DRIVER";
     public static String CACHE_STORAGE_JDBC_USER = "CACHE_STORAGE_JDBC_USER";
@@ -190,51 +259,32 @@ public class DistConfig {
     public static String CACHE_STORAGE_JDBC_INIT_CONNECTIONS = "CACHE_STORAGE_JDBC_INIT_CONNECTIONS";
     public static String CACHE_STORAGE_JDBC_MAX_ACTIVE_CONNECTIONS = "CACHE_STORAGE_JDBC_MAX_ACTIVE_CONNECTIONS";
 
-    /** settings for MongoDB storage */
+    /** CACHE STORAGE - settings for MongoDB storage */
     public static String CACHE_STORAGE_MONGODB_HOST = "CACHE_STORAGE_MONGODB_HOST";
     public static String CACHE_STORAGE_MONGODB_PORT = "CACHE_STORAGE_MONGODB_PORT";
+    public static String CACHE_STORAGE_MONGODB_DATABASE = "CACHE_STORAGE_MONGODB_DATABASE";
+    public static String CACHE_STORAGE_MONGODB_COLLECTION = "CACHE_STORAGE_MONGODB_COLLECTION";
 
-    /** settings for Redis storage */
+    /** CACHE STORAGE - settings for Redis storage */
     public static String CACHE_STORAGE_REDIS_HOST = "CACHE_STORAGE_REDIS_HOST";
     public static String CACHE_STORAGE_REDIS_PORT = "CACHE_STORAGE_REDIS_PORT";
+    public static String CACHE_STORAGE_REDIS_URL = "REDIS_URL";
 
-    /** settings for Elasticsearch storage */
+    /** CACHE STORAGE - settings for Elasticsearch storage */
     public static String CACHE_STORAGE_ELASTICSEARCH_URL = "CACHE_STORAGE_ELASTICSEARCH_URL";
     public static String CACHE_STORAGE_ELASTICSEARCH_USER = "CACHE_STORAGE_ELASTICSEARCH_USER";
     public static String CACHE_STORAGE_ELASTICSEARCH_PASS = "CACHE_STORAGE_ELASTICSEARCH_PASS";
 
-    /** settings for Cassandra storage */
-    public static String CACHE_STORAGE_CASSANDRA_HOST = "CACHE_STORAGE_REDIS_HOST";
-    public static String CACHE_STORAGE_CASSANDRA_PORT = "CACHE_STORAGE_REDIS_PORT";
+    /** CACHE STORAGE - settings for Cassandra storage */
+    public static String CACHE_STORAGE_CASSANDRA_HOST = "CACHE_STORAGE_CASSANDRA_HOST";
+    public static String CACHE_STORAGE_CASSANDRA_PORT = "CACHE_STORAGE_CASSANDRA_PORT";
 
-    /** */
-    public static String CACHE_STORAGE_LOCAL_DISK_PREFIX_PATH = "CACHE_STORAGE_LOCAL_DISK_PREFIX_PATH";
-
-    /** JDBC connection for agent registration */
-    public static String JDBC_URL = "JDBC_URL";
-    public static String JDBC_DRIVER = "JDBC_DRIVER";
-    public static String JDBC_USER = "JDBC_USER";
-    public static String JDBC_PASS = "JDBC_PASS";
-    public static String JDBC_DIALECT = "JDBC_DIALECT";
-    public static String JDBC_INIT_CONNECTIONS = "JDBC_INIT_CONNECTIONS";
-    public static String JDBC_MAX_ACTIVE_CONNECTIONS = "JDBC_MAX_ACTIVE_CONNECTIONS";
-
-    /** elasticsearch URL */
-    public static String ELASTICSEARCH_URL = "ELASTICSEARCH_URL";
-    public static String ELASTICSEARCH_USER = "ELASTICSEARCH_USER";
-    /** elasticsearch password */
-    public static String ELASTICSEARCH_PASS = "ELASTICSEARCH_PASS";
-
-    /** Kafka brokers */
+    /** CACHE STORAGE - Kafka brokers */
     public static String CACHE_STORAGE_KAFKA_BROKERS = "CACHE_STORAGE_KAFKA_BROKERS";
     public static String CACHE_STORAGE_KAFKA_TOPIC = "CACHE_STORAGE_KAFKA_TOPIC";
     public static String CACHE_STORAGE_KAFKA_BROKERS_DEFAULT_VALUE = "dist-cache-items";
-    /** URL for redis */
-    public static String CACHE_STORAGE_REDIS_URL = "REDIS_URL";
 
-    public static String REDIS_PORT = "REDIS_PORT";
-
-    public static String CACHE_STORAGE_MONGO_HOST = "CACHE_STORAGE_MONGO_HOST";
-    public static String CACHE_STORAGE_MONGO_PORT = "CACHE_STORAGE_MONGO_PORT";
+    /** CACHE STORAGE - LocalDisk prefix for storage folder/ directory */
+    public static String CACHE_STORAGE_LOCAL_DISK_PREFIX_PATH = "CACHE_STORAGE_LOCAL_DISK_PREFIX_PATH";
 
 }

@@ -27,11 +27,11 @@ public class CacheDistributeClearTest {
                 .withCacheStorageHashMap()
                 .withServerSocketPort(9991)
                 .withWebApiPort(9999)
-                .withObjectTimeToLive(CacheMode.TIME_TEN_MINUTES)
+                .withCacheObjectTimeToLive(CacheMode.TIME_TEN_MINUTES)
                 .withTimerStorageClean(1000)
                 .withTimerRegistrationPeriod(500)
                 .withTimerServerPeriod(500)
-                .withMaxObjectAndItems(100, 1000)
+                .withCacheMaxObjectsAndItems(100, 1000)
                 .createCacheInstance();
 
         Cache cache2 = DistFactory.buildDefaultFactory()
@@ -41,11 +41,11 @@ public class CacheDistributeClearTest {
                 .withCacheStorageHashMap()
                 .withServerSocketPort(9992)
                 .withWebApiPort(9998)
-                .withObjectTimeToLive(CacheMode.TIME_TEN_MINUTES)
+                .withCacheObjectTimeToLive(CacheMode.TIME_TEN_MINUTES)
                 .withTimerStorageClean(1000)
                 .withTimerRegistrationPeriod(1000)
                 .withTimerServerPeriod(1000)
-                .withMaxObjectAndItems(100, 1000)
+                .withCacheMaxObjectsAndItems(100, 1000)
                 .createCacheInstance();
 
         assertNotNull(cache1, "Created cache should not be null");
@@ -85,11 +85,11 @@ public class CacheDistributeClearTest {
         log.info("Clearing cache2 for key5");
         cache2.clearCacheContains("key5");
 
-        DistUtils.sleep(1000);
+        DistUtils.sleep(1000); // distributing clear should take around 500ms to be send from agent1 to agent2 AND from agent2 to agent1
 
         log.info("After clear cache in agents, cache1: " + cache1.getObjectsCount() + ", cache2: " + cache1.getObjectsCount());
-        assertEquals(cache1.getObjectsCount(), 8, "There should be 8 objets in cache1");
-        assertEquals(cache1.getObjectsCount(), 8, "There should be 8 objets in cache2");
+        assertEquals(8, cache1.getObjectsCount(),  "There should be 8 objets in cache1");
+        assertEquals(8, cache1.getObjectsCount(),  "There should be 8 objets in cache2");
 
         cache1.close();
         cache2.close();

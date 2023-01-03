@@ -5,7 +5,7 @@ import com.cache.base.CacheBase;
 import com.cache.base.CacheStorageBase;
 import com.cache.interfaces.Agent;
 import com.cache.api.DistMessage;
-import com.cache.util.JsonUtils;
+import com.cache.utils.JsonUtils;
 import com.cache.utils.DistMessageProcessor;
 import com.cache.utils.DistWebApiProcessor;
 import com.fasterxml.jackson.core.type.TypeReference;

@@ -3,7 +3,7 @@ package com.cache.storage;
 import com.cache.api.*;
 import com.cache.base.dtos.DistCacheItemRow;
 import com.cache.base.CacheStorageBase;
-import com.cache.base.DaoBase;
+import com.cache.base.DaoJdbcBase;
 import com.cache.jdbc.JdbcDialect;
 
 import java.util.*;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class JdbcStorage extends CacheStorageBase {
 
     /** DAO with DBCP to database */
-    private final DaoBase dao;
+    private final DaoJdbcBase dao;
     /** JDBC dialect with SQL queries for different database management systems */
     private final JdbcDialect dialect;
 
@@ -30,9 +30,9 @@ public class JdbcStorage extends CacheStorageBase {
         // get dialect by driver class and dialect name
         dialect = JdbcDialect.getDialect(jdbcDriver, jdbcDialect);
         log.info(" ========================= Initializing JdbcStorage with URL: " + jdbcUrl + ", dialect: " + dialect);
-        var initConnections = p.cache.getConfig().getPropertyAsInt(DistConfig.JDBC_INIT_CONNECTIONS, 2);
-        var maxActiveConnections = p.cache.getConfig().getPropertyAsInt(DistConfig.JDBC_MAX_ACTIVE_CONNECTIONS, 10);
-        dao = new DaoBase(jdbcUrl, jdbcDriver, jdbcUser, jdbcPass, initConnections, maxActiveConnections);
+        var initConnections = p.cache.getConfig().getPropertyAsInt(DistConfig.AGENT_REGISTRATION_JDBC_INIT_CONNECTIONS, 2);
+        var maxActiveConnections = p.cache.getConfig().getPropertyAsInt(DistConfig.AGENT_REGISTRATION_JDBC_MAX_ACTIVE_CONNECTIONS, 10);
+        dao = new DaoJdbcBase(jdbcUrl, jdbcDriver, jdbcUser, jdbcPass, initConnections, maxActiveConnections);
         initializeConnectionAndCreateTables();
     }
     /** create table with cache items if not exists */

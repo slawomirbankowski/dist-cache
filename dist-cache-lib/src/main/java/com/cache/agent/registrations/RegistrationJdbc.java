@@ -4,7 +4,7 @@ import com.cache.agent.AgentInstance;
 import com.cache.api.*;
 import com.cache.base.dtos.DistAgentRegisterRow;
 import com.cache.base.dtos.DistAgentServerRow;
-import com.cache.base.DaoBase;
+import com.cache.base.DaoJdbcBase;
 import com.cache.base.RegistrationBase;
 import com.cache.jdbc.JdbcDialect;
 import com.cache.jdbc.JdbcTables;
@@ -22,7 +22,7 @@ public class RegistrationJdbc extends RegistrationBase {
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(RegistrationJdbc.class);
 
-    private DaoBase dao;
+    private DaoJdbcBase dao;
     private JdbcDialect dialect;
     private String jdbcUrl;
 
@@ -32,15 +32,15 @@ public class RegistrationJdbc extends RegistrationBase {
     /** run for initialization in classes */
     @Override
     public void onInitialize() {
-        jdbcUrl = parentAgent.getConfig().getProperty(DistConfig.JDBC_URL);
-        var jdbcDriver = parentAgent.getConfig().getProperty(DistConfig.JDBC_DRIVER, "");
-        var jdbcUser = parentAgent.getConfig().getProperty(DistConfig.JDBC_USER, "");
-        var jdbcPass = parentAgent.getConfig().getProperty(DistConfig.JDBC_PASS, "");
-        var jdbcDialect = parentAgent.getConfig().getProperty(DistConfig.JDBC_DIALECT, "");
+        jdbcUrl = parentAgent.getConfig().getProperty(DistConfig.AGENT_REGISTRATION_JDBC_URL);
+        var jdbcDriver = parentAgent.getConfig().getProperty(DistConfig.AGENT_REGISTRATION_JDBC_DRIVER, "");
+        var jdbcUser = parentAgent.getConfig().getProperty(DistConfig.AGENT_REGISTRATION_JDBC_USER, "");
+        var jdbcPass = parentAgent.getConfig().getProperty(DistConfig.AGENT_REGISTRATION_JDBC_PASS, "");
+        var jdbcDialect = parentAgent.getConfig().getProperty(DistConfig.AGENT_REGISTRATION_JDBC_DIALECT, "");
         dialect = JdbcDialect.getDialect(jdbcDriver, jdbcDialect);
-        var initConnections = parentAgent.getConfig().getPropertyAsInt(DistConfig.JDBC_INIT_CONNECTIONS, 2);
-        var maxActiveConnections = parentAgent.getConfig().getPropertyAsInt(DistConfig.JDBC_MAX_ACTIVE_CONNECTIONS, 10);
-        dao = new DaoBase(jdbcUrl, jdbcDriver, jdbcUser, jdbcPass, initConnections, maxActiveConnections);
+        var initConnections = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_REGISTRATION_JDBC_INIT_CONNECTIONS, 2);
+        var maxActiveConnections = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_REGISTRATION_JDBC_MAX_ACTIVE_CONNECTIONS, 10);
+        dao = new DaoJdbcBase(jdbcUrl, jdbcDriver, jdbcUser, jdbcPass, initConnections, maxActiveConnections);
         log.info("Initialize JDBC registration with URL: " + jdbcUrl + ", dialect: " + dialect.dialectName);
         tryCreateAgentTable();
     }

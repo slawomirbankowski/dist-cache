@@ -1,13 +1,10 @@
 package com.cache.agent.clients;
 
-import com.cache.api.DistConfig;
-import com.cache.api.DistMessageType;
-import com.cache.api.DistServiceType;
+import com.cache.api.*;
 import com.cache.base.AgentClientBase;
 import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.AgentClient;
-import com.cache.api.DistMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,14 +28,12 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
     protected BufferedReader inSocket;
     protected PrintWriter outSocket;
     protected Thread receivingThread;
-    /**  */
-    private boolean working = true;
     protected int sleepThreadTime = 1000; // TODO: change this to be configured
 
     /** creates new socket client */
     public SocketServerClient(Agent parentAgent, Socket socket) {
         super(parentAgent);
-        log.info("@@@@@@@@@@@@@@@ Open new socket client on agent: " + parentAgent.getAgentGuid() + ", local host: " + socket.getLocalAddress().getHostName() + ":" + socket.getLocalPort() + ", remote: " + socket.getRemoteSocketAddress().toString() + ", uid: " + clientGuid);
+        log.info("Open new socket client on agent: " + parentAgent.getAgentGuid() + ", local host: " + socket.getLocalAddress().getHostName() + ":" + socket.getLocalPort() + ", remote: " + socket.getRemoteSocketAddress().toString() + ", uid: " + clientGuid);
         this.socket = socket;
         connectedAgentGuid = "UNKNOWN";
         isServer = true;
@@ -48,9 +43,8 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
     public SocketServerClient(Agent parentAgent, DistAgentServerRow srv) {
         super(parentAgent);
         try {
-            this.parentAgent = parentAgent;
             connectedAgentGuid = srv.agentguid;
-            log.info("@@@@@@@@@@@@@@@ Creates new socket client for server: " + srv.servertype + ", host: " + srv.serverhost + ", port: " + srv.serverport);
+            log.info("Creates new socket client for server: " + srv.servertype + ", host: " + srv.serverhost + ", port: " + srv.serverport);
             isServer = false;
             socket = new Socket(srv.serverhost, srv.serverport);
         } catch (Exception ex) {
@@ -59,12 +53,21 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
         }
         initialize();
     }
+    /** get type of client - socket, http, datagram, ... */
+    public DistClientType getClientType() {
+        return DistClientType.socket;
+    }
+    /** get unified URL of this client */
+    public String getUrl() {
+        return "socket://" + host + ":" + port;
+    }
+
     /** initialize client - connecting or reconnecting */
     public boolean initialize() {
         try {
             log.info("Initializing socket client for agent: " + parentAgent.getAgentGuid() + ", isServer: " + isServer + ", host: " + host + ", port: " + port + ", client UID: " + clientGuid);
-            parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SERVER_SOCKET_CLIENT_TIMEOUT, DistConfig.AGENT_SERVER_SOCKET_CLIENT_TIMEOUT_DEFAULT_VALUE);
-            socket.setSoTimeout(1000);
+            int socketTimeout = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SERVER_SOCKET_CLIENT_TIMEOUT, DistConfig.AGENT_SERVER_SOCKET_CLIENT_TIMEOUT_DEFAULT_VALUE);
+            socket.setSoTimeout(socketTimeout);
             host = socket.getInetAddress().getHostAddress();
             port = socket.getPort();
             if (this.socket.isConnected()) {
@@ -88,7 +91,8 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
             receivingThread = new Thread(this);
             receivingThread.start();
             parentAgent.getAgentThreads().registerThread(receivingThread);
-            DistMessage welcomeMsg = DistMessage.createMessage(DistMessageType.welcome, parentAgent.getAgentGuid(), DistServiceType.agent, connectedAgentGuid, DistServiceType.agent, "welcome",  "");
+            AgentWelcomeMessage welcome = new AgentWelcomeMessage(parentAgent.getAgentInfo(), getClientInfo());
+            DistMessage welcomeMsg = DistMessage.createMessage(DistMessageType.system, parentAgent.getAgentGuid(), DistServiceType.agent, connectedAgentGuid, DistServiceType.agent, "welcome",  welcome);
             send(welcomeMsg);
             return true;
         } catch (SocketException ex) {
@@ -104,10 +108,11 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
     public boolean send(DistMessage msg) {
         try {
             String line = parentAgent.getSerializer().serializeToString(msg);
-            log.trace("&&&&&&&&&&&&&&&&&&&&&&& Writing line to be sent in client: " + clientGuid + ", LINE=" + line);
+            log.trace("Writing line to be sent using SOCKET client: " + clientGuid + ", LINE=" + line + ", serializer: " + parentAgent.getSerializer() + ", message: " + msg.toString());
             synchronized (outSocket) {
                 outSocket.write(line + "\n");
                 outSocket.flush();
+                sentMessages.incrementAndGet();
                 if (outSocket.checkError()) {
                     log.warn("Error in socket client: " + clientGuid);
                 }
@@ -135,14 +140,14 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
             }
             String readLine = inSocket.readLine();
             if (readLine != null) {
-                log.trace("&&&&&&&&&&&&&&&&&&&&&&&&& Reading line for client: " + clientGuid + ", LINE=" + readLine);
+                log.trace("Reading line for client: " + clientGuid + ", LINE=" + readLine);
                 DistMessage receivedMsg = (DistMessage)parentAgent.getSerializer().deserializeFromString(DistMessage.class.getName(), readLine);
-                if (receivedMsg.isWelcome()) {
-                    log.info("&&&&&&&&&&&&&&&&&&&&&&&&& Socked client got WELCOME message, client: " + clientGuid + ", " + readLine + ", message: " + receivedMsg.toString());
-                    // TODO: welcome message to SocketClient - set Agent name and initial information from Welcome message
+                receivedMessages.incrementAndGet();
+                if (receivedMsg.isSystem()) {
+                    parseWelcomeMessage(receivedMsg);
 
                 } else {
-                    log.trace("&&&&&&&&&&&&&&&&&&&&&&& Socket client got another message, client: " + clientGuid + ", LINE: " +readLine + ", message: " + receivedMsg.toString());
+                    log.trace("Socket client got another message, client: " + clientGuid + ", LINE: " +readLine + ", message: " + receivedMsg.toString());
                     parentAgent.getAgentServices().receiveMessage(receivedMsg);
                 }
             }
@@ -156,7 +161,16 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
             log.warn(" Exception in Socket Client: "+ex.getMessage()+"; "+ex.getLocalizedMessage());
         }
     }
-
+    /** */
+    private void parseWelcomeMessage(DistMessage msg) {
+        try {
+            AgentWelcomeMessage welcome = (AgentWelcomeMessage)msg.getMessage();
+            log.info("Socked client got WELCOME message, client: " + clientGuid + ", from agent: " + welcome.getAgentInfo().getAgentGuid() + ", from client: " + welcome.getClientInfo().getClientGuid());
+            // TODO: welcome message to SocketClient - set Agent name and initial information from Welcome message
+        } catch (Exception ex) {
+            parentAgent.getAgentIssues().addIssue("parseWelcomeMessage", ex);
+        }
+    }
     /** close this client */
     public void close() {
         try {

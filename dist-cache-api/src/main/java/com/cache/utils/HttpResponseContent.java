@@ -1,5 +1,9 @@
 package com.cache.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
+import java.util.Optional;
+
 /** response of HTTP(s) call - in case of OK or ERROR */
 public class HttpResponseContent {
 
@@ -9,7 +13,7 @@ public class HttpResponseContent {
     private int code;
     /** read object from call - this is the response body */
     private Object outObject;
-    /** lenght of output object */
+    /** length of output object */
     private long outLength;
     private String contentType;
     private String error;
@@ -38,7 +42,38 @@ public class HttpResponseContent {
     public Object getOutObject() {
         return outObject;
     }
+    public String getOutString() {
+        if (isOk) {
+            return "" + outObject;
+        } else {
+            return "";
+        }
+    }
 
+    public <T> Optional<T> parseOutputTo(Class<T> outClass) {
+        try {
+            T obj = JsonUtils.deserialize("" + getOutObject(), outClass);
+            if (obj != null) {
+                return Optional.of(obj);
+            } else {
+                return Optional.empty();
+            }
+        } catch (Exception ex) {
+            return Optional.empty();
+        }
+    }
+    public <T> Optional<T> parseOutputTo(TypeReference<T> type) {
+        try {
+            T obj = JsonUtils.deserialize("" + getOutObject(), type);
+            if (obj != null) {
+                return Optional.of(obj);
+            } else {
+                return Optional.empty();
+            }
+        } catch (Exception ex) {
+            return Optional.empty();
+        }
+    }
     public long getOutLength() {
         return outLength;
     }

@@ -18,11 +18,9 @@ public class CacheManagerDistributeTest {
                 .withName("GlobalCacheTest") // set friendly cache name
                 .withServerSocketDefaultPort() // open TCP port for listening to commands and external cache agents
                 .withRegisterApplication("https://localhost:8080/") // connect to cache standalone application to synchronize cache agents
-                //.withStorageKafka("") // connect to Kafka brokers as storage
-                //.withStorageElasticsearch("", "", "") // connect to Elasticsearch storage
                 .withCacheStorageHashMap() // add storage build of HashMap manager by cache
-                .withObjectTimeToLive(100000) // set default time to live objects in cache for 100 seconds
-                .withMaxObjectAndItems(30, 100) // set maximum number of objects to 30 and items to 100
+                .withCacheObjectTimeToLive(100000) // set default time to live objects in cache for 100 seconds
+                .withCacheMaxObjectsAndItems(30, 100) // set maximum number of objects to 30 and items to 100
                 .createCacheInstance();
 
         log.info("Cache storages: " + cache.getStorageKeys());

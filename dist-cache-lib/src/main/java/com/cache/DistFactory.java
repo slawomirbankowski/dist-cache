@@ -5,10 +5,14 @@ import com.cache.api.*;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.Cache;
 import com.cache.interfaces.DistSerializer;
+import com.cache.interfaces.Resolver;
 import com.cache.serializers.ComplexSerializer;
-import com.cache.util.JsonUtils;
+import com.cache.utils.JsonUtils;
 import com.cache.utils.DistUtils;
 import com.cache.utils.CustomSerializer;
+import com.cache.utils.StringValueResolver;
+import com.cache.utils.resolvers.MapResolver;
+import com.cache.utils.resolvers.PropertyResolver;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +86,7 @@ public class DistFactory {
                 .withCacheStorageHashMap()
                 .withMaxIssues(DistConfig.CACHE_ISSUES_MAX_COUNT_VALUE)
                 .withMaxEvents(DistConfig.CACHE_EVENTS_MAX_COUNT_VALUE)
-                .withMaxObjectAndItems(DistConfig.CACHE_MAX_LOCAL_OBJECTS_VALUE, DistConfig.CACHE_MAX_LOCAL_ITEMS_VALUE);
+                .withCacheMaxObjectsAndItems(DistConfig.CACHE_MAX_LOCAL_OBJECTS_VALUE, DistConfig.CACHE_MAX_LOCAL_ITEMS_VALUE);
     }
 
     /** build factory based on properties */
@@ -106,6 +110,10 @@ public class DistFactory {
     private final HashMap<String, DistSerializer> serializers = new HashMap<>();
     /** cache policy */
     private CachePolicy policy = CachePolicyBuilder.empty().create();
+    /** resolver for configuration values */
+    private StringValueResolver resolver = new StringValueResolver()
+            .addResolver(new PropertyResolver(props))
+            .addResolver(new MapResolver(System.getenv()));
 
     /** factory is just creating managers */
     private DistFactory() {
@@ -119,7 +127,7 @@ public class DistFactory {
      * this is creating Agent and Agent is creating Cache by get method
      * */
     public Cache createCacheInstance() {
-        DistConfig config = new DistConfig(props);
+        DistConfig config = new DistConfig(props, resolver);
         AgentInstance agent = new AgentInstance(config, callbacks, serializers, policy);
         agent.initializeAgent();
         return agent.getAgentServices().getCache();
@@ -128,7 +136,7 @@ public class DistFactory {
      * This is just creating Agent itself
      * */
     public Agent createAgentInstance() {
-        DistConfig config = new DistConfig(props);
+        DistConfig config = new DistConfig(props, resolver);
         AgentInstance agent = new AgentInstance(config, callbacks, serializers, policy);
         agent.initializeAgent();
         return agent;
@@ -144,7 +152,6 @@ public class DistFactory {
     }
     /** add new command line arguments to Dist properties */
     public DistFactory withCommandLineArguments(String[] args) {
-        // TODO: read command-line arguments into map of properties to be added --name value1 value2 --name2 value3 value4
         String currentProperty = null;
         List<String> currentValues = new LinkedList<>();
         for (int i=0; i<args.length; i++) {
@@ -228,20 +235,111 @@ public class DistFactory {
         }
         return this;
     }
+
+    /** with resolver to resolve values form String  */
+    public DistFactory withResolver(Resolver r) {
+        resolver.addResolver(r);
+        return this;
+    }
+
+
     /** define port for Web Api */
     public DistFactory withWebApiPort(int port) {
         props.setProperty(DistConfig.AGENT_API_PORT, ""+port);
         return this;
     }
-    /** define port for Socket communication */
-    public DistFactory withServerSocketPort(int port) {
-        props.setProperty(DistConfig.AGENT_SOCKET_PORT, ""+port);
+
+
+    /** set default serializers */
+    public DistFactory withSerializerDefault() {
+        props.setProperty(DistConfig.SERIALIZER_DEFINITION, DistConfig.SERIALIZER_DEFINITION_SERIALIZABLE_VALUE);
+        serializers.putAll(ComplexSerializer.parseSerializers(DistConfig.SERIALIZER_DEFINITION_SERIALIZABLE_VALUE));
+        return this;
+    }
+    /** definition of serializer from String */
+    public DistFactory withSerializer(String serializerDefinition) {
+        serializers.putAll(ComplexSerializer.parseSerializers(serializerDefinition));
+        props.setProperty(DistConfig.SERIALIZER_DEFINITION, serializerDefinition);
+        return this;
+    }
+    public DistFactory withSerializer(DistSerializerTypes serializer, String... className) {
+        // TODO: add better way to define serializers
+
+        //serializers.put()
+        //ComplexSerializer.createComplexSerializer()
+        //serializers.putAll(ComplexSerializer.parseSerializers(serializerDefinition));
+        //props.setProperty(DistConfig.SERIALIZER_DEFINITION, serializerDefinition);
         return this;
     }
 
-    /** define port to define value on which agent will be listening */
+    /** add serializer to Dist system */
+    public DistFactory withSerializer(String className, DistSerializer ser) {
+        serializers.put(className, ser);
+        return this;
+    }
+    /** add custom serializations for this system */
+    public DistFactory withSerializerCustom(String className, Function<Object, String> serializeFunction, BiFunction<String, String, Object> deserializeFunction) {
+        serializers.put(className, new CustomSerializer(serializeFunction, deserializeFunction));
+        return this;
+    }
+
+
+    /** add registration method as JDBC */
+    public DistFactory withRegistrationJdbc(String url, String driver, String user, String pass) {
+        props.setProperty(DistConfig.AGENT_REGISTRATION_JDBC_URL, url);
+        props.setProperty(DistConfig.AGENT_REGISTRATION_JDBC_DRIVER, driver);
+        props.setProperty(DistConfig.AGENT_REGISTRATION_JDBC_USER, user);
+        props.setProperty(DistConfig.AGENT_REGISTRATION_JDBC_PASS, pass);
+        return this;
+    }
+
+    /** add URL for Dist standalone application */
+    public DistFactory withRegisterApplication(String cacheAppUrl) {
+        props.setProperty(DistConfig.CACHE_APPLICATION_URL, cacheAppUrl);
+        return this;
+    }
+    /** add URL for Dist application */
+    public DistFactory withRegisterApplicationDefaultUrl() {
+        props.setProperty(DistConfig.CACHE_APPLICATION_URL, DistConfig.CACHE_APPLICATION_URL_DEFAULT_VALUE);
+        return this;
+    }
+    /** add registration with Elasticsearch */
+    public DistFactory withRegistrationElasticsearch(String url, String user, String pass) {
+        props.setProperty(DistConfig.AGENT_REGISTRATION_ELASTICSEARCH_URL, url);
+        props.setProperty(DistConfig.AGENT_REGISTRATION_ELASTICSEARCH_USER, user);
+        props.setProperty(DistConfig.AGENT_REGISTRATION_ELASTICSEARCH_PASS, pass);
+        return this;
+    }
+
+    /** add times to inactivate other agents that have no ping for more than time declared,
+     * remove all agents without ping for more than time declared
+     * */
+    public DistFactory withRegisterCleanAfter(long inactivateWithoutPingMs, long deleteWithoutPingMs) {
+        props.setProperty(DistConfig.AGENT_INACTIVATE_AFTER, ""+inactivateWithoutPingMs);
+        props.setProperty(DistConfig.AGENT_DELETE_AFTER, ""+deleteWithoutPingMs);
+        return this;
+    }
+
+
+    /** define port for Socket communication */
+    public DistFactory withServerSocketPort(int port) {
+        props.setProperty(DistConfig.AGENT_SERVER_SOCKET_PORT, ""+port);
+        return this;
+    }
+
+    /** define port to define value on which agent will be listening - this is Socket server */
     public DistFactory withServerSocketDefaultPort() {
-        return withServerSocketPort(DistConfig.AGENT_SOCKET_PORT_DEFAULT_VALUE);
+        return withServerSocketPort(DistConfig.AGENT_SERVER_SOCKET_PORT_DEFAULT_VALUE);
+    }
+    /** define port for HTTP communication between agents */
+    public DistFactory withServerHttpPort(int port) {
+        props.setProperty(DistConfig.AGENT_SERVER_HTTP_PORT, ""+port);
+        return this;
+    }
+    /** define port for DATAGRAM/ UDP communication between agents */
+    public DistFactory withServerDatagramPort(int port) {
+        props.setProperty(DistConfig.AGENT_SERVER_DATAGRAM_PORT, ""+port);
+        return this;
     }
 
     /** get comma-separated list of defined cache storages */
@@ -268,9 +366,9 @@ public class DistFactory {
     }
     public DistFactory withCacheStorageElasticsearch(String url, String user, String pass) {
         props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_ELASTICSEARCH);
-        props.setProperty(DistConfig.ELASTICSEARCH_URL, url);
-        props.setProperty(DistConfig.ELASTICSEARCH_USER, user);
-        props.setProperty(DistConfig.ELASTICSEARCH_PASS, pass);
+        props.setProperty(DistConfig.CACHE_STORAGE_ELASTICSEARCH_URL, url);
+        props.setProperty(DistConfig.CACHE_STORAGE_ELASTICSEARCH_USER, user);
+        props.setProperty(DistConfig.CACHE_STORAGE_ELASTICSEARCH_PASS, pass);
         return this;
     }
     /** add JDBC as external storage */
@@ -308,7 +406,7 @@ public class DistFactory {
     /** add cache storage as Mongodb */
     public DistFactory withCacheStorageMongo(String url, int port) {
         props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_MONGO);
-        props.setProperty(DistConfig.CACHE_STORAGE_MONGO_HOST, url);
+        props.setProperty(DistConfig.CACHE_STORAGE_MONGODB_HOST, url);
         props.setProperty(DistConfig.REDIS_PORT, ""+port);
         return this;
     }
@@ -324,74 +422,14 @@ public class DistFactory {
     public DistFactory withCacheStorageKafka(String brokers) {
         return withCacheStorageKafka(brokers, DistConfig.CACHE_STORAGE_KAFKA_BROKERS_DEFAULT_VALUE);
     }
-    /** set default serializers */
-    public DistFactory withSerializerDefault() {
-        props.setProperty(DistConfig.SERIALIZER_DEFINITION, DistConfig.SERIALIZER_DEFINITION_SERIALIZABLE_VALUE);
-        serializers.putAll(ComplexSerializer.parseSerializers(DistConfig.SERIALIZER_DEFINITION_SERIALIZABLE_VALUE));
-        return this;
-    }
-    /** definition of serializer from String */
-    public DistFactory withSerializer(String serializerDefinition) {
-        serializers.putAll(ComplexSerializer.parseSerializers(serializerDefinition));
-        props.setProperty(DistConfig.SERIALIZER_DEFINITION, serializerDefinition);
-        return this;
-    }
-    public DistFactory withSerializer(DistSerializerTypes serializer, String... className) {
-        // TODO: add better way to define serializers
 
-        //serializers.put()
-        //ComplexSerializer.createComplexSerializer()
-        //serializers.putAll(ComplexSerializer.parseSerializers(serializerDefinition));
-        //props.setProperty(DistConfig.SERIALIZER_DEFINITION, serializerDefinition);
-        return this;
-    }
-
-    /** add serializer to Dist system */
-    public DistFactory withSerializer(String className, DistSerializer ser) {
-        serializers.put(className, ser);
-        return this;
-    }
-    /** add custom serializations for this system */
-    public DistFactory withSerializerCustom(String className, Function<Object, String> serializeFunction, BiFunction<String, String, Object> deserializeFunction) {
-        serializers.put(className, new CustomSerializer(serializeFunction, deserializeFunction));
-        return this;
-    }
-
-    /** add registration method as JDBC */
-    public DistFactory withRegistrationJdbc(String url, String driver, String user, String pass) {
-        props.setProperty(DistConfig.JDBC_URL, url);
-        props.setProperty(DistConfig.JDBC_DRIVER, driver);
-        props.setProperty(DistConfig.JDBC_USER, user);
-        props.setProperty(DistConfig.JDBC_PASS, pass);
-        return this;
-    }
-
-    /** add URL for Dist standalone application */
-    public DistFactory withRegisterApplication(String cacheAppUrl) {
-        props.setProperty(DistConfig.CACHE_APPLICATION_URL, cacheAppUrl);
-        return this;
-    }
-    /** add URL for Dist application */
-    public DistFactory withRegisterApplicationDefaultUrl() {
-        props.setProperty(DistConfig.CACHE_APPLICATION_URL, DistConfig.CACHE_APPLICATION_URL_DEFAULT_VALUE);
-        return this;
-    }
-
-    /** add times to inactivate other agents that have no ping for more than time declared,
-     * remove all agents without ping for more than time declared
-     * */
-    public DistFactory withRegisterCleanAfter(long inactivateWithoutPingMs, long deleteWithoutPingMs) {
-        props.setProperty(DistConfig.AGENT_INACTIVATE_AFTER, ""+inactivateWithoutPingMs);
-        props.setProperty(DistConfig.AGENT_DELETE_AFTER, ""+deleteWithoutPingMs);
-        return this;
-    }
 
     /** CACHE setting - object TTL - time to live */
-    public DistFactory withObjectTimeToLive(long timeToLiveMs) {
+    public DistFactory withCacheObjectTimeToLive(long timeToLiveMs) {
         props.setProperty(DistConfig.CACHE_TTL, ""+timeToLiveMs);
         return this;
     }
-    public DistFactory withMaxObjectAndItems(int maxObjects, int maxItems) {
+    public DistFactory withCacheMaxObjectsAndItems(int maxObjects, int maxItems) {
         props.setProperty(DistConfig.CACHE_MAX_LOCAL_OBJECTS, ""+maxObjects);
         props.setProperty(DistConfig.CACHE_MAX_LOCAL_ITEMS, ""+maxItems);
         return this;

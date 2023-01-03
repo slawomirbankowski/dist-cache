@@ -5,9 +5,7 @@ import com.cache.utils.DistUtils;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.time.Period;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 
 /** interface for message sent by dist service to another service between agent
  * message should be serialized and sent using known servers-clients like Socket, Datagram, Kafka, HTTP, ...
@@ -143,9 +141,9 @@ public class DistMessage implements Serializable {
     }
 
 
-    /** returns true when this is welcome message to initiate transfers, set agentGuid, validity, support items */
-    public boolean isWelcome() {
-        return messageType.equals(DistMessageType.welcome);
+    /** returns true when this is welcome message, close message, other system-type message to initiate transfers, set agentGuid, validity, support items */
+    public boolean isSystem() {
+        return messageType.equals(DistMessageType.system);
     }
     public DistServiceType getToService() {
         return toService;
@@ -203,11 +201,11 @@ public class DistMessage implements Serializable {
     }
 
     public static DistMessage createEmpty() {
-        return new DistMessage(DistMessageType.welcome, sendToSelf, DistServiceType.agent,
+        return new DistMessage(DistMessageType.system, sendToSelf, DistServiceType.agent,
                 sendToSelf, DistServiceType.agent,  "empty", "empty", "", "", DistUtils.getCreatedDate(), DistMessageStatus.init);
     }
     public static DistMessage createError(String errorDescription, Exception ex) {
-        return new DistMessage(DistMessageType.welcome, sendToSelf, DistServiceType.agent,
+        return new DistMessage(DistMessageType.system, sendToSelf, DistServiceType.agent,
                 sendToSelf, DistServiceType.agent,  "error", "error", "", "", DistUtils.getCreatedDate(), DistMessageStatus.init);
     }
     /** creates new message */

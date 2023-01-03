@@ -18,6 +18,8 @@ public interface AgentServices {
     void setPolicy(CachePolicy policy);
     /** get or create cache connected with this Agent */
     Cache getCache();
+    /** get or create service for reports to create, update, remove or execute reports */
+    Reports getReports();
     /** get number of services */
     int getServicesCount();
     /** get keys of registered services */
