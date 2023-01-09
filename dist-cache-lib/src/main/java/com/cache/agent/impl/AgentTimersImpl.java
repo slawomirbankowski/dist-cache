@@ -1,9 +1,8 @@
 package com.cache.agent.impl;
 
 import com.cache.agent.AgentInstance;
-import com.cache.api.AgentTimerInfo;
-import com.cache.api.AgentTimerTaskInfo;
-import com.cache.interfaces.Agent;
+import com.cache.api.info.AgentTimerInfo;
+import com.cache.api.info.AgentTimerTaskInfo;
 import com.cache.interfaces.AgentTimers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

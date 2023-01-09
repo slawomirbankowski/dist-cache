@@ -4,6 +4,7 @@ import com.cache.interfaces.Resolver;
 import java.util.Map;
 import java.util.Optional;
 
+/** Key-Value resolver with defined map */
 public class MapResolver implements Resolver {
     Map<String, String> map;
     public MapResolver(Map<String, String> map) {

@@ -23,6 +23,8 @@ public class CacheMode {
         /** when cache size limit is reached and a new object is inserted, another object
          * with the lowest priority will be removed */
         PRIORITY;
+
+        /** if this mode is TTL based - so it is Time To Live */
         public boolean isTtl() {
             return this.equals(TTL);
         }
@@ -111,6 +113,8 @@ public class CacheMode {
      * after that objects with the lowest priority would be removed  */
     public static int MODE_PRIORITY = 5;
 
+    public static long TIME_ONE_SECOND = 1 * 1000L;
+    public static long TIME_TWO_SECONDS = 2 * 1000L;
     public static long TIME_THREE_SECONDS = 3 * 1000L;
     public static long TIME_FIVE_SECONDS = 5 * 1000L;
     public static long TIME_TEN_SECONDS = 10 * 1000L;
@@ -151,6 +155,9 @@ public class CacheMode {
 
     public static CacheMode modeKeep = new CacheMode(Mode.KEEP, TIME_FOREVER);
     public static CacheMode modeInternalOnly = new CacheMode(Mode.KEEP, TIME_FOREVER);
+
+    public static CacheMode modeRefreshOneSecond = new CacheMode(Mode.REFRESH, TIME_ONE_SECOND);
+    public static CacheMode modeRefreshTwoSeconds = new CacheMode(Mode.REFRESH, TIME_TWO_SECONDS);
     public static CacheMode modeRefreshTenSeconds = new CacheMode(Mode.REFRESH, TIME_TEN_SECONDS);
     public static CacheMode modeRefreshOneMinute = new CacheMode(Mode.REFRESH, TIME_ONE_MINUTE);
     public static CacheMode modeRefreshOneHour = new CacheMode(Mode.REFRESH, TIME_ONE_HOUR);

@@ -1,10 +1,13 @@
 package com.cache.test;
 
+import com.cache.api.enums.DistClientType;
+import com.cache.api.enums.DistMessageType;
+import com.cache.api.enums.DistServiceType;
+import com.cache.api.info.*;
 import com.cache.api.*;
 import com.cache.interfaces.DistSerializer;
 import com.cache.serializers.*;
 import com.cache.utils.DistUtils;
-import net.bytebuddy.asm.Advice;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,10 +37,16 @@ public class SerializersTest {
         // String agentGuid, LocalDateTime createDate, boolean closed, int serversCount, List<String> servers,int clientsCount, List<String> clients,
         //                     int servicesCount, List<String> services, int registrationsCount, List<String> registrations,
         //                     int timerTasksCount, int threadsCount, int eventsCount, int issuesCount
-        var agentInfo = new AgentInfo(agentGuid, LocalDateTime.now(), false, 1, List.of("server_guid"), 1, List.of("client_guid"),
-                1, List.of("serviceGuid"), 1, List.of("reg_guid"),
-                2, 44, 123, 0
-                );
+
+        AgentConnectorsInfo connectors = new AgentConnectorsInfo(new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        List<DistServiceInfo> services = new ArrayList<>();
+        List<AgentRegistrationInfo> registrations = new LinkedList<>();
+        AgentTimerInfo timers = new AgentTimerInfo("ClassName", 1L, 2, new ArrayList<>());
+        DistThreadsInfo threads = new DistThreadsInfo(11, new ArrayList<>());
+
+        var agentInfo = new AgentInfo(agentGuid, LocalDateTime.now(), false, Set.of(),
+                connectors, services, registrations, timers, threads,
+                2, 44);
         // DistClientType clientType, String clientClassName, String url, boolean working, String clientGuid, Set<String> tags, long receivedMessages, long sentMessages
         var clientInfo = new ClientInfo(DistClientType.http, "ClientClassName", "serverUrl", true, "client_guid", Set.of("tag1"), 1, 1);
         AgentWelcomeMessage welcome = new AgentWelcomeMessage(agentInfo, clientInfo);
@@ -78,7 +87,7 @@ public class SerializersTest {
                 Map.of("kkkkkkkk", "vvvvvvvv"),
                 new HashMap<String, String>(),
                 List.of("elem1", "elem2", "elem3", "elem4", "elem5"),
-                DistUtils.generateAgentGuid(),
+                DistUtils.generateShortGuid(),
                 DistUtils.randomTable(50, 10000)
         };
         DistSerializer[] serializers = new DistSerializer[] {

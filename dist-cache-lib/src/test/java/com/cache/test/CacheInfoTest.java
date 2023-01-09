@@ -2,6 +2,7 @@ package com.cache.test;
 
 import com.cache.DistFactory;
 import com.cache.api.*;
+import com.cache.api.info.CacheObjectInfo;
 import com.cache.interfaces.Cache;
 import com.cache.utils.DistUtils;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ public class CacheInfoTest {
             }, CacheMode.modeTtlFiveMinutes);
         }
         List<CacheObjectInfo> objs = cache.getCacheInfos("");
-        assertEquals(cache.getCacheValues("").size(), 10);
+        assertEquals(10, cache.getCacheValues("").size(), "");
         objs.stream().forEach(x -> {
             log.info("OBJ IN CACHE: " + x);
         });

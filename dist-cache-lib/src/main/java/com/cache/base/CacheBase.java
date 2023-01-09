@@ -1,6 +1,8 @@
 package com.cache.base;
 
 import com.cache.api.*;
+import com.cache.api.enums.DistServiceType;
+import com.cache.api.info.CacheInfo;
 import com.cache.encoders.KeyEncoderNone;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.Cache;
@@ -30,7 +32,7 @@ public abstract class CacheBase extends ServiceBase implements Cache {
      * */
     protected final CacheStats cacheStats = new CacheStats();
 
-    /**default mode for cache objects added without mode */
+    /** default mode for cache objects added without mode */
     protected CacheMode defaultMode = CacheMode.modeTtlTenSeconds;
 
     /** key encoder to hide passwords and secrets in keys */
@@ -60,18 +62,11 @@ public abstract class CacheBase extends ServiceBase implements Cache {
         return DistMessageBuilder.empty().fromService(this);
     }
 
-    /** get date and time of creating service */
-    public LocalDateTime getCreateDate() { return createdDateTime; }
-
     /** get type of service: cache, measure, report, */
     public DistServiceType getServiceType() {
         return DistServiceType.cache;
     }
 
-    /** get basic information about service */
-    public DistServiceInfo getServiceInfo() {
-        return new DistServiceInfo(getServiceType(), getClass().getName(), getServiceUid(), createdDateTime, isClosed, Map.of());
-    }
     /** get key encoder - this is a class to encode key to protect passwords, secrets of a key */
     public CacheKeyEncoder getKeyEncoder() {
         return keyEncoder;
@@ -94,11 +89,16 @@ public abstract class CacheBase extends ServiceBase implements Cache {
     }
     /** get info about cache */
     public CacheInfo getCacheInfo() {
-        return new CacheInfo(guid, createdDateTime, cacheStats.checksCount(),
+        return new CacheInfo(guid, createDate, cacheStats.checksCount(),
                 cacheStats.addedItemsCount(), isClosed,
             getAgent().getAgentIssues().getIssues().size(), getAgent().getAgentEvents().getEvents().size(),
             getItemsCount(), getObjectsCount(), getStoragesInfo());
     }
+    /** get custom map of info about service */
+    public Map<String, String> getServiceInfoCustomMap() {
+        return Map.of("keyEncoder", keyEncoder.getClass().getName());
+    }
+
     /** initialize key encoder to encode secrets */
     private void initializeEncoder() {
         // initialize encoder for secrets and passwords in key

@@ -1,6 +1,7 @@
 package com.cache.report;
 
 import com.cache.api.*;
+import com.cache.api.enums.DistServiceType;
 import com.cache.base.ServiceBase;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.Storages;
@@ -53,6 +54,5 @@ public class StoragesImpl extends ServiceBase implements Storages {
     public void onClose() {
         // TODO: close this reports service
     }
-
 
 }

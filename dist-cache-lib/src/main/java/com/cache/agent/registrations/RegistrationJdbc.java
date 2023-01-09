@@ -4,7 +4,8 @@ import com.cache.agent.AgentInstance;
 import com.cache.api.*;
 import com.cache.base.dtos.DistAgentRegisterRow;
 import com.cache.base.dtos.DistAgentServerRow;
-import com.cache.base.DaoJdbcBase;
+import com.cache.dao.DaoElasticsearchBase;
+import com.cache.dao.DaoJdbcBase;
 import com.cache.base.RegistrationBase;
 import com.cache.jdbc.JdbcDialect;
 import com.cache.jdbc.JdbcTables;
@@ -40,7 +41,8 @@ public class RegistrationJdbc extends RegistrationBase {
         dialect = JdbcDialect.getDialect(jdbcDriver, jdbcDialect);
         var initConnections = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_REGISTRATION_JDBC_INIT_CONNECTIONS, 2);
         var maxActiveConnections = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_REGISTRATION_JDBC_MAX_ACTIVE_CONNECTIONS, 10);
-        dao = new DaoJdbcBase(jdbcUrl, jdbcDriver, jdbcUser, jdbcPass, initConnections, maxActiveConnections);
+        DaoParams params = DaoParams.jdbcParams(jdbcUrl, jdbcDriver, jdbcUser, jdbcPass, initConnections, maxActiveConnections);
+        dao = parentAgent.getAgentDao().getOrCreateDaoOrError(DaoJdbcBase.class, params);
         log.info("Initialize JDBC registration with URL: " + jdbcUrl + ", dialect: " + dialect.dialectName);
         tryCreateAgentTable();
     }
@@ -58,6 +60,12 @@ public class RegistrationJdbc extends RegistrationBase {
             log.info("Try to create distagentserver table in JDBC, dialect: " + dialect.dialectName);
             dao.executeAnyQuery(dialect.createAgentServer());
             dao.executeAnyQuery(dialect.createAgentServerIndex());
+        }
+        var agentServiceTable = dao.executeSelectQuery(dialect.selectTable(), new Object[] {JdbcTables.distagentservice.name() });
+        if (agentServiceTable.size() == 0) {
+            log.info("Try to create distagentservice table in JDBC, dialect: " + dialect.dialectName);
+            dao.executeAnyQuery(dialect.createAgentService());
+            dao.executeAnyQuery(dialect.createAgentServiceIndex());
         }
         var agentConfigTable = dao.executeSelectQuery(dialect.selectTable(), new Object[] {JdbcTables.distagentconfig.name() });
         if (agentConfigTable.size() == 0) {

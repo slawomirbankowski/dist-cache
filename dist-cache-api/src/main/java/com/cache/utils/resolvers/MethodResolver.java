@@ -4,7 +4,7 @@ import com.cache.interfaces.Resolver;
 import java.util.Optional;
 import java.util.function.Function;
 
-/** */
+/** Key-Value resolver with function to be called to get value for given key */
 public class MethodResolver implements Resolver {
     private Function<String, Optional<String>> method;
     public MethodResolver(Function<String, Optional<String>> method) {

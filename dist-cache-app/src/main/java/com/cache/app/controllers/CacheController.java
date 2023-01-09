@@ -1,6 +1,6 @@
 package com.cache.app.controllers;
 
-import com.cache.api.CacheInfo;
+import com.cache.api.info.CacheInfo;
 import com.cache.api.CacheRegister;
 import com.cache.api.ControllerStatus;
 import com.cache.app.services.CacheService;

@@ -5,6 +5,7 @@ import com.cache.api.*;
 import com.cache.base.RegistrationBase;
 import com.cache.base.dtos.DistAgentRegisterRow;
 import com.cache.base.dtos.DistAgentServerRow;
+import com.cache.dao.DaoKafkaBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,8 @@ public class RegistrationKafka extends RegistrationBase {
     protected void onInitialize() {
         var kafkaBrokers = parentAgent.getConfig().getProperty(DistConfig.CACHE_STORAGE_KAFKA_BROKERS);
         try {
+
+            parentAgent.getAgentDao().getOrCreateDaoOrError(DaoKafkaBase.class, DaoParams.kafkaParams("", 1, (short)1, "", ""));
             log.info("Register to Kafka: " + kafkaBrokers);
             // TODO: register to Kafka, push agent info, read other agents
         } catch (Exception ex) {
@@ -39,6 +42,7 @@ public class RegistrationKafka extends RegistrationBase {
     }
     @Override
     protected boolean onIsConnected() {
+
         return false;
     }
     @Override

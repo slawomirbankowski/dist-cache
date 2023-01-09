@@ -1,6 +1,9 @@
 package com.cache.agent.clients;
 
 import com.cache.api.*;
+import com.cache.api.enums.DistClientType;
+import com.cache.api.enums.DistMessageType;
+import com.cache.api.enums.DistServiceType;
 import com.cache.base.AgentClientBase;
 import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.interfaces.Agent;
@@ -44,6 +47,7 @@ public class HttpClient extends AgentClientBase implements AgentClient {
             send(welcomeMsg);
             return true;
         } catch (Exception ex) {
+            parentAgent.getAgentIssues().addIssue("HttpClient.initialize", ex);
             log.warn("Cannot initialize client " + clientGuid + ", agent: " + this.parentAgent.getAgentGuid() + ", Exception at Start: "+ex.getMessage(), ex);
             return false;
         }
@@ -72,6 +76,7 @@ public class HttpClient extends AgentClientBase implements AgentClient {
             send(closeMsg);
             working = false;
         } catch (Exception ex) {
+            parentAgent.getAgentIssues().addIssue("HttpClient.close", ex);
             log.info(" Error while closing HTTP client connection, reason: "+ex.getMessage());
 
         }

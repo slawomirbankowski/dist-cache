@@ -2,14 +2,12 @@ package com.cache.api;
 
 import com.cache.utils.DistUtils;
 import com.cache.utils.JsonUtils;
-import com.cache.utils.StringValueResolver;
+import com.cache.utils.ResolverManager;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
@@ -33,14 +31,14 @@ public class DistConfig {
     /** all properties to be used for DistCache initialization */
     private Properties props = null;
     /** resolver for String values in properties */
-    private StringValueResolver resolver;
+    private ResolverManager resolver;
 
     public DistConfig(Properties p) {
         this.props = p;
-        this.resolver = new StringValueResolver();
+        this.resolver = new ResolverManager();
         props.setProperty("CONFIG_GUID", configGuid);
     }
-    public DistConfig(Properties p, StringValueResolver resolver) {
+    public DistConfig(Properties p, ResolverManager resolver) {
         this.props = p;
         this.resolver = resolver;
         props.setProperty("CONFIG_GUID", configGuid);
@@ -66,6 +64,10 @@ public class DistConfig {
         return resolver.resolve(props.getProperty(name));
     }
 
+    /** get resolver manager to resolve names, values, properties */
+    public ResolverManager getResolverManager() {
+        return resolver;
+    }
     /** configuration contains property for given name */
     public boolean hasProperty(String name) {
         return props.containsKey(name);
@@ -130,9 +132,12 @@ public class DistConfig {
     public static String DIST_NAME_VALUE_DEFAULT = "DistSystem";
 
 
-    /** port of cache for extending and distributed join */
+    /** port for HTTP REST Web API to contact directly to Agent */
     public static String AGENT_API_PORT = "AGENT_API_PORT";
+    public static int AGENT_API_PORT_DEFAULT_VALUE = 9900;
 
+    /** tags used to identify agent */
+    public static String AGENT_TAGS = "AGENT_TAGS";
 
     /** JDBC connection for agent registration */
     public static String AGENT_REGISTRATION_JDBC_URL = "AGENT_REGISTRATION_JDBC_URL";
@@ -149,19 +154,20 @@ public class DistConfig {
     public static String AGENT_REGISTRATION_ELASTICSEARCH_PASS = "AGENT_REGISTRATION_ELASTICSEARCH_PASS";
 
     /** */
-    public static String REDIS_PORT = "REDIS_PORT";
+    public static String AGENT_REGISTRATION_REDIS_HOST = "AGENT_REGISTRATION_REDIS_HOST";
+    public static String AGENT_REGISTRATION_REDIS_PORT = "AGENT_REGISTRATION_REDIS_PORT";
 
 
-    /** port of cache for extending and distributed join */
+    /**port of SockerServer to exchange messages between Agents */
     public static String AGENT_SERVER_SOCKET_PORT = "AGENT_SERVER_SOCKET_PORT";
     /** */
     public static int AGENT_SERVER_SOCKET_PORT_DEFAULT_VALUE = 9901;
     /** sequencer for default agent port */
     public static final AtomicInteger AGENT_SOCKET_PORT_VALUE_SEQ = new AtomicInteger(9901);
 
-    /** */
+    /** port of HTTP Server to exchange messages between Agents */
     public static String AGENT_SERVER_HTTP_PORT = "AGENT_SERVER_HTTP_PORT";
-    public static int AGENT_SERVER_HTTP_PORT_DEFAULT_VALUE = 9901;
+    public static int AGENT_SERVER_HTTP_PORT_DEFAULT_VALUE = 9912;
 
     public static String AGENT_SERVER_DATAGRAM_PORT = "AGENT_SERVER_DATAGRAM_PORT";
     public static int AGENT_SERVER_DATAGRAM_PORT_DEFAULT_VALUE = 9933;
@@ -169,30 +175,48 @@ public class DistConfig {
 
     /** Server for agent communication based on Kafka */
     public static String AGENT_SERVER_KAFKA_BROKERS = "AGENT_SERVER_KAFKA_BROKERS";
+    public static String AGENT_SERVER_KAFKA_BROKERS_DEFAULT_VALUE = "localhost:9092";
     public static String AGENT_SERVER_KAFKA_TOPIC = "AGENT_SERVER_KAFKA_TOPIC";
+    public static String AGENT_SERVER_KAFKA_TOPIC_DEFAULT_VALUE = "dist-agent-";
 
-    /** */
+    /** times to deactivate old agents that are not pinging registration services
+     * After AGENT_INACTIVATE_AFTER milliseconds without ping all agents would be deactivated.
+     * After AGENT_DELETE_AFTER  milliseconds without ping all agents would be deleted forever
+     * */
     public static final String AGENT_INACTIVATE_AFTER = "AGENT_INACTIVATE_AFTER";
     public static final long AGENT_INACTIVATE_AFTER_DEFAULT_VALUE = CacheMode.TIME_TEN_MINUTES;
     public static final String AGENT_DELETE_AFTER = "AGENT_DELETE_AFTER";
     public static final long AGENT_DELETE_AFTER_DEFAULT_VALUE = CacheMode.TIME_ONE_DAY;
 
+    /** URL of cache standalone application to synchronize all distributed cache managers
+     * Cache Standalone App is registering and unregistering all cache agents with managers
+     * that are working in cluster */
+    public static String CACHE_APPLICATION_URL = "CACHE_APPLICATION_URL";
+    public static String CACHE_APPLICATION_URL_DEFAULT_VALUE = "http://localhost:8085/api";
+
     /** period of timer to clear storages - value in milliseconds */
     public static String TIMER_CLEAN_STORAGE_PERIOD = "TIMER_CLEAN_STORAGE_PERIOD";
     public static long TIMER_CLEAN_STORAGE_PERIOD_DELAY_VALUE = CacheMode.TIME_ONE_MINUTE;
 
-    /** timer to refresh statistics */
+    /** timer to refresh statistics
+     * Every TIMER_STAT_REFRESH_PERIOD milliseconds cache statistics would be refreshed and saved
+     * */
     public static String TIMER_STAT_REFRESH_PERIOD = "TIMER_STAT_REFRESH_PERIOD";
     public static long TIMER_STAT_REFRESH_PERIOD_DELAY_VALUE = CacheMode.TIME_ONE_MINUTE;
 
-    /** timer to check registration objects like agents, servers, new configurations */
+    /** timer to check registration objects like agents, servers, new configurations
+     * Every TIMER_REGISTRATION_PERIOD milliseconds Agent would check registration objects, ping, check old agents, refresh list of agents
+     * */
     public static String TIMER_REGISTRATION_PERIOD = "TIMER_REGISTRATION_PERIOD";
     public static long TIMER_REGISTRATION_PERIOD_DELAY_VALUE = CacheMode.TIME_ONE_MINUTE;
 
-    public static String TIMER_SERVER_CLIENT_PERIOD = "TIMER_REGISTRATION_PERIOD";
+    /** timer to check connections, servers, clients
+     * Every TIMER_SERVER_CLIENT_PERIOD milliseconds connections would be refreshed, clients would be checked,
+     * old connections would be removed, connections to servers or agents would be created */
+    public static String TIMER_SERVER_CLIENT_PERIOD = "TIMER_SERVER_CLIENT_PERIOD";
     public static long TIMER_SERVER_CLIENT_PERIOD_DELAY_VALUE = CacheMode.TIME_ONE_MINUTE;
 
-    /** */
+    /** timeout value for Socket reading in milliseconds, this is used for Socket.setSoTimeout(...) */
     public static String AGENT_SERVER_SOCKET_CLIENT_TIMEOUT = "AGENT_SERVER_SOCKET_CLIENT_TIMEOUT";
     public static int AGENT_SERVER_SOCKET_CLIENT_TIMEOUT_DEFAULT_VALUE = 2000;
 
@@ -200,14 +224,10 @@ public class DistConfig {
     public static String CACHE_TTL = "CACHE_TTL";
     public static long CACHE_TTL_VALUE = CacheMode.TIME_ONE_HOUR;
 
+    /** serializer full definition to serialize and deserialize objects */
     public static String SERIALIZER_DEFINITION = "SERIALIZER_DEFINITION";
     public static String SERIALIZER_DEFINITION_SERIALIZABLE_VALUE = "java.lang.String=StringSerializer,default=ObjectStreamSerializer";
 
-    /** URL of cache standalone application to synchronize all distributed cache managers
-     * Cache Standalone App is registering and unregistering all cache agents with managers
-     * that are working in cluster */
-    public static String CACHE_APPLICATION_URL = "CACHE_APPLICATION_URL";
-    public static String CACHE_APPLICATION_URL_DEFAULT_VALUE = "http://localhost:8085/api";
     /** maximum number of local objects */
     public static String CACHE_MAX_LOCAL_OBJECTS = "CACHE_MAX_LOCAL_OBJECTS";
     public static int CACHE_MAX_LOCAL_OBJECTS_VALUE = 1000;
@@ -227,6 +247,10 @@ public class DistConfig {
     public static String CACHE_MAX_LOCAL_ITEMS = "CACHE_MAX_LOCAL_ITEMS";
     public static int CACHE_MAX_LOCAL_ITEMS_VALUE = 100000;
 
+    /** Encoder class name to encode key of cache for different reasons:
+     * Encoded key might hide passwords and secret values
+     * Encoded key might be simpler and shorter
+     * Encoded key might be removing some unwanted characters that would be problematic in some cache storages */
     public static String CACHE_KEY_ENCODER = "CACHE_KEY_ENCODER";
     public static String CACHE_KEY_ENCODER_VALUE_NONE = "com.cache.encoders.KeyEncoderNone";
     public static String CACHE_KEY_ENCODER_VALUE_SECRET = "com.cache.encoders.KeyEncoderStarting";
@@ -235,7 +259,7 @@ public class DistConfig {
     /** default number of milliseconds as time to live for given cache object */
     public static String CACHE_DEFAULT_TTL_TIME = "CACHE_DEFAULT_TTL_TIME";
     /** list of semicolon separated storages initialized for cache
-     * Elasticsearch;HashMap;Redis
+     * RedisCacheStorage;MongodbStorage;InternalHashMapCacheStorage;JdbcStorage
      *  */
     public static String CACHE_STORAGES = "CACHE_STORAGES";
     /** names of storages and class names for these storages in package com.cache.storage */
@@ -274,6 +298,8 @@ public class DistConfig {
     public static String CACHE_STORAGE_ELASTICSEARCH_URL = "CACHE_STORAGE_ELASTICSEARCH_URL";
     public static String CACHE_STORAGE_ELASTICSEARCH_USER = "CACHE_STORAGE_ELASTICSEARCH_USER";
     public static String CACHE_STORAGE_ELASTICSEARCH_PASS = "CACHE_STORAGE_ELASTICSEARCH_PASS";
+    public static String CACHE_STORAGE_ELASTICSEARCH_INDEX = "CACHE_STORAGE_ELASTICSEARCH_INDEX";
+    public static String CACHE_STORAGE_ELASTICSEARCH_INDEX_DEFAULT_VALUE = "dist-cache-items";
 
     /** CACHE STORAGE - settings for Cassandra storage */
     public static String CACHE_STORAGE_CASSANDRA_HOST = "CACHE_STORAGE_CASSANDRA_HOST";

@@ -26,9 +26,9 @@ public class AgentWebApiTest {
                 .withTimerServerPeriod(10000)
                 .withTimerRegistrationPeriod(10000)
                 .withCacheStorageJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
-                        "cache_user", "cache_password123")
+                        "cache_user", "${JDBC_PASS}")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
-                        "cache_user", "cache_password123")
+                        "cache_user", "${JDBC_PASS}")
                 .createCacheInstance();
 
         Agent agent1 = cache1.getAgent();

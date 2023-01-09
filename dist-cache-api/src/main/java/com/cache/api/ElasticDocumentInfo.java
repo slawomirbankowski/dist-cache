@@ -10,11 +10,11 @@ public class ElasticDocumentInfo {
     private String _id;
     private int _version;
     private Boolean found;
-    private Map<String, String> _source;
+    private Map<String, Object> _source;
 
     public ElasticDocumentInfo() {
     }
-    public ElasticDocumentInfo(String _index, String _id, int _version, Boolean found, Map<String, String> _source) {
+    public ElasticDocumentInfo(String _index, String _id, int _version, Boolean found, Map<String, Object> _source) {
         this._index = _index;
         this._id = _id;
         this._version = _version;
@@ -54,11 +54,11 @@ public class ElasticDocumentInfo {
         this.found = found;
     }
 
-    public Map<String, String> get_source() {
+    public Map<String, Object> get_source() {
         return _source;
     }
 
-    public void set_source(Map<String, String> _source) {
+    public void set_source(Map<String, Object> _source) {
         this._source = _source;
     }
 }

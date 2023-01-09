@@ -2,11 +2,10 @@ package com.cache.agent.registrations;
 
 import com.cache.agent.AgentInstance;
 import com.cache.api.*;
-import com.cache.base.DaoElasticsearchBase;
+import com.cache.dao.DaoElasticsearchBase;
 import com.cache.base.RegistrationBase;
 import com.cache.base.dtos.DistAgentRegisterRow;
 import com.cache.base.dtos.DistAgentServerRow;
-import com.cache.utils.HttpConnectionHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** connector to Elasticsearch as agent manager - central point with registering/unregistering agents
  * TODO: implement global storage of agents in Elasticsearch
@@ -42,13 +42,10 @@ public class RegistrationElasticsearch extends RegistrationBase {
     /** run for initialization in classes */
     @Override
     protected void onInitialize() {
-        elasticDao = new DaoElasticsearchBase(elasticUrl, elasticUser, elasticPass);
-        elasticDao.getIndices();
-        elasticDao.createIndex(registerIndexName);
-        elasticDao.createIndex("distagentserver");
-        elasticDao.createIndex("distagentissue");
-
+        elasticDao = parentAgent.getAgentDao().getOrCreateDaoOrError(DaoElasticsearchBase.class, DaoParams.elasticsearchParams(elasticUrl, elasticUser, elasticPass));
         // check connection to Elasticsearch, if needed - create index with default name
+        log.info("Connected to Elasticsearch, url: " + elasticUrl + ", indices: " + elasticDao.getIndices().size());
+        elasticDao.createIndicesWithCheck(Set.of(registerIndexName, serverIndexName));
     }
     @Override
     protected boolean onIsConnected() {

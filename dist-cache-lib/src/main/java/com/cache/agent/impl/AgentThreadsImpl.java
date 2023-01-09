@@ -1,8 +1,9 @@
 package com.cache.agent.impl;
 
-import com.cache.agent.AgentInstance;
 import com.cache.api.AgentThreadObject;
-import com.cache.api.DistThreadsInfo;
+import com.cache.api.info.DistThreadsInfo;
+import com.cache.interfaces.Agent;
+import com.cache.interfaces.AgentComponent;
 import com.cache.interfaces.AgentThreads;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,7 @@ public class AgentThreadsImpl extends Agentable implements AgentThreads {
     private final java.util.concurrent.ConcurrentLinkedQueue<AgentThreadObject> registeredThreads = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
     /** creates service manager for agent with parent agent assigned */
-    public AgentThreadsImpl(AgentInstance parentAgent) {
+    public AgentThreadsImpl(Agent parentAgent) {
         super(parentAgent);
     }
 
@@ -25,9 +26,9 @@ public class AgentThreadsImpl extends Agentable implements AgentThreads {
     public int getThreadsCount() {
         return registeredThreads.size();
     }
-    /** register thread to be maintained */
-    public void registerThread(Thread thread) {
-        AgentThreadObject thObj = new AgentThreadObject(thread);
+    /** register thread to be maintained by Agent */
+    public void registerThread(AgentComponent parent, Thread thread, String threadFriendlyName) {
+        AgentThreadObject thObj = new AgentThreadObject(parent, thread, threadFriendlyName);
         registeredThreads.add(thObj);
     }
     /** get information about managed threads */

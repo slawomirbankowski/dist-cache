@@ -1,5 +1,8 @@
 package com.cache.api;
 
+import com.cache.api.info.AgentInfo;
+import com.cache.api.info.ClientInfo;
+
 import java.io.Serializable;
 
 /** message sending as welcome from server to client to gain more information about Agent on the other side s*/

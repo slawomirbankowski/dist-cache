@@ -1,6 +1,6 @@
 package com.cache.interfaces;
 
-import com.cache.api.AgentTimerInfo;
+import com.cache.api.info.AgentTimerInfo;
 
 import java.util.Timer;
 import java.util.function.Function;

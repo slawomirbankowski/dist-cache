@@ -1,6 +1,7 @@
 package com.cache.interfaces;
 
 import com.cache.api.*;
+import com.cache.api.enums.DistServiceType;
 
 import java.time.LocalDateTime;
 

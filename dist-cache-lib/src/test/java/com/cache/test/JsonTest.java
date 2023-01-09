@@ -8,8 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonTest {
     private static final Logger log = LoggerFactory.getLogger(JsonTest.class);
@@ -22,8 +21,8 @@ public class JsonTest {
         String json = JsonUtils.serialize(cor1);
         log.info("COR_JSON=" + json);
         CacheObjectRequest cor2 = JsonUtils.deserialize(json, CacheObjectRequest.class);
+        assertEquals(cor1.toString(), cor2.toString(), "Before and after serialization value should be the same");
         log.info("COR2=" + cor2);
-
         log.info("END-- ---");
     }
 }

@@ -2,6 +2,8 @@ package com.cache.api;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import java.util.List;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ElasticSearchInfo {
     private int took;
@@ -33,5 +35,11 @@ public class ElasticSearchInfo {
     }
     public void setHits(ElasticSearchHitsInfo hits) {
         this.hits = hits;
+    }
+    public List<ElasticDocumentInfo> getDocuments() {
+        if (hits == null) {
+            return List.of();
+        }
+        return hits.getHits();
     }
 }

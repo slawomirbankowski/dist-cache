@@ -1,7 +1,10 @@
 package com.cache.storage;
 
 import com.cache.api.*;
+import com.cache.api.enums.CacheStorageType;
+import com.cache.api.info.CacheObjectInfo;
 import com.cache.base.CacheStorageBase;
+import com.cache.interfaces.Cache;
 
 import java.util.*;
 
@@ -10,15 +13,24 @@ public class InternalWeakHashMapCacheStorage extends CacheStorageBase {
 
     /** weak hash map */
     private WeakHashMap<String, CacheObject> localCache = new WeakHashMap<>();
+
+    public InternalWeakHashMapCacheStorage(Cache cache) {
+        super(cache);
+    }
     /** WeakHashMap is internal storage */
     public  boolean isInternal() { return true; }
+    /** returns true if storage is global,
+     * it means that one global shared storage is available for all cache instances*/
+    public boolean isGlobal() { return false; }
+    /** get additional info parameters for this storage */
+    public Map<String, Object> getStorageAdditionalInfo() {
+        return Map.of("className", localCache.getClass().getName());
+    }
     /** get type of this storage */
     public CacheStorageType getStorageType() {
         return CacheStorageType.memory;
     }
-    public InternalWeakHashMapCacheStorage(StorageInitializeParameter p) {
-        super(p);
-    }
+
     /** check if object has given key, optional with specific type */
     public boolean contains(String key) {
         return false;

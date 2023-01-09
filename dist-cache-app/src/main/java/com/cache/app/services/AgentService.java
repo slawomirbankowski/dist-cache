@@ -34,7 +34,7 @@ public class AgentService {
                 agents.put(register.agentGuid, agentObj);
             } else {
                 // agent is already registered, need to update information about storages and other connected agents
-                log.info("Agent for guid: " + register.agentGuid + " already registered, updating existing new, created date: " + currentAgent.createDate);
+                log.info("Agent for guid: " + register.agentGuid + " already registered, updating existing new, created date: " + currentAgent.getCreateDate());
                 //currentAgent.update(register);
             }
         }

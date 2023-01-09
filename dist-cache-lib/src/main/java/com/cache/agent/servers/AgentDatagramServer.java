@@ -1,6 +1,6 @@
 package com.cache.agent.servers;
 
-import com.cache.api.DistClientType;
+import com.cache.api.enums.DistClientType;
 import com.cache.api.DistConfig;
 import com.cache.api.DistMessage;
 import com.cache.base.ServerBase;
@@ -19,6 +19,7 @@ public class AgentDatagramServer extends ServerBase implements AgentServer, Runn
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentServerSocket.class);
 
+    /** Datagram server - UDP to receive packets/ datagram */
     private DatagramSocket datagramSocket;
     private int workingPort;
     private String url;
@@ -35,7 +36,7 @@ public class AgentDatagramServer extends ServerBase implements AgentServer, Runn
             mainThread = new Thread(this);
             mainThread.setDaemon(true);
             mainThread.start();
-            parentAgent.getAgentThreads().registerThread(mainThread);
+            parentAgent.getAgentThreads().registerThread(this, mainThread, "datagram-server-" + workingPort);
             log.info("Started new DATAGRAM server at port:" + workingPort + ", timeout: " + soTimeout + ", agent: " + parentAgent.getAgentGuid());
         } catch (Exception ex) {
             log.info("Cannot start DATAGRAM server, reason: " + ex.getMessage());

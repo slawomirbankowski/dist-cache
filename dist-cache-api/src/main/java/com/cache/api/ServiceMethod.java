@@ -1,5 +1,7 @@
 package com.cache.api;
 
+import com.cache.api.enums.DistServiceType;
+
 /** class representing single method in service can can be called */
 public class ServiceMethod {
     private DistServiceType service;

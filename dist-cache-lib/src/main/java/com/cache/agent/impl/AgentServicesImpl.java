@@ -1,6 +1,5 @@
 package com.cache.agent.impl;
 
-import com.cache.agent.AgentInstance;
 import com.cache.api.*;
 import com.cache.interfaces.*;
 import com.cache.managers.CacheManager;
@@ -13,7 +12,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** */
+/** Implementation of manager for services. Kept services, initiate them in case of the need.
+ *
+ *  */
 public class AgentServicesImpl extends Agentable implements AgentServices {
 
     /** local logger for this class*/
@@ -34,7 +35,7 @@ public class AgentServicesImpl extends Agentable implements AgentServices {
     private Security security;
 
     /** creates service manager for agent with parent agent assigned */
-    public AgentServicesImpl(AgentInstance parentAgent) {
+    public AgentServicesImpl(Agent parentAgent) {
         super(parentAgent);
     }
     /** set new policy for services */

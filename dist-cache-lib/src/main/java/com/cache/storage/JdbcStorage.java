@@ -1,9 +1,12 @@
 package com.cache.storage;
 
 import com.cache.api.*;
+import com.cache.api.enums.CacheStorageType;
+import com.cache.api.info.CacheObjectInfo;
 import com.cache.base.dtos.DistCacheItemRow;
 import com.cache.base.CacheStorageBase;
-import com.cache.base.DaoJdbcBase;
+import com.cache.dao.DaoJdbcBase;
+import com.cache.interfaces.Cache;
 import com.cache.jdbc.JdbcDialect;
 
 import java.util.*;
@@ -18,21 +21,23 @@ public class JdbcStorage extends CacheStorageBase {
     private final DaoJdbcBase dao;
     /** JDBC dialect with SQL queries for different database management systems */
     private final JdbcDialect dialect;
+    private String jdbcUrl;
 
     /** initialize JDBC storage */
-    public JdbcStorage(StorageInitializeParameter p) {
-        super(p);
-        var jdbcUrl = p.cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_JDBC_URL);
-        var jdbcDriver = p.cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_JDBC_DRIVER);
-        var jdbcUser = p.cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_JDBC_USER, "");
-        var jdbcPass = p.cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_JDBC_PASS, "");
-        var jdbcDialect = p.cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_JDBC_DIALECT, "");
+    public JdbcStorage(Cache cache) {
+        super(cache);
+        jdbcUrl = cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_JDBC_URL);
+        var jdbcDriver = cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_JDBC_DRIVER);
+        var jdbcUser = cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_JDBC_USER, "");
+        var jdbcPass = cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_JDBC_PASS, "");
+        var jdbcDialect = cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_JDBC_DIALECT, "");
         // get dialect by driver class and dialect name
         dialect = JdbcDialect.getDialect(jdbcDriver, jdbcDialect);
         log.info(" ========================= Initializing JdbcStorage with URL: " + jdbcUrl + ", dialect: " + dialect);
-        var initConnections = p.cache.getConfig().getPropertyAsInt(DistConfig.AGENT_REGISTRATION_JDBC_INIT_CONNECTIONS, 2);
-        var maxActiveConnections = p.cache.getConfig().getPropertyAsInt(DistConfig.AGENT_REGISTRATION_JDBC_MAX_ACTIVE_CONNECTIONS, 10);
-        dao = new DaoJdbcBase(jdbcUrl, jdbcDriver, jdbcUser, jdbcPass, initConnections, maxActiveConnections);
+        var initConnections = cache.getConfig().getPropertyAsInt(DistConfig.AGENT_REGISTRATION_JDBC_INIT_CONNECTIONS, 2);
+        var maxActiveConnections = cache.getConfig().getPropertyAsInt(DistConfig.AGENT_REGISTRATION_JDBC_MAX_ACTIVE_CONNECTIONS, 10);
+        DaoParams params = DaoParams.jdbcParams(jdbcUrl, jdbcDriver, jdbcUser, jdbcPass, initConnections, maxActiveConnections);
+        dao = cache.getAgent().getAgentDao().getOrCreateDaoOrError(DaoJdbcBase.class, params);
         initializeConnectionAndCreateTables();
     }
     /** create table with cache items if not exists */
@@ -48,6 +53,17 @@ public class JdbcStorage extends CacheStorageBase {
 
     /** JDBC is external storage */
     public  boolean isInternal() { return false; }
+    /** returns true if storage is global,
+     * it means that one global shared storage is available for all cache instances*/
+    public boolean isGlobal() { return true; }
+
+    /** get additional info parameters for this storage */
+    public Map<String, Object> getStorageAdditionalInfo() {
+        return Map.of("jdbcUrl", jdbcUrl,
+                "activeConnections", dao.getActiveConnections(),
+                "idleConnections", dao.getIdleConnections(),
+                " dialectName", dialect.dialectName);
+    }
     /** returns true if JDBC database is connected and there is cache table */
     public boolean isOperable() {
         try {
@@ -72,12 +88,9 @@ public class JdbcStorage extends CacheStorageBase {
     public Optional<CacheObject> getObject(String key) {
         //CacheObject.fromSerialized();
         var items = dao.executeSelectQuery(dialect.selectCacheItemsByKey(),
-                new Object[] { key }, x -> CacheObjectSerialized.fromMap(x).toCacheObject(distSerializer));
-        if (items.isEmpty()) {
-            return Optional.empty();
-        } else {
-            return Optional.of(items.get(0));
-        }
+                new Object[] { key }, x -> CacheObjectSerialized.fromMapToCacheObject(x, distSerializer))
+                .stream().flatMap(x -> x.stream()).collect(Collectors.toList());
+        return items.stream().findFirst();
     }
 
     /** set object */
@@ -124,9 +137,9 @@ public class JdbcStorage extends CacheStorageBase {
     /** get values of cache objects that contains given String in key */
     public List<CacheObject> getValues(String containsStr) {
         log.info("GET VALUES -=======> " + dialect.selectFindCacheItems());
-        var items = dao.executeSelectQuery(dialect.selectFindCacheItems(),
-                new Object[] { "%" + containsStr + "%" }, x -> CacheObjectSerialized.fromMap(x).toCacheObject(distSerializer));
-        return new ArrayList<>(items);
+        var items = dao.executeSelectQueryOptional(dialect.selectFindCacheItems(),
+                new Object[] { "%" + containsStr + "%" }, rowMap -> CacheObjectSerialized.fromMapToCacheObject(rowMap, distSerializer));
+        return items;
     }
     /** clear caches for given group */
     public int clearCacheForGroup(String groupName) {

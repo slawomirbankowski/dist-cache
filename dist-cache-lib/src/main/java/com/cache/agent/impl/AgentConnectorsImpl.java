@@ -1,6 +1,10 @@
 package com.cache.agent.impl;
 
-import com.cache.agent.AgentInstance;
+import com.cache.api.enums.DistCallbackType;
+import com.cache.api.enums.DistClientType;
+import com.cache.api.enums.DistMessageType;
+import com.cache.api.enums.DistServiceType;
+import com.cache.api.info.AgentConnectorsInfo;
 import com.cache.agent.clients.DatagramClient;
 import com.cache.agent.clients.HttpClient;
 import com.cache.agent.clients.SocketServerClient;
@@ -8,8 +12,11 @@ import com.cache.agent.servers.AgentDatagramServer;
 import com.cache.agent.servers.AgentHttpServer;
 import com.cache.agent.servers.AgentServerSocket;
 import com.cache.api.*;
+import com.cache.api.info.AgentServerInfo;
+import com.cache.api.info.ClientInfo;
 import com.cache.base.ServerBase;
 import com.cache.base.dtos.DistAgentServerRow;
+import com.cache.interfaces.Agent;
 import com.cache.interfaces.AgentClient;
 import com.cache.interfaces.AgentConnectors;
 import com.cache.interfaces.AgentServer;
@@ -34,12 +41,11 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     private final java.util.concurrent.ConcurrentHashMap<String, AgentServer> servers = new java.util.concurrent.ConcurrentHashMap<>();
     /** all servers for connections to other agents */
     private final java.util.concurrent.ConcurrentHashMap<String, DistAgentServerRow> agentServers = new java.util.concurrent.ConcurrentHashMap<>();
-
     /** map of map of clients connected to different agents
      * key1 = agentGUID
      * key2 = serverGUID
      * value = client to transfer messages to this agent */
-    private final HashMapMap<String, String, AgentClient> serverConnectors = new HashMapMap<>();
+    private final HashMapMap<String, String, AgentClient> clients = new HashMapMap<>();
     /** map of local connectors as part of local clients
      * key=clientGUID
      * value= client
@@ -51,8 +57,9 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     private final java.util.ArrayList<AgentClient> clientTable = new ArrayList<>();
     /** messages already sent with callbacks */
     private final DistMapTimeStorage<DistMessageFull> sentMessages = new DistMapTimeStorage();
+
     /** create new connectors */
-    public AgentConnectorsImpl(AgentInstance parentAgent) {
+    public AgentConnectorsImpl(Agent parentAgent) {
         super(parentAgent);
     }
     /** open servers for communication  */
@@ -70,6 +77,13 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
         parentAgent.getAgentTimers().setUpTimer("TIMER_SERVER_CLIENT", DistConfig.TIMER_SERVER_CLIENT_PERIOD, DistConfig.TIMER_SERVER_CLIENT_PERIOD_DELAY_VALUE, x -> onTimeServersCheck());
     }
 
+    /** get full information about connectors - servers, clients */
+    public AgentConnectorsInfo getInfo() {
+        List<AgentServerInfo> createdServers = servers.values().stream().map(s -> s.getInfo()).collect(Collectors.toList());
+        List<DistAgentServerRow> serverDefinitions = agentServers.values().stream().map(as -> as.copyNoPassword()).collect(Collectors.toList());
+        List<ClientInfo> clientInfos = clients.getAllValues().stream().map(c -> c.getClientInfo()).collect(Collectors.toList());
+        return new AgentConnectorsInfo(createdServers, serverDefinitions, clientInfos);
+    }
     /** add new server - put in map of servers and register server to registration services */
     private void addNewServer(ServerBase serv) {
         servers.put(serv.getServerGuid(), serv);
@@ -80,7 +94,7 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     public boolean onTimeServersCheck() {
         try {
             List<DistAgentServerRow> servers = getParentAgent().getAgentRegistrations().getServers();
-            List connectedAgents = getParentAgent().getAgentRegistrations().getAgents();
+            List<AgentSimplified> connectedAgents = getParentAgent().getAgentRegistrations().getAgents();
             log.info("Check servers for agent: " + parentAgent.getAgentGuid() + ", connectedAgents: " + connectedAgents.size() + ", servers from registrations: " + servers.size());
             parentAgent.getAgentConnectors().checkActiveServers(servers);
             // TODO: connect to all nearby agents, check statuses
@@ -89,7 +103,7 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
             return true;
         } catch (Exception ex) {
             log.warn("Cannot communicate with other agents, reason: " + ex.getMessage(), ex);
-            parentAgent.getAgentIssues().addIssue("AgentRegistrationsImpl.onTimeCommunicate", ex);
+            parentAgent.getAgentIssues().addIssue("AgentConnectorsImpl.onTimeServersCheck", ex);
             return false;
         }
     }
@@ -104,33 +118,34 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     }
     /** get number of clients */
     public int getClientsCount() {
-        return serverConnectors.totalSize();
+        return clients.totalSize();
     }
 
     /** get client keys */
     public List<String> getClientKeys() {
-        return serverConnectors.getAllValues().stream().map(x -> x.getClientGuid()).collect(Collectors.toList());
+        return clients.getAllValues().stream().map(x -> x.getClientGuid()).collect(Collectors.toList());
     }
     /** check list of active servers and connect to the server if this is still not connected */
     public void checkActiveServers(List<DistAgentServerRow> activeServers) {
-        log.info("Connectors updating servers from registers for agent: " + parentAgent.getAgentGuid() + ", count: " + activeServers.size() + ", agentServers: " + agentServers.size() + ", servers: " + servers.size() + ", clients: " + serverConnectors.totalSize());
+        log.info("Connectors updating servers from registers for agent: " + parentAgent.getAgentGuid() + ", count: " + activeServers.size() + ", agentServers: " + agentServers.size() + ", servers: " + servers.size() + ", clients: " + clients.totalSize());
         for (DistAgentServerRow srv: activeServers) {
             agentServers.putIfAbsent(srv.serverguid, srv);
         }
         // check all servers
         agentServers.values().stream().forEach(srv -> {
             if (!srv.agentguid.equals(parentAgent.getAgentGuid())) {
-                Optional<AgentClient> client = serverConnectors.getValue(srv.agentguid, srv.serverguid);
+                Optional<AgentClient> client = clients.getValue(srv.agentguid, srv.serverguid);
                 if (client.isEmpty()) {
                     try {
                         log.info("Connectors from agent: " + parentAgent.getAgentGuid() +  ", NO client to agent: " + srv.agentguid + ", server: " + srv.serverguid + ", type" + srv.servertype + ", creating NEW ONE !!!!!!!!!");
                         var createdClient = createClient(srv);
                         if (createdClient.isPresent()) {
-                            serverConnectors.add(srv.agentguid, srv.serverguid, createdClient.get());
+                            clients.add(srv.agentguid, srv.serverguid, createdClient.get());
                             clientQueue.add(createdClient.get());
                             clientTable.add(createdClient.get());
                         }
                     } catch (Exception ex) {
+
                         log.warn("Cannot create client to server: " + srv.serverguid + ", reason: " + ex.getMessage());
                     }
                 } else {
@@ -138,7 +153,7 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
                 }
             }
         });
-        log.info("Connectors AFTER check servers for agent: " + parentAgent.getAgentGuid() + ", agentServers: " + agentServers.size() + ", servers: " + servers.size() + ", clients: " + serverConnectors.totalSize());
+        log.info("Connectors AFTER check servers for agent: " + parentAgent.getAgentGuid() + ", agentServers: " + agentServers.size() + ", servers: " + servers.size() + ", clients: " + clients.totalSize());
     }
     /** register new client created local as part of server */
     public void registerLocalClient(AgentClient client) {
@@ -170,7 +185,7 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     /** message send broadcast */
     public void sendMessageBroadcast(DistMessageFull msg) {
         // sending broadcast - to all known agents
-        var allClients = serverConnectors.getAllValues();
+        var allClients = clients.getAllValues();
         log.info("Sending broadcast message from agent: " + parentAgent.getAgentGuid() + " to all clients: " + allClients.size() + ", message UID: " + msg.getMessage().getMessageUid());
         allClients.stream().forEach(client -> {
             var res = client.send(msg.getMessage());
@@ -211,7 +226,7 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     public void sendMessageTag(DistMessageFull msg) {
          // TODO: get all agents for given tags and send them message
         String[] tags = msg.getMessage().getTags().split(",");
-        serverConnectors.getAllValues().stream().filter(client -> client.hasTags(tags)).forEach(client -> {
+        clients.getAllValues().stream().filter(client -> client.hasTags(tags)).forEach(client -> {
             client.send(msg.getMessage());
             client.getClientGuid();
         });
@@ -219,7 +234,7 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     /** message send to only one agent by GUID */
     public void sendMessageAgent(DistMessageFull msg) {
         // sending to exactly one agent
-        var clientMap = serverConnectors.get(msg.getMessage().getToAgent());
+        var clientMap = clients.get(msg.getMessage().getToAgent());
         if (clientMap == null || clientMap.size() == 0) {
             msg.applyCallback(DistCallbackType.onClientNotFound);
         } else {
@@ -245,11 +260,11 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
 
     /** close all connectors, clients, servers  */
     public void close() {
-        log.info("Closing connectors for agent: " + parentAgent.getAgentGuid() + ", servers: " + servers.size() + ", clients: " + serverConnectors.totalSize());
+        log.info("Closing connectors for agent: " + parentAgent.getAgentGuid() + ", servers: " + servers.size() + ", clients: " + clients.totalSize());
         servers.values().stream().forEach(serv -> {
             serv.close();
         });
-        serverConnectors.getAllValues().stream().forEach(cli -> cli.close());
+        clients.getAllValues().stream().forEach(cli -> cli.close());
         log.info("Closed all connectors for agent: " + parentAgent.getAgentGuid());
     }
 

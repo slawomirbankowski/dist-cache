@@ -2,14 +2,15 @@ package com.cache.api;
 
 import java.time.LocalDateTime;
 
-/** simplified agent information about GUID, host, port and create date */
+/** simplified agent information about GUID, host, port and create date
+ * This class is returned by Registration services  */
 public class AgentSimplified {
-    // TODO: refactor this to hide fields
-    public String agentGuid;
-    public String hostName;
-    public String hostIp;
-    public int port;
-    public LocalDateTime createDate;
+
+    private String agentGuid;
+    private String hostName;
+    private String hostIp;
+    private int port;
+    private LocalDateTime createDate;
 
     public AgentSimplified() {
         this.agentGuid = null;
@@ -46,8 +47,4 @@ public class AgentSimplified {
         return createDate.toString();
     }
 
-    public void update(AgentSimplified newAgent) {
-
-
-    }
 }

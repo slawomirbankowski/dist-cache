@@ -2,6 +2,9 @@ package com.cache.agent;
 
 import com.cache.agent.impl.*;
 import com.cache.api.*;
+import com.cache.api.enums.DistMessageType;
+import com.cache.api.enums.DistServiceType;
+import com.cache.api.info.AgentInfo;
 import com.cache.interfaces.*;
 import com.cache.serializers.ComplexSerializer;
 import com.cache.utils.JsonUtils;
@@ -15,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /** agent class to be connected to dist-cache applications, Kafka, Elasticsearch or other global agent repository
  * Agent is also connecting directly to other agents */
@@ -30,8 +34,10 @@ public class AgentInstance implements Agent, DistService {
     private boolean closed = false;
     /** generate secret of this agent to be able to put commands */
     private final String agentSecret = UUID.randomUUID().toString();
+    /** short GUID of agent  */
+    private final String agentShortGuid = DistUtils.generateShortGuid();
     /** GUID of agent */
-    private final String agentGuid = DistUtils.generateAgentGuid();
+    private final String agentGuid = DistUtils.generateAgentGuid(agentShortGuid);
 
     /** manager for threads in Agent system */
     private final AgentThreads agentThreads = new AgentThreadsImpl(this);
@@ -51,6 +57,8 @@ public class AgentInstance implements Agent, DistService {
     private final AgentIssues agentIssues = new AgentIssuesImpl(this);
     /** manager for Web API Objects to direct synchronous communication with this agent*/
     private final AgentApi agentApi = new AgentApiImpl(this);
+    /** manager for DAO objects */
+    private final AgentDaoImpl agentDao = new AgentDaoImpl(this);
 
     /** tags assigned to this Agent, by these tags other Agent can search set of Agent */
     private final Set<String> agentTags = new HashSet<>();
@@ -94,13 +102,16 @@ public class AgentInstance implements Agent, DistService {
     }
     /** create new agent */
     public AgentInstance(DistConfig config, Map<String, Function<CacheEvent, String>> callbacksMethods, HashMap<String, DistSerializer> serializers,
-                         CachePolicy policy) {
+                         CachePolicy policy, Map<String, DaoParams> daos) {
+        log.info("CREATING NEW AGENT with guid: " + agentGuid + ", configuration: " + config.getConfigGuid() + ", host: " + DistUtils.getCurrentHostName());
         this.config = config;
+        agentTags.addAll(Arrays.stream(config.getProperty(DistConfig.AGENT_TAGS, "").split(";")).collect(Collectors.toList()));
         agentServices.setPolicy(policy);
         // self register of agent as service
         agentServices.registerService(this);
         agentEvents.addCallbackMethods(callbacksMethods);
         serializer = ComplexSerializer.createSerializer(serializers);
+        agentDao.createDaos(daos);
     }
 
     /** get type of service: cache, measure, report, flow, space, ... */
@@ -114,7 +125,11 @@ public class AgentInstance implements Agent, DistService {
     /** get basic information about service */
     public DistServiceInfo getServiceInfo() {
         // DistServiceType serviceType, String getServiceClass, String serviceGuid, LocalDateTime createdDateTime, boolean closed, Map<String, String> customAttributes
-        return new DistServiceInfo(getServiceType(), getClass().getName(), getServiceUid(), createDate, closed, Map.of());
+        return new DistServiceInfo(getServiceType(), getClass().getName(), getServiceUid(), createDate, closed, getServiceInfoCustomMap());
+    }
+    /** get custom map of info about service */
+    public Map<String, String> getServiceInfoCustomMap() {
+        return Map.of();
     }
     /** returns unmodificable set of Agent tags */
     public Set<String> getAgentTags() {
@@ -127,6 +142,11 @@ public class AgentInstance implements Agent, DistService {
         agentConnectors.openServers();
         agentApi.openApis();
     }
+
+    /** add issue with method and exception */
+    public void addIssue(String methodName, Exception ex) {
+        agentIssues.addIssue(new DistIssue(this, methodName, ex));
+    }
     /** get this Agent */
     public Agent getAgent() {
         return this;
@@ -135,6 +155,9 @@ public class AgentInstance implements Agent, DistService {
     public DistConfig getConfig() { return config; }
     /** get unique ID of this agent */
     public String getAgentGuid() { return agentGuid; }
+    /** get short version ID of this agent GUID */
+    public String getAgentShortGuid() { return agentShortGuid; }
+
     /** get date and time of creating this agent */
     public LocalDateTime getCreateDate() {
         return createDate;
@@ -150,12 +173,13 @@ public class AgentInstance implements Agent, DistService {
     }
     /** get high-level information about this agent */
     public AgentInfo getAgentInfo() {
-        return new AgentInfo(agentGuid, createDate, closed,
-                agentConnectors.getServersCount(), agentConnectors.getServerKeys(),
-                agentConnectors.getClientsCount(), agentConnectors.getClientKeys(),
-                agentServices.getServicesCount(), agentServices.getServiceKeys(),
-                agentRegistrations.getRegistrationsCount(), agentRegistrations.getRegistrationKeys(),
-                getAgentTimers().getTimerTasksCount(), getAgentThreads().getThreadsCount(),
+        return new AgentInfo(agentGuid, createDate, closed, getAgentTags(),
+                agentConnectors.getInfo(),
+                agentServices.getServiceInfos(),
+                agentRegistrations.getRegistrationInfos(),
+                agentTimers.getInfo(),
+                agentThreads.getThreadsInfo(),
+
                 getAgentEvents().getEvents().size(),
                 getAgentIssues().getIssues().size());
     }
@@ -189,6 +213,10 @@ public class AgentInstance implements Agent, DistService {
     public AgentIssues getAgentIssues() {
         return agentIssues;
     }
+    /** get agent DAOs manager for external connections to JDBC, Elasticsearch, Kafka, Redis */
+    public AgentDao getAgentDao() {
+        return agentDao;
+    }
 
     /** returns true if agent has been already closed */
     public boolean isClosed() {
@@ -199,15 +227,17 @@ public class AgentInstance implements Agent, DistService {
     public void close() {
         log.info("Closing agent: " + agentGuid);
         closed = true;
-        // TODO: close all items for this agent - unregister in application, notify all agents
         agentApi.close();
         agentThreads.close();
+        agentDao.close();
         agentTimers.close();
         agentServices.close();
         agentConnectors.close();
         agentRegistrations.close();
         agentEvents.close();
         agentIssues.close();
+        messageProcessor.close();
+        webApiProcessor.close();
     }
 
     /** process message by this agent service, choose method and , returns status */

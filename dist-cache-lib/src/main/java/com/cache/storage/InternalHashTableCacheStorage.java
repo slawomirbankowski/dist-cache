@@ -1,7 +1,10 @@
 package com.cache.storage;
 
 import com.cache.api.*;
+import com.cache.api.enums.CacheStorageType;
+import com.cache.api.info.CacheObjectInfo;
 import com.cache.base.CacheStorageBase;
+import com.cache.interfaces.Cache;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -12,12 +15,20 @@ public class InternalHashTableCacheStorage extends CacheStorageBase {
     /** objects in cache */
     private final  Map<String, CacheObject> localCache;
 
-    public InternalHashTableCacheStorage(StorageInitializeParameter p) {
-        super(p);
+    public InternalHashTableCacheStorage(Cache cache) {
+        super(cache);
         localCache = Collections.synchronizedMap(new java.util.Hashtable<>((int)maxObjects));
     }
     /** Hashtable is internal storage */
     public boolean isInternal() { return true; }
+    /** returns true if storage is global,
+     * it means that one global shared storage is available for all cache instances*/
+    public boolean isGlobal() { return false; }
+
+    /**  get additional info parameters for this storage */
+    public Map<String, Object> getStorageAdditionalInfo() {
+        return Map.of("className", localCache.getClass().getName());
+    }
     /** get type of this storage */
     public CacheStorageType getStorageType() {
         return CacheStorageType.memory;

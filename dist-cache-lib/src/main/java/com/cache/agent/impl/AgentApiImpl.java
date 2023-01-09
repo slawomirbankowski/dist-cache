@@ -21,7 +21,7 @@ public class AgentApiImpl extends Agentable implements AgentApi {
     private final java.util.concurrent.ConcurrentHashMap<String, AgentWebApi> apiConnectors = new java.util.concurrent.ConcurrentHashMap<>();
 
     /** create new connectors */
-    public AgentApiImpl(AgentInstance parentAgent) {
+    public AgentApiImpl(Agent parentAgent) {
         super(parentAgent);
     }
 
@@ -49,9 +49,8 @@ public class AgentApiImpl extends Agentable implements AgentApi {
     }
     /** check all registered APIs */
     public void checkApis() {
-        log.info("%%%%%%%%%%%%%%>>> Connectors updating servers from registers for agent: " + parentAgent.getAgentGuid());
-
-        log.info("%%%%%%%%%%%%%%>>> Connectors AFTER check servers for agent: " + parentAgent.getAgentGuid() );
+        log.info("Check APIs for Agent: " + parentAgent.getAgentGuid());
+        // TODO: implement check of all APIs
     }
     /** close all connectors, clients, servers  */
     public void close() {

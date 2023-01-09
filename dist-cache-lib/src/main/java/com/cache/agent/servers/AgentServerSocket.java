@@ -1,7 +1,7 @@
 package com.cache.agent.servers;
 
 import com.cache.agent.clients.SocketServerClient;
-import com.cache.api.DistClientType;
+import com.cache.api.enums.DistClientType;
 import com.cache.api.DistConfig;
 import com.cache.base.ServerBase;
 import com.cache.interfaces.Agent;
@@ -15,6 +15,7 @@ import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+/** Socket server to listen on one port */
 public class AgentServerSocket extends ServerBase implements AgentServer, Runnable {
 
     /** local logger for this class*/
@@ -49,7 +50,7 @@ public class AgentServerSocket extends ServerBase implements AgentServer, Runnab
     }
     /** get port of this server */
     public String getUrl() {
-        return "";
+        return "socket://" + DistUtils.getCurrentHostName() + ":" + workingPort + "/";
     }
     public void initializeServer() {
         try {
@@ -62,7 +63,7 @@ public class AgentServerSocket extends ServerBase implements AgentServer, Runnab
             Thread mainThread = new Thread(this);
             mainThread.setDaemon(true);
             mainThread.start();
-            parentAgent.getAgentThreads().registerThread(mainThread);
+            parentAgent.getAgentThreads().registerThread(this, mainThread, "socket-server-" + workingPort);
             threads.add(mainThread);
         } catch (Exception ex) {
             log.warn("Cannot run socket server on port: " + workingPort + ", reason: " + ex.getMessage());

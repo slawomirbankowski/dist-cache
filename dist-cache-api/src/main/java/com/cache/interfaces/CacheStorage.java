@@ -1,7 +1,7 @@
 package com.cache.interfaces;
 
-import com.cache.api.CacheStorageType;
-import com.cache.api.StorageInfo;
+import com.cache.api.enums.CacheStorageType;
+import com.cache.api.info.StorageInfo;
 
 /** interface for cache storages to keep cache objects with faster access to be read */
 public interface CacheStorage {
@@ -23,6 +23,10 @@ public interface CacheStorage {
     /** returns true if storage is internal and cache objects are kept in local memory
      * false if storage is external and cache objects are kept in any storages like Redis, Elasticsearch, DB*/
     boolean isInternal();
+    /** returns true if storage is global,
+     * it means that one global shared storage is available for all cache instances*/
+    boolean isGlobal();
+
     /** dispose this storage if needed */
     void disposeStorage();
 

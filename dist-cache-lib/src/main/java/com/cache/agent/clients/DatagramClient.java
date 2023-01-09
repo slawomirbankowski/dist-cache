@@ -1,6 +1,9 @@
 package com.cache.agent.clients;
 
 import com.cache.api.*;
+import com.cache.api.enums.DistClientType;
+import com.cache.api.enums.DistMessageType;
+import com.cache.api.enums.DistServiceType;
 import com.cache.base.AgentClientBase;
 import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.interfaces.Agent;

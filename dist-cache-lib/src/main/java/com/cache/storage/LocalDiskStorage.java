@@ -1,7 +1,10 @@
 package com.cache.storage;
 
 import com.cache.api.*;
+import com.cache.api.enums.CacheStorageType;
+import com.cache.api.info.CacheObjectInfo;
 import com.cache.base.CacheStorageBase;
+import com.cache.interfaces.Cache;
 import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +24,15 @@ public class LocalDiskStorage extends CacheStorageBase {
     private final String filePrefixName;
 
     /** init local disk storage */
-    public LocalDiskStorage(StorageInitializeParameter p) {
-        super(p);
-        filePrefixName = initParams.cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_LOCAL_DISK_PREFIX_PATH, "/tmp/");
+    public LocalDiskStorage(Cache cache) {
+        super(cache);
+        filePrefixName = cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_LOCAL_DISK_PREFIX_PATH, "/tmp/");
     }
     /** Local Disk is external storage */
     public  boolean isInternal() { return false; }
+    /** returns true if storage is global,
+     * it means that one global shared storage is available for all cache instances*/
+    public boolean isGlobal() { return false; }
     /** returns true if base file path is folder with write access */
     public boolean isOperable() {
         try {
@@ -34,6 +40,11 @@ public class LocalDiskStorage extends CacheStorageBase {
         } catch (Exception ex) {
             return false;
         }
+    }
+
+    /** get additional info parameters for this storage */
+    public Map<String, Object> getStorageAdditionalInfo() {
+        return Map.of("filePrefixName", filePrefixName);
     }
     /** get type of this storage */
     public CacheStorageType getStorageType() {
@@ -53,7 +64,7 @@ public class LocalDiskStorage extends CacheStorageBase {
             CacheObject co = cos.toCacheObject(distSerializer);
             return Optional.of(co);
         } catch (Exception ex) {
-            initParams.cache.addIssue("LocalDiskStorage.getObject", ex);
+            cache.addIssue("LocalDiskStorage.getObject", ex);
             log.info("Cannot deserialize CacheObject from LocalDisk storage, reason: " + ex.getMessage(), ex);
             return Optional.empty();
         }
@@ -72,7 +83,7 @@ public class LocalDiskStorage extends CacheStorageBase {
                 return Optional.empty();
             }
         } catch (Exception ex) {
-            initParams.cache.addIssue("LocalDiskStorage.getObject", ex);
+            cache.addIssue("LocalDiskStorage.getObject", ex);
             log.info("Cannot deserialize CacheObject from LocalDisk storage, reason: " + ex.getMessage(), ex);
             return Optional.empty();
         }
@@ -91,7 +102,7 @@ public class LocalDiskStorage extends CacheStorageBase {
             oos.close();
         } catch (Exception ex) {
             log.warn("Cannot serialize CacheObject to LocalDisk storage, key: " + o.getKey() +  ", class: " + o.getClassName() + ", reason: " + ex.getMessage(), ex);
-            initParams.cache.addIssue("LocalDiskStorage.setObject", ex);
+            cache.addIssue("LocalDiskStorage.setObject", ex);
         }
         return curr;
     }
@@ -111,7 +122,7 @@ public class LocalDiskStorage extends CacheStorageBase {
             return files;
         } catch (Exception ex) {
             log.warn("Cannot find files in LocalDisk storage, reason: " + ex.getMessage(), ex);
-            initParams.cache.addIssue("LocalDiskStorage.removeObjectsByKeys", ex);
+            cache.addIssue("LocalDiskStorage.removeObjectsByKeys", ex);
             return new File[0];
         }
     }
@@ -123,7 +134,7 @@ public class LocalDiskStorage extends CacheStorageBase {
             Arrays.stream(filesToRemove).forEach(f -> f.delete());
         } catch (Exception ex) {
             log.info("Cannot remove files for keys in LocalDisk storage, reason: " + ex.getMessage(), ex);
-            initParams.cache.addIssue("LocalDiskStorage.removeObjectsByKeys", ex);
+            cache.addIssue("LocalDiskStorage.removeObjectsByKeys", ex);
         }
     }
     /** remove object in cache storage by key */
@@ -134,7 +145,7 @@ public class LocalDiskStorage extends CacheStorageBase {
             Arrays.stream(filesToRemove).forEach(File::delete);
         } catch (Exception ex) {
             log.info("Cannot remove file for key: " + key + " in LocalDisk storage, reason: " + ex.getMessage(), ex);
-            initParams.cache.addIssue("LocalDiskStorage.removeObjectsByKeys", ex);
+            cache.addIssue("LocalDiskStorage.removeObjectsByKeys", ex);
         }
     }
     /** get number of items in cache */

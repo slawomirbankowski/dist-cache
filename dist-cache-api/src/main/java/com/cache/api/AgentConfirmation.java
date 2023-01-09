@@ -14,6 +14,7 @@ public class AgentConfirmation {
     private int totalAgentsCount;
     /** currently registered agents */
     private List<AgentSimplified> agents;
+
     public AgentConfirmation(String agentGuid, boolean isNew, boolean isDeleted, int totalAgentsCount, List<AgentSimplified> agents) {
         this.agentGuid = agentGuid;
         this.isNew = isNew;

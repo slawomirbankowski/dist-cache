@@ -1,5 +1,6 @@
 package com.cache.interfaces;
 
+import com.cache.api.info.AgentServerInfo;
 import com.cache.api.DistConfig;
 
 import java.time.LocalDateTime;
@@ -20,5 +21,6 @@ public interface AgentServer {
     LocalDateTime getCreateDate();
     /** close all items in this agent */
     void close();
-
+    /** get information about this server */
+    AgentServerInfo getInfo();
 }

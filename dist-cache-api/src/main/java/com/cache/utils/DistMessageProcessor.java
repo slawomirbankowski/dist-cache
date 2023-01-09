@@ -39,7 +39,6 @@ public class DistMessageProcessor {
     /** add many methods */
     public DistMessageProcessor addMethods(Object service) {
         for (Method method : service.getClass().getDeclaredMethods()) {
-            // TODO: check if method is taking String and DistMessage and returns DistMessageStatus - then add to methods
             System.out.println(">>>> Method: " + method.getName() + ", return type: " + method.getReturnType().getName());
             boolean retTypeOk = method.getReturnType().isAssignableFrom(DistMessage.class);
             var paramsCount = method.getParameterCount();
@@ -82,6 +81,10 @@ public class DistMessageProcessor {
             exceptionMessages.incrementAndGet();
             return msg.exception(ex);
         }
+    }
+    /** close message processor */
+    public void close() {
+
     }
 
 }

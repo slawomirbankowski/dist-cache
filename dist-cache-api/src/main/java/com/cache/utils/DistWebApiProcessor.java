@@ -43,4 +43,7 @@ public class DistWebApiProcessor {
         return req.responseNotFound();
     }
 
+    /** close WebAPI processor */
+    public void close() {
+    }
 }

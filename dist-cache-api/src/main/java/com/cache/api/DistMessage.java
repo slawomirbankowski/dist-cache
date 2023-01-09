@@ -1,5 +1,7 @@
 package com.cache.api;
 
+import com.cache.api.enums.DistMessageType;
+import com.cache.api.enums.DistServiceType;
 import com.cache.interfaces.DistService;
 import com.cache.utils.DistUtils;
 

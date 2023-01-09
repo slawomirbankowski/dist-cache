@@ -1,5 +1,6 @@
 package com.cache.interfaces;
 
+import com.cache.api.info.AgentConnectorsInfo;
 import com.cache.api.DistMessage;
 import com.cache.api.DistMessageFull;
 import com.cache.base.dtos.DistAgentServerRow;
@@ -14,6 +15,8 @@ public interface AgentConnectors {
     void openServers();
     /** check list of active servers and connect to the server if this is still not connected */
     void checkActiveServers(List<DistAgentServerRow> activeServers);
+    /** get full information about connectors - servers, clients*/
+    AgentConnectorsInfo getInfo();
     /** get count of servers */
     int getServersCount();
     /** get all UIDs of servers */

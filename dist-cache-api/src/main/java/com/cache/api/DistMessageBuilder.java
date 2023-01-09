@@ -1,5 +1,8 @@
 package com.cache.api;
 
+import com.cache.api.enums.DistCallbackType;
+import com.cache.api.enums.DistMessageType;
+import com.cache.api.enums.DistServiceType;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.DistService;
 import com.cache.utils.DistUtils;
@@ -7,6 +10,8 @@ import com.cache.utils.DistUtils;
 import java.time.LocalDateTime;
 import java.util.function.Function;
 
+/** Builder of messages to be sent between agents.
+ * */
 public class DistMessageBuilder {
 
     /** type of message - this could be welcome, system, request, response, noOperation, ... */

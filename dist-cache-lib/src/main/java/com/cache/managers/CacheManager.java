@@ -1,10 +1,15 @@
 package com.cache.managers;
 
 import com.cache.api.*;
+import com.cache.api.enums.DistServiceType;
+import com.cache.api.info.CacheObjectInfo;
+import com.cache.api.info.StorageInfo;
+import com.cache.api.info.StorageInfos;
 import com.cache.base.CacheBase;
 import com.cache.base.CacheStorageBase;
 import com.cache.interfaces.Agent;
 import com.cache.api.DistMessage;
+import com.cache.interfaces.Cache;
 import com.cache.utils.JsonUtils;
 import com.cache.utils.DistMessageProcessor;
 import com.cache.utils.DistWebApiProcessor;
@@ -55,7 +60,7 @@ public class CacheManager extends CacheBase {
             .addHandlerGet("storages-info", (m, req) -> req.responseOkJson(JsonUtils.serialize(getStoragesInfo())))
             .addHandlerGet("storage-keys", (m, req) -> req.responseOkJson(JsonUtils.serialize(getStorageKeys())))
             .addHandlerGet("storages-count", (m, req) ->  req.responseOkText( ""+getStoragesCount()))
-            .addHandlerPost("initialize-single-storage", (m, req) -> req.responseOkText( "" + initializeSingleStorage(new StorageInitializeParameter(this), req.getParamOne())))
+            .addHandlerPost("initialize-single-storage", (m, req) -> req.responseOkText( "" + initializeSingleStorage(req.getParamOne())))
             .addHandlerGet("items-count", (m, req) -> req.responseOkText(""+getItemsCount()))
             .addHandlerGet("objects-count", (m, req) -> req.responseOkText(""+getObjectsCount()))
             .addHandlerGet("items-per-storage", (m, req) -> req.responseOkJson(JsonUtils.serialize(getItemsCountPerStorage())))
@@ -107,25 +112,24 @@ public class CacheManager extends CacheBase {
     /** initialize all storages from configuration */
     private void initializeStorages() {
         addEvent(new CacheEvent(this, "initializeStorages", CacheEvent.EVENT_INITIALIZE_STORAGES));
-        StorageInitializeParameter initParams = new StorageInitializeParameter(this);
         String cacheStorageList = ""+getConfig().getProperty(DistConfig.CACHE_STORAGES);
         log.info("Initializing cache storages: " + cacheStorageList);
         Arrays.stream(cacheStorageList.split(","))
                 .distinct()
                 .filter(x -> !x.isEmpty())
-                .forEach(storageClass -> initializeSingleStorage(initParams, storageClass));
+                .forEach(storageClass -> initializeSingleStorage(storageClass));
     }
 
     /** initialize single storage */
-    private boolean initializeSingleStorage(StorageInitializeParameter initParams, String className) {
+    private boolean initializeSingleStorage(String className) {
         try {
             cacheStats.initializeSingleStorage();
             String fullClassName = "com.cache.storage." + className;
             addEvent(new CacheEvent(this, "initializeStorages", CacheEvent.EVENT_INITIALIZE_STORAGE, fullClassName));
             log.debug("Initializing storage for class: " + fullClassName + ", current storages: " + storages.size());
             CacheStorageBase storage = (CacheStorageBase)Class.forName(fullClassName)
-                    .getConstructor(StorageInitializeParameter.class)
-                    .newInstance(initParams);
+                    .getConstructor(Cache.class)
+                    .newInstance(this);
             CacheStorageBase prevStorage = storages.put(storage.getStorageUid(), storage);
             log.info("Initialized storage: " + storage.getStorageUid() + ", current storages: " + storages.size());
             if (prevStorage != null) {
@@ -136,7 +140,7 @@ public class CacheManager extends CacheBase {
             return true;
         } catch (Exception ex) {
             addIssue("initializeSingleStorage", ex);
-            log.warn("Cannot initialize storage for class: " + className);
+            log.warn("Cannot initialize storage for class: " + className + ", reason: " + ex.getMessage(), ex);
             return false;
         }
     }

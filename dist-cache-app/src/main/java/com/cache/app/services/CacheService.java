@@ -2,6 +2,8 @@ package com.cache.app.services;
 
 import com.cache.DistFactory;
 import com.cache.api.*;
+import com.cache.api.info.CacheInfo;
+import com.cache.api.info.CacheSetBackInfo;
 import com.cache.app.DistCacheApp;
 import com.cache.interfaces.Cache;
 import org.slf4j.Logger;

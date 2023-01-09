@@ -1,7 +1,7 @@
 package com.cache.agent.servers;
 
 import com.cache.api.AgentWelcomeMessage;
-import com.cache.api.DistClientType;
+import com.cache.api.enums.DistClientType;
 import com.cache.api.DistConfig;
 import com.cache.api.DistMessage;
 import com.cache.base.ServerBase;

@@ -2,6 +2,7 @@ package com.cache.test;
 
 import com.cache.DistFactory;
 import com.cache.api.*;
+import com.cache.api.info.CacheObjectInfo;
 import com.cache.interfaces.Cache;
 import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
@@ -35,13 +36,13 @@ public class CacheCleanTest {
         for (int i=0; i<30; i++) {
             String v = cache.withCache("key"+i, key -> "value");
             log.info("Objects in cache: " + cache.getObjectsCount() + ", keys: " + cache.getCacheKeys("") + ", key_refresh: " + cache.getObject("key_refresh"));
-            DistUtils.sleep(300);
+            DistUtils.sleep(100);
         }
         assertTrue(cache.getObjectsCount() > 10, "There should be at least 10 objets in cache");
         assertTrue(cache.contains("key_keep"));
         for (int i=0; i<11; i++) {
             log.info("Objects in cache: " + cache.getObjectsCount() + ", keys: " + cache.getCacheKeys("" + ", key_refresh: " + cache.getObject("key_refresh")));
-            DistUtils.sleep(300);
+            DistUtils.sleep(100);
         }
         List<CacheObjectInfo> objs = cache.getCacheInfos("");
         assertTrue(objs.size() > 20, "There should be at least 20 objects in cache");

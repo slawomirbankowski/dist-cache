@@ -1,7 +1,10 @@
 package com.cache.storage;
 
 import com.cache.api.*;
+import com.cache.api.enums.CacheStorageType;
+import com.cache.api.info.CacheObjectInfo;
 import com.cache.base.CacheStorageBase;
+import com.cache.interfaces.Cache;
 
 import java.util.*;
 
@@ -12,12 +15,14 @@ import java.util.*;
 public class KafkaStorage extends CacheStorageBase {
 
     /** TODO: init Kafka storage */
-    public KafkaStorage(StorageInitializeParameter p) {
-        super(p);
-
+    public KafkaStorage(Cache cache) {
+        super(cache);
     }
     /** Kafka is external storage */
     public  boolean isInternal() { return false; }
+    /** returns true if storage is global,
+     * it means that one global shared storage is available for all cache instances*/
+    public boolean isGlobal() { return true; }
     /** returns true if storage is operable and can be used
      * returns false is this storage cannot be used right now - it might be incorrect or turned off
      * this is mostly for external cache storages like JDBC DB that might be not connected
@@ -26,6 +31,12 @@ public class KafkaStorage extends CacheStorageBase {
         // TODO: implement checking connection to Kafka
         return true;
     }
+
+    /** get additional info parameters for this storage */
+    public Map<String, Object> getStorageAdditionalInfo() {
+        return Map.of();
+    }
+
     /** get type of this storage */
     public CacheStorageType getStorageType() {
         return CacheStorageType.kafka;

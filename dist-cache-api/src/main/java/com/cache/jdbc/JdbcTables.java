@@ -9,6 +9,8 @@ public enum JdbcTables {
     distagentconfig,
     /** table to store communication servers that are listening */
     distagentserver,
+    /** table to store services kept by agent */
+    distagentservice,
     /** table to store issues in agents, exceptions */
     distagentissue,
 

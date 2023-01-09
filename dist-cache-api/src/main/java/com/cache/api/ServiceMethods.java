@@ -1,5 +1,8 @@
 package com.cache.api;
 
+import com.cache.api.enums.DistServiceType;
+import com.cache.api.info.CacheInfo;
+import com.cache.api.info.StorageInfos;
 import com.cache.utils.CacheStats;
 
 /** available methods inside services - each method can be called with Distributed Messages

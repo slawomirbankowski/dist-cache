@@ -10,6 +10,10 @@ public class ElasticClusterInfo {
     private String node;
 
     public ElasticClusterInfo() {
+        id = "";
+        host = "";
+        ip = "";
+        node = "";
     }
     public ElasticClusterInfo(String id, String host, String ip, String node) {
         this.id = id;
@@ -48,5 +52,9 @@ public class ElasticClusterInfo {
 
     public void setNode(String node) {
         this.node = node;
+    }
+
+    public String toString() {
+        return "id:" + id + ", host: " + host + ", ip: " + ip + ", node: " + node;
     }
 }

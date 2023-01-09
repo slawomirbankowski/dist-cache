@@ -2,6 +2,8 @@ package com.cache.test;
 
 import com.cache.DistFactory;
 import com.cache.api.*;
+import com.cache.api.enums.DistCallbackType;
+import com.cache.api.enums.DistServiceType;
 import com.cache.interfaces.Agent;
 import com.cache.utils.DistUtils;
 import org.junit.jupiter.api.Test;
@@ -20,7 +22,7 @@ public class AgentRegisterTest {
         Agent agent1 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
-                        "cache_user", "cache_password123")
+                        "cache_user", "${JDBC_PASS}")
                 .withServerSocketPort(9901)
                 .withTimerStorageClean(1000)
                 .withTimerRegistrationPeriod(1000)
@@ -30,7 +32,7 @@ public class AgentRegisterTest {
         Agent agent2 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
-                        "cache_user", "cache_password123")
+                        "cache_user", "${JDBC_PASS}")
                 .withServerSocketPort(9902)
                 .withTimerStorageClean(1000)
                 .withTimerRegistrationPeriod(1000)

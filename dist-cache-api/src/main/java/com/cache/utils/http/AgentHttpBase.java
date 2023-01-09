@@ -66,7 +66,9 @@ public abstract class AgentHttpBase implements HttpCallable {
     public HttpResponseContent callDelete(String appendUrl, Map<String, String> headers) {
         return call(appendUrl, HttpConnectionHelper.METHOD_DELETE, Optional.empty(), headers, defaultTimeout);
     }
-
+    public HttpResponseContent callDelete(String appendUrl, Map<String, String> headers, String body) {
+        return call(appendUrl, HttpConnectionHelper.METHOD_DELETE, Optional.of(body), headers, defaultTimeout);
+    }
     protected String tryReadContent(java.io.InputStream inpStr) {
         try {
             StringBuilder responseText = new StringBuilder();

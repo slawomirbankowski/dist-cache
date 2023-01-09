@@ -1,6 +1,9 @@
 package com.cache.interfaces;
 
 import com.cache.api.*;
+import com.cache.api.enums.DistMessageType;
+import com.cache.api.enums.DistServiceType;
+import com.cache.api.info.AgentInfo;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -17,9 +20,11 @@ import java.util.Set;
  * - Issue management - to add issues from all local services
  *
  * */
-public interface Agent {
+public interface Agent extends IssueHandler {
     /** get unique ID of this agent */
     String getAgentGuid();
+    /** get short version ID of this agent GUID */
+    String getAgentShortGuid();
     /** get configuration for this agent */
     DistConfig getConfig();
     /** get high-level information about this agent */
@@ -52,7 +57,8 @@ public interface Agent {
     AgentEvents getAgentEvents();
     /** get agent issuer manager add issues */
     AgentIssues getAgentIssues();
-
+    /** get agent DAOs manager for external connections to JDBC, Elasticsearch, Kafka, Redis */
+    AgentDao getAgentDao();
 
     /** create new message builder starting this agent */
     DistMessageBuilder createMessageBuilder();

@@ -2,9 +2,9 @@ package com.cache.test;
 
 import com.cache.DistFactory;
 import com.cache.api.CacheMode;
-import com.cache.api.DistCallbackType;
+import com.cache.api.enums.DistCallbackType;
 import com.cache.api.DistCallbacks;
-import com.cache.api.DistServiceType;
+import com.cache.api.enums.DistServiceType;
 import com.cache.interfaces.Agent;
 import com.cache.utils.DistUtils;
 import org.junit.jupiter.api.Test;
@@ -22,7 +22,7 @@ public class AgentServerDatagramTest {
         Agent agent1 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
-                        "cache_user", "cache_password123")
+                        "cache_user", "${JDBC_PASS}")
                 .withRegisterCleanAfter(CacheMode.TIME_FIVE_MINUTES, CacheMode.TIME_ONE_DAY)
                 .withServerDatagramPort(9911)
                 .withSerializer("java.lang.String=StringSerializer,default=ObjectStreamSerializer")
@@ -44,7 +44,6 @@ public class AgentServerDatagramTest {
         assertNotNull(agent1, "Created agent should not be null");
         assertNotNull(agent2, "Created agent should not be null");
 
-
         log.info("======-----> Agent1 [1]: " + agent1.getAgentRegistrations().getAgents().size() + ", servers: " + agent1.getAgentServices().getServices().size());
         assertEquals(1, agent1.getAgentServices().getServices().size(), "There should be 1 server");
         assertEquals(0, agent1.getAgentRegistrations().getAgents().size(), "There should be 0 agents");
@@ -54,7 +53,7 @@ public class AgentServerDatagramTest {
         assertEquals(0, agent2.getAgentRegistrations().getAgents().size(), "There should be 0 agents");
         assertEquals(1, agent2.getAgentRegistrations().getRegistrationsCount(), "There should be 1 registration service");
 
-//com.cache.api.DistServiceType fromService, DistServiceType toService, String method, Object message, DistCallbacks
+//com.cache.api.enums.DistServiceType fromService, DistServiceType toService, String method, Object message, DistCallbacks
 
         DistUtils.sleep(3000);
         log.info("======-----> Agent1 [2]: " + agent1.getAgentRegistrations().getAgents().size() + ", servers: " + agent1.getAgentServices().getServices().size());

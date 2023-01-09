@@ -85,6 +85,11 @@ public class JdbcDialect {
     public String insertAgentIssue() { return getQueryOrEmpty(DialectQueries.insertAgentIssue); }
     public String selectAgentIssue() { return getQueryOrEmpty(DialectQueries.selectAgentIssue); }
 
+    public String createAgentService() { return getQueryOrEmpty(DialectQueries.createAgentService); }
+    public String createAgentServiceIndex() { return getQueryOrEmpty(DialectQueries.createAgentServiceIndex); }
+    public String insertAgentService() { return getQueryOrEmpty(DialectQueries.insertAgentService); }
+    public String selectAgentService() { return getQueryOrEmpty(DialectQueries.selectAgentService); }
+    public String deleteAgentService() { return getQueryOrEmpty(DialectQueries.deleteAgentService); }
 
     /** all supported dialects for databases */
     private static final Map<String, JdbcDialect> dialects = createDialectsMap();

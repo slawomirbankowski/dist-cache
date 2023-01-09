@@ -1,9 +1,14 @@
 package com.cache.api;
 
+import com.cache.api.enums.DistServiceType;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 
-/** class to keep information about Dist Service */
+/** class to keep information about Dist Service.
+ * There could be many services in Dist System connected through Agents:
+ * report, storage, space, remove, ...
+ * */
 public class DistServiceInfo {
     private DistServiceType serviceType;
     private String serviceClass;

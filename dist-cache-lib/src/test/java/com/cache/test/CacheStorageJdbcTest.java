@@ -24,11 +24,11 @@ public class CacheStorageJdbcTest {
         Cache cache = DistFactory.buildEmptyFactory()
                 .withName("GlobalCacheTest")
                 .withCacheStorageJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
-                        "cache_user", "cache_password123")
+                        "cache_user", "${JDBC_PASS}")
                 .withSerializerDefault()
                 .withSerializer("java.lang.String=StringSerializer,default=ObjectStreamSerializer")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
-                        "cache_user", "cache_password123")
+                        "cache_user", "${JDBC_PASS}")
                 .withCacheMaxObjectsAndItems(30, 100)
                 .createCacheInstance();
         var storageKeys = cache.getStorageKeys();

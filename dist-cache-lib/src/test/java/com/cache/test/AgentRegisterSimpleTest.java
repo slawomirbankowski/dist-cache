@@ -19,7 +19,7 @@ public class AgentRegisterSimpleTest {
         Agent agent1 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
-                        "cache_user", "cache_password123")
+                        "cache_user", "${JDBC_PASS}")
                 .withServerSocketPort(9901)
                 .withRegisterCleanAfter(CacheMode.TIME_FIVE_MINUTES, CacheMode.TIME_ONE_DAY)
                 .withTimerRegistrationPeriod(1000)
@@ -40,6 +40,7 @@ public class AgentRegisterSimpleTest {
         assertEquals(1, agent1.getAgentRegistrations().getRegistrationsCount(), "There should be 1 registration service");
 
         agent1.close();
+
         assertTrue(agent1.isClosed(), "agent1 should be closed");
 
         log.info("END-----");

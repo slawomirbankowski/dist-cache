@@ -1,6 +1,7 @@
 package com.cache.report;
 
 import com.cache.api.*;
+import com.cache.api.enums.DistServiceType;
 import com.cache.base.ServiceBase;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.Reports;
@@ -16,7 +17,6 @@ public class ReportsImpl extends ServiceBase implements Reports {
 
     /** local logger for this clas s*/
     protected static final Logger log = LoggerFactory.getLogger(ReportsImpl.class);
-
 
     public ReportsImpl(Agent agent) {
         super(agent);

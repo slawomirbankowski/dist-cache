@@ -1,7 +1,10 @@
 package com.cache.storage;
 
 import com.cache.api.*;
+import com.cache.api.enums.CacheStorageType;
+import com.cache.api.info.CacheObjectInfo;
 import com.cache.base.CacheStorageBase;
+import com.cache.interfaces.Cache;
 import com.cache.util.measure.TimedResult;
 import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
@@ -28,10 +31,10 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
   private Map<String, CacheObject> byKey;
   private NavigableMap<Integer, LinkedList<String>> byPriority;
 
-  public InternalWithTtlAndPriority(StorageInitializeParameter p) {
-    super(p);
-    this.maxObjectCount = p.cache.getConfig().getPropertyAsInt(DistConfig.CACHE_MAX_LOCAL_OBJECTS, DistConfig.CACHE_MAX_LOCAL_OBJECTS_VALUE);
-    this.maxItemCount = p.cache.getConfig().getPropertyAsInt(DistConfig.CACHE_MAX_LOCAL_ITEMS, DistConfig.CACHE_MAX_LOCAL_ITEMS_VALUE);
+  public InternalWithTtlAndPriority(Cache cache) {
+    super(cache);
+    this.maxObjectCount = cache.getConfig().getPropertyAsInt(DistConfig.CACHE_MAX_LOCAL_OBJECTS, DistConfig.CACHE_MAX_LOCAL_OBJECTS_VALUE);
+    this.maxItemCount = cache.getConfig().getPropertyAsInt(DistConfig.CACHE_MAX_LOCAL_ITEMS, DistConfig.CACHE_MAX_LOCAL_ITEMS_VALUE);
     this.byPriority = new TreeMap<>();
     this.byKey = new HashMap<>();
   }
@@ -210,6 +213,14 @@ public class InternalWithTtlAndPriority extends CacheStorageBase {
   @Override
   public boolean isInternal() {
     return true;
+  }
+  /** returns true if storage is global,
+   * it means that one global shared storage is available for all cache instances*/
+  public boolean isGlobal() { return false; }
+  /** get additional info parameters for this storage */
+  public Map<String, Object> getStorageAdditionalInfo() {
+    return Map.of("className", byKey.getClass().getName(),
+             " byPrioritySize", byPriority.size());
   }
   /** get type of this storage */
   public CacheStorageType getStorageType() {

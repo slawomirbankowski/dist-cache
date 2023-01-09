@@ -141,8 +141,7 @@ public class TestInternalTtlPriority {
     props.put(DistConfig.CACHE_MAX_LOCAL_ITEMS, "" + maxItems);
     var cc = new DistConfig(props);
     var cache = DistFactory.createCacheInstance(props);
-    var sip = new StorageInitializeParameter(cache);
-    return new InternalWithTtlAndPriority(sip);
+    return new InternalWithTtlAndPriority(cache);
   }
 
   @SafeVarargs

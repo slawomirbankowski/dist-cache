@@ -1,7 +1,10 @@
 package com.cache.storage;
 
 import com.cache.api.*;
+import com.cache.api.enums.CacheStorageType;
+import com.cache.api.info.CacheObjectInfo;
 import com.cache.base.CacheStorageBase;
+import com.cache.interfaces.Cache;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.params.SetParams;
 
@@ -9,9 +12,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /** cache with Redis as Cache Storage
- *
  * TODO: Implement storage saving cache objects in Redis
- *
  * */
 public class RedisCacheStorage extends CacheStorageBase {
 
@@ -23,14 +24,18 @@ public class RedisCacheStorage extends CacheStorageBase {
     private Jedis jedis;
 
     /** initialize Redis storage */
-    public RedisCacheStorage(StorageInitializeParameter p) {
-        super(p);
-        redisHost = p.cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_REDIS_HOST, "");
-        redisPort = p.cache.getConfig().getPropertyAsInt(DistConfig.CACHE_STORAGE_REDIS_PORT, 6379);
+    public RedisCacheStorage(Cache cache) {
+        super(cache);
+        redisHost = cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_REDIS_HOST, "");
+        redisPort = cache.getConfig().getPropertyAsInt(DistConfig.CACHE_STORAGE_REDIS_PORT, 6379);
         jedis = new Jedis(redisHost, redisPort);
     }
     /** Redis is external storage */
     public  boolean isInternal() { return false; }
+
+    /** returns true if storage is global,
+     * it means that one global shared storage is available for all cache instances */
+    public boolean isGlobal() { return true; }
     /** returns true Redis is connected/ available */
     public boolean isOperable() {
         try {
@@ -39,6 +44,11 @@ public class RedisCacheStorage extends CacheStorageBase {
             return false;
         }
     }
+    /** get additional info parameters for this storage */
+    public Map<String, Object> getStorageAdditionalInfo() {
+        return Map.of();
+    }
+
     /** get type of this storage */
     public CacheStorageType getStorageType() {
         return CacheStorageType.redis;
@@ -97,7 +107,7 @@ public class RedisCacheStorage extends CacheStorageBase {
         try {
             return jedis.keys("*" + containsStr + "*");
         } catch (Exception ex) {
-            initParams.cache.addIssue("", ex);
+            cache.addIssue("getKeys", ex);
             return new HashSet<String>();
         }
     }

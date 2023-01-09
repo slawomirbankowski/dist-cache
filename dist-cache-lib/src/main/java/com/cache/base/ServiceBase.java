@@ -8,7 +8,6 @@ import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 /** base class for any service connected to Agent */
@@ -18,8 +17,7 @@ public abstract class ServiceBase extends Agentable implements DistService {
     protected static final Logger log = LoggerFactory.getLogger(ServiceBase.class);
     /** UUID for service - globally unique */
     protected String guid = DistUtils.generateCacheGuid();
-    /** creation date and time of this cache manager */
-    protected LocalDateTime createdDateTime = LocalDateTime.now();
+
     /** if service has been already closed */
     protected boolean isClosed = false;
 
@@ -28,8 +26,7 @@ public abstract class ServiceBase extends Agentable implements DistService {
         super(parentAgent);
     }
 
-    /** get date and time of creating service */
-    public LocalDateTime getCreateDate() { return createdDateTime; }
+
     /** get unique ID of this service */
     public String getServiceUid() {
         return guid;
@@ -38,7 +35,11 @@ public abstract class ServiceBase extends Agentable implements DistService {
     protected abstract String createServiceUid();
     /** get basic information about service */
     public DistServiceInfo getServiceInfo() {
-        return new DistServiceInfo(getServiceType(), getClass().getName(), getServiceUid(), createdDateTime, isClosed, Map.of());
+        return new DistServiceInfo(getServiceType(), getClass().getName(), getServiceUid(), createDate, isClosed, getServiceInfoCustomMap());
+    }
+    /** get custom map of info about service */
+    public Map<String, String> getServiceInfoCustomMap() {
+        return Map.of();
     }
     /** check if service has been already closed and deinitialized */
     public boolean getClosed() { return isClosed; }

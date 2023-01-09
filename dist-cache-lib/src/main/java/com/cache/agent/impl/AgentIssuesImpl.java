@@ -1,8 +1,8 @@
 package com.cache.agent.impl;
 
-import com.cache.agent.AgentInstance;
 import com.cache.api.DistConfig;
 import com.cache.api.DistIssue;
+import com.cache.interfaces.Agent;
 import com.cache.interfaces.AgentIssues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,18 +22,17 @@ public class AgentIssuesImpl extends Agentable implements AgentIssues {
     protected final Queue<DistIssue> issues = new LinkedList<>();
 
     /** */
-    public AgentIssuesImpl(AgentInstance parentAgent) {
+    public AgentIssuesImpl(Agent parentAgent) {
         super(parentAgent);
     }
 
-    /** add issue to cache manager to be revoked by parent
+    /** add issue to be revoked by parent
      * issue could be Exception, Error, problem with connecting to storage,
      * internal error, not consistent state that is unknown and could be used by parent manager */
     public void addIssue(DistIssue issue) {
         synchronized (issues) {
             issues.add(issue);
             // add issue for registration services
-            parentAgent.getAgentServices();
             parentAgent.getAgentRegistrations().addIssue(issue);
             while (issues.size() > parentAgent.getConfig().getPropertyAsLong(DistConfig.CACHE_ISSUES_MAX_COUNT, DistConfig.CACHE_ISSUES_MAX_COUNT_VALUE)) {
                 issues.poll();
@@ -53,7 +52,10 @@ public class AgentIssuesImpl extends Agentable implements AgentIssues {
 
     /** close issues with clearing all */
     public void close() {
-        issues.clear();
+        synchronized (issues) {
+            log.info("Closing Issues, clearing all, count: " + issues.size());
+            issues.clear();
+        }
     }
 
 }

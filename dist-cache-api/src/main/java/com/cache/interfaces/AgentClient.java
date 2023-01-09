@@ -1,6 +1,7 @@
 package com.cache.interfaces;
 
-import com.cache.api.DistClientType;
+import com.cache.api.info.ClientInfo;
+import com.cache.api.enums.DistClientType;
 import com.cache.api.DistMessage;
 
 /** Interface for client connected to other agent
@@ -28,4 +29,6 @@ public interface AgentClient {
     boolean hasTags(String[] tags);
     /** send message using this client */
     boolean send(DistMessage msg);
+    /** get information about this client */
+    ClientInfo getClientInfo();
 }

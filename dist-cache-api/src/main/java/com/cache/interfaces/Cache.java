@@ -1,8 +1,10 @@
 package com.cache.interfaces;
 
 import com.cache.api.*;
+import com.cache.api.info.CacheInfo;
+import com.cache.api.info.CacheObjectInfo;
+import com.cache.api.info.StorageInfo;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;

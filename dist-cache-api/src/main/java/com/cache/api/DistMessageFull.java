@@ -1,5 +1,6 @@
 package com.cache.api;
 
+import com.cache.api.enums.DistCallbackType;
 import com.cache.interfaces.AgentClient;
 
 import java.time.LocalDateTime;

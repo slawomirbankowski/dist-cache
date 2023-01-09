@@ -3,6 +3,7 @@ package com.cache.base;
 import com.cache.agent.AgentInstance;
 import com.cache.agent.impl.Agentable;
 import com.cache.api.*;
+import com.cache.api.info.AgentRegistrationInfo;
 import com.cache.base.dtos.DistAgentRegisterRow;
 import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.utils.CacheHitRatio;
@@ -16,8 +17,6 @@ import java.util.List;
  * */
 public abstract class RegistrationBase extends Agentable {
 
-    /** date and time of creation */
-    private final LocalDateTime createdDate = LocalDateTime.now();
     /** global unique ID */
     private final String registerGuid = DistUtils.generateConnectorGuid(this.getClass().getSimpleName());
 
@@ -36,9 +35,6 @@ public abstract class RegistrationBase extends Agentable {
     public RegistrationBase(AgentInstance parentAgent) {
         super(parentAgent);
         initialize();
-    }
-    public LocalDateTime getCreatedDate() {
-        return createdDate;
     }
     /** get global ID of this connector */
     public String getRegisterGuid() {
@@ -120,7 +116,7 @@ public abstract class RegistrationBase extends Agentable {
     /** get information about registration object */
     public AgentRegistrationInfo getInfo() {
         // String registerGuid, String registrationType, LocalDateTime createdDate, boolean initialized, boolean closed, boolean lastConnected, String url, AgentConfirmation confirmation
-        return new AgentRegistrationInfo(registerGuid, getClass().getSimpleName(), getCreatedDate(), initialized, closed, lastConnected, getUrl(), registerConfirmation);
+        return new AgentRegistrationInfo(registerGuid, getClass().getSimpleName(), getCreateDate(), initialized, closed, lastConnected, getUrl(), registerConfirmation);
     }
     /** get all agents */
     public List<AgentSimplified> getAgents() {

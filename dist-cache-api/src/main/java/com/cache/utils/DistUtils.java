@@ -1,6 +1,6 @@
 package com.cache.utils;
 
-import com.cache.api.AppGlobalInfo;
+import com.cache.api.info.AppGlobalInfo;
 import com.cache.api.CacheObject;
 
 import java.io.BufferedReader;
@@ -82,8 +82,11 @@ public class DistUtils {
     public static String generateStorageGuid(String className) {
         return "ST_" + hostName + "_S" + className + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + storageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
-    public static String generateAgentGuid() {
-        return "A_" + hostName + "_" + UUID.randomUUID().toString().substring(0, 8);
+    public static String generateAgentGuid(String agentShortGuid) {
+        return "A_" + hostName + "_" + agentShortGuid;
+    }
+    public static String generateShortGuid() {
+        return UUID.randomUUID().toString().substring(0, 8);
     }
     public static String generateServerGuid(String servType) {
         return "SRV_" +  hostName  + "_T" + servType + "_" + UUID.randomUUID().toString().substring(0, 8);

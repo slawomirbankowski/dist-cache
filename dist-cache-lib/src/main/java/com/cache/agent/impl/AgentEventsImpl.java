@@ -1,8 +1,8 @@
 package com.cache.agent.impl;
 
-import com.cache.agent.AgentInstance;
 import com.cache.api.CacheEvent;
 import com.cache.api.DistConfig;
+import com.cache.interfaces.Agent;
 import com.cache.interfaces.AgentEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ public class AgentEventsImpl extends Agentable implements AgentEvents {
     protected final Queue<CacheEvent> events = new LinkedList<>();
 
     /** creates new manager for events in agent */
-    public AgentEventsImpl(AgentInstance parentAgent) {
+    public AgentEventsImpl(Agent parentAgent) {
         super(parentAgent);
     }
 
@@ -64,7 +64,10 @@ public class AgentEventsImpl extends Agentable implements AgentEvents {
 
     /** close */
     public void close() {
-        events.clear();
+        synchronized (events) {
+            log.info("Closing events, clearing ALL, count: " + events.size());
+            events.clear();
+        }
     }
 
 }

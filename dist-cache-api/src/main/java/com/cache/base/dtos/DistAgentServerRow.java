@@ -19,11 +19,12 @@ public class DistAgentServerRow {
     public java.util.Date createddate;
     public int isactive;
     public java.util.Date lastpingdate;
+    public String serverparams;
 
     /** */
     public DistAgentServerRow() {
     }
-    public DistAgentServerRow(String agentguid, String serverguid, String servertype, String serverhost, String serverip, int serverport, String serverurl, java.util.Date createddate, int isactive, java.util.Date lastpingdate) {
+    public DistAgentServerRow(String agentguid, String serverguid, String servertype, String serverhost, String serverip, int serverport, String serverurl, java.util.Date createddate, int isactive, java.util.Date lastpingdate, String serverparams) {
         this.agentguid = agentguid;
         this.serverguid = serverguid;
         this.servertype = servertype;
@@ -34,6 +35,10 @@ public class DistAgentServerRow {
         this.createddate = createddate;
         this.isactive = isactive;
         this.lastpingdate = lastpingdate;
+        this.serverparams = serverparams;
+    }
+    public DistAgentServerRow copyNoPassword() {
+        return new DistAgentServerRow(agentguid, serverguid, servertype, serverhost, serverip, serverport, serverurl, createddate, isactive, lastpingdate, serverparams);
     }
     public Map<String, String> toMap() {
         return Map.of("type", "server",
@@ -44,6 +49,7 @@ public class DistAgentServerRow {
                 "serverip", serverip,
                 "serverport", "" + serverport,
                 "serverurl", serverurl,
+               // "serverparams", serverparams,
                 "createddate", createddate.toString(),
                 "lastpingdate", lastpingdate.toString());
     }
@@ -59,7 +65,8 @@ public class DistAgentServerRow {
                 m.getString("serverurl", ""),
                 m.getDateOrNow("lastpingdate"),
                 m.getInt("isactive", 0),
-                m.getDateOrNow("lastpingdate")
+                m.getDateOrNow("lastpingdate"),
+                m.getString("serverparams", "")
         );
     }
 }

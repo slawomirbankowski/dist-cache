@@ -32,7 +32,7 @@ public class CacheMultiThreadTest {
             thread.start();
             threaads[th] = thread;
         }
-        // test should take 10 seconds
+        // test should take 5 seconds
         DistUtils.sleep(5000);
         for (int th=0; th<maxThreads; th++) {
             threaads[th].working = false;
@@ -56,7 +56,6 @@ class ReadingWritingThread extends Thread {
         while (working) {
             try {
                 long startTime = System.currentTimeMillis();
-
                 for (int i=0; i<50; i++) {
                     String key = "key" + DistUtils.randomInt(maxKeys);
                     String v = cache.withCache(key, k -> {
@@ -67,6 +66,7 @@ class ReadingWritingThread extends Thread {
                     cache.clearCacheContains(keyToClear);
                 }
                 long totalTime = System.currentTimeMillis() - startTime;
+
             } catch (Exception ex) {
                 log.error("Error while testing multi-thread cache, reason: " + ex.getMessage(), ex);
             }

@@ -1,5 +1,7 @@
 package com.cache.api;
 
+import com.cache.api.enums.CacheStorageType;
+import com.cache.api.info.CacheObjectInfo;
 import com.cache.interfaces.DistSerializer;
 import com.cache.utils.DistUtils;
 
@@ -139,6 +141,10 @@ public class CacheObject {
     public CacheMode.Mode getMode() {
         return mode;
     }
+    /** get number of automatic refreshed of this value */
+    public long getRefreshes() {
+        return refreshes.get();
+    }
     /** get time of last use this cache */
     public long getLastUseTime() { return lastUseTime; }
     /** get acquire time of getting this object from aquire method */
@@ -221,7 +227,7 @@ public class CacheObject {
      * */
     public int refreshIfNeeded() {
         boolean sbr = shouldBeRefreshed();
-        //log.debug("Should be refreshed: " + sbr + ", key=" + key + ", lastRefreshTime=" + lastRefreshTime + ", isRefresh=" + mode.isRefresh());
+        //System.out.println("Should be refreshed: " + sbr + ", key=" + key + ", lastRefreshTime=" + lastRefreshTime + ", ttl=" + getTimeToLive() + ", curr=" + System.currentTimeMillis() + ", isRefresh=" + mode.isRefresh());
         if (sbr) {
             lastRefreshTime = System.currentTimeMillis();
             if (methodToAcquire != null) {

@@ -21,5 +21,5 @@ public interface HttpCallable {
     HttpResponseContent callPut(String appendUrl, Map<String, String> headers, String body);
     HttpResponseContent callDelete(String appendUrl);
     HttpResponseContent callDelete(String appendUrl, Map<String, String> headers);
-
+    HttpResponseContent callDelete(String appendUrl, Map<String, String> headers, String body);
 }

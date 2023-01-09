@@ -1,6 +1,10 @@
 package com.cache.base;
 
 import com.cache.api.*;
+import com.cache.api.enums.CacheStorageType;
+import com.cache.api.info.CacheObjectInfo;
+import com.cache.api.info.StorageInfo;
+import com.cache.interfaces.Cache;
 import com.cache.interfaces.CacheKeyEncoder;
 import com.cache.interfaces.CacheStorage;
 import com.cache.interfaces.DistSerializer;
@@ -9,10 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /** base abstract class for storage to keep caches
  * storage could be:
@@ -33,22 +34,22 @@ public abstract class CacheStorageBase implements CacheStorage {
     protected final long maxObjects;
     /** serializer dedicated for this cache storage */
     protected final DistSerializer distSerializer;
-    /** initialization parameters for subclasses */
-    protected StorageInitializeParameter initParams;
+    /** parent cache for this storage */
+    protected Cache cache;
 
     /** base constructor to pass initialization parameters */
-    public CacheStorageBase(StorageInitializeParameter p) {
-        this.initParams = p;
+    public CacheStorageBase(Cache cache) {
+        this.cache = cache;
         this.storageUid = DistUtils.generateStorageGuid(getClass().getSimpleName());
-        this.distSerializer = p.cache.getAgent().getSerializer();
-        this.maxObjects = initParams.cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_OBJECTS, 1000);
-        this.maxItems = initParams.cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_ITEMS, 1000);
+        this.distSerializer = cache.getAgent().getSerializer();
+        this.maxObjects = cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_OBJECTS, 1000);
+        this.maxItems = cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_ITEMS, 1000);
     }
 
     /** get unique storage ID */
     public String getStorageUid() { return storageUid; }
     /** get UID of parent cache */
-    public String getCacheUid() { return initParams.cache.getCacheGuid(); }
+    public String getCacheUid() { return cache.getCacheGuid(); }
     /** get type of this storage */
     public abstract CacheStorageType getStorageType();
     /** get name of this storage - by default it is simple name of this class */
@@ -58,10 +59,15 @@ public abstract class CacheStorageBase implements CacheStorage {
     /** get information about this storage */
     public StorageInfo getStorageInfo() {
         return new StorageInfo(storageUid, storageCreatedDate, this.getClass().getName(),
-                getItemsCount(), getObjectsCount(), isInternal()); }
+                getItemsCount(), getObjectsCount(), isInternal(), isGlobal(), getStorageAdditionalInfo());
+    }
+    /** to override - get additional info parameters for this storage*/
+    public Map<String, Object> getStorageAdditionalInfo() {
+        return Map.of();
+    }
     /** get key encoder - this is a class to encode key to protect passwords, secrets of a key */
     public CacheKeyEncoder getKeyEncoder() {
-        return initParams.cache.getKeyEncoder();
+        return cache.getKeyEncoder();
     }
     /** encode key of cache object to be file name end like .98c1247b349c87238a724.cache */
     protected String encodeKeyToFileEnd(String key) {
@@ -116,8 +122,12 @@ public abstract class CacheStorageBase implements CacheStorage {
         return 2;
     }
     /** returns true if storage is internal and cache objects are kept in local memory
-     * false if storage is external and cache objects are kept in any storages like Redis, Elasticsearch, DB*/
+     * false if storage is external and cache objects are kept in any storages like Redis, Elasticsearch, DB */
     public abstract boolean isInternal();
+    /** returns true if storage is global,
+     * it means that one global shared storage is available for all cache instances*/
+    public abstract boolean isGlobal();
+
     /** returns true if storage is operable and can be used
      * returns false is this storage cannot be used right now - it might be incorrect or turned off
      * this is mostly for external cache storages like JDBC DB that might be not connected

@@ -21,7 +21,7 @@ public class AgentServerHttpTest {
         Agent agent1 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
-                        "cache_user", "cache_password123")
+                        "cache_user", "${JDBC_PASS}")
                 .withServerHttpPort(9911)
                 .withSerializer("java.lang.String=StringSerializer,default=ObjectStreamSerializer")
                 .withRegisterCleanAfter(CacheMode.TIME_FIVE_MINUTES, CacheMode.TIME_ONE_DAY)
@@ -52,7 +52,7 @@ public class AgentServerHttpTest {
         assertEquals(0, agent2.getAgentRegistrations().getAgents().size(), "There should be 0 agents");
         assertEquals(1, agent2.getAgentRegistrations().getRegistrationsCount(), "There should be 1 registration service");
 
-//com.cache.api.DistServiceType fromService, DistServiceType toService, String method, Object message, DistCallbacks
+//com.cache.api.enums.DistServiceType fromService, DistServiceType toService, String method, Object message, DistCallbacks
 
         DistUtils.sleep(3000);
         log.info("======-----> Agent1 [2]: " + agent1.getAgentRegistrations().getAgents().size() + ", servers: " + agent1.getAgentServices().getServices().size());

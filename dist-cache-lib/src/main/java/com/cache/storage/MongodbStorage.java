@@ -1,14 +1,15 @@
 package com.cache.storage;
 
 import com.cache.api.*;
+import com.cache.api.enums.CacheStorageType;
+import com.cache.api.info.CacheObjectInfo;
 import com.cache.base.CacheStorageBase;
+import com.cache.interfaces.Cache;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 
-import java.io.File;
 import java.util.*;
 
 /** cache with MongoDB as storage for objects
@@ -27,13 +28,13 @@ public class MongodbStorage extends CacheStorageBase {
     private MongoCollection<Document> mongoCacheItems;
 
     /** initialize Redis storage */
-    public MongodbStorage(StorageInitializeParameter p) {
-        super(p);
-        mongoHost = p.cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_MONGODB_HOST);
-        mongoPort = p.cache.getConfig().getPropertyAsInt(DistConfig.CACHE_STORAGE_MONGODB_PORT, 8081);
-        mongoDbName = p.cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_MONGODB_DATABASE, "distcache");
-        mongoCollection = p.cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_MONGODB_COLLECTION, "distcacheitems");
-        log.info("Try to start Cache Storage of MongoDB for agent:" + p.cache.getAgent().getAgentGuid() + ", host: " + mongoHost + ", port: " + mongoPort + ", DB: " + mongoDbName + ", collection" + mongoCollection);
+    public MongodbStorage(Cache cache) {
+        super(cache);
+        mongoHost = cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_MONGODB_HOST);
+        mongoPort = cache.getConfig().getPropertyAsInt(DistConfig.CACHE_STORAGE_MONGODB_PORT, 8081);
+        mongoDbName = cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_MONGODB_DATABASE, "distcache");
+        mongoCollection = cache.getConfig().getProperty(DistConfig.CACHE_STORAGE_MONGODB_COLLECTION, "distcacheitems");
+        log.info("Try to start Cache Storage of MongoDB for agent:" + cache.getAgent().getAgentGuid() + ", host: " + mongoHost + ", port: " + mongoPort + ", DB: " + mongoDbName + ", collection" + mongoCollection);
         mongoClient = new MongoClient( mongoHost , mongoPort );
         mongoDb = mongoClient.getDatabase(mongoDbName);
         mongoCacheItems = mongoDb.getCollection(mongoCollection);
@@ -41,6 +42,10 @@ public class MongodbStorage extends CacheStorageBase {
 
     /** MongoDB is external storage */
     public  boolean isInternal() { return false; }
+
+    /** returns true if storage is global,
+     * it means that one global shared storage is available for all cache instances*/
+    public boolean isGlobal() { return true; }
     /** returns true if MongoDB is available  */
     public boolean isOperable() {
         try {
@@ -50,6 +55,12 @@ public class MongodbStorage extends CacheStorageBase {
             return false;
         }
     }
+
+    /** get additional info parameters for this storage */
+    public Map<String, Object> getStorageAdditionalInfo() {
+        return Map.of();
+    }
+
     /** get type of this storage */
     public CacheStorageType getStorageType() {
         return CacheStorageType.mongodb;

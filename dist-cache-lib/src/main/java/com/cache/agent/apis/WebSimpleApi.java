@@ -42,7 +42,7 @@ public class WebSimpleApi extends AgentWebApi {
     /** creates new Web API and initialize it */
     public WebSimpleApi(AgentApi api) {
         parentApi = api;
-        webApiPort = parentApi.getAgent().getConfig().getPropertyAsInt(DistConfig.AGENT_API_PORT, 9900);
+        webApiPort = parentApi.getAgent().getConfig().getPropertyAsInt(DistConfig.AGENT_API_PORT, DistConfig.AGENT_API_PORT_DEFAULT_VALUE);
         startApi();
     }
     /** start this Agent Web API */

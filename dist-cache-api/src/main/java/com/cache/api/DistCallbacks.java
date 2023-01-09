@@ -1,5 +1,7 @@
 package com.cache.api;
 
+import com.cache.api.enums.DistCallbackType;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;

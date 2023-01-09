@@ -19,8 +19,8 @@ public class CacheModeKeepTest {
         Cache cache = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withCacheStorageHashMap()
-                .withCacheObjectTimeToLive(CacheMode.TIME_FIVE_SECONDS)
-                .withTimerStorageClean(CacheMode.TIME_FIVE_SECONDS)
+                .withCacheObjectTimeToLive(CacheMode.TIME_TWO_SECONDS)
+                .withTimerStorageClean(CacheMode.TIME_TWO_SECONDS)
                 .withCacheMaxObjectsAndItems(30, 100)
                 .createCacheInstance();
 
@@ -30,9 +30,9 @@ public class CacheModeKeepTest {
             String v = cache.withCache("key"+i, key -> "value", CacheMode.modeKeep);
             log.info("Objects in cache: " + cache.getObjectsCount() + ", keys: " + cache.getCacheKeys(""));
         }
-        DistUtils.sleep(3000);
+        DistUtils.sleep(2000);
         assertEquals(cache.getObjectsCount(), 30, "There should be 30 objets in cache");
-        DistUtils.sleep(3000);
+        DistUtils.sleep(2000);
         assertEquals(cache.getObjectsCount(), 30, "There should be 30 objets in cache");
         cache.close();
         assertTrue(cache.getClosed(), "Cache should be closed");

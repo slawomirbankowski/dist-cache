@@ -2,6 +2,7 @@ package com.cache;
 
 import com.cache.agent.AgentInstance;
 import com.cache.api.*;
+import com.cache.api.enums.DistSerializerTypes;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.Cache;
 import com.cache.interfaces.DistSerializer;
@@ -10,8 +11,9 @@ import com.cache.serializers.ComplexSerializer;
 import com.cache.utils.JsonUtils;
 import com.cache.utils.DistUtils;
 import com.cache.utils.CustomSerializer;
-import com.cache.utils.StringValueResolver;
+import com.cache.utils.ResolverManager;
 import com.cache.utils.resolvers.MapResolver;
+import com.cache.utils.resolvers.MethodResolver;
 import com.cache.utils.resolvers.PropertyResolver;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
@@ -111,9 +113,11 @@ public class DistFactory {
     /** cache policy */
     private CachePolicy policy = CachePolicyBuilder.empty().create();
     /** resolver for configuration values */
-    private StringValueResolver resolver = new StringValueResolver()
+    private ResolverManager resolver = new ResolverManager()
             .addResolver(new PropertyResolver(props))
             .addResolver(new MapResolver(System.getenv()));
+    /** all DAOs parameters by name to create DAO in Agent */
+    private Map<String, DaoParams> daos = new HashMap<>();
 
     /** factory is just creating managers */
     private DistFactory() {
@@ -127,17 +131,14 @@ public class DistFactory {
      * this is creating Agent and Agent is creating Cache by get method
      * */
     public Cache createCacheInstance() {
-        DistConfig config = new DistConfig(props, resolver);
-        AgentInstance agent = new AgentInstance(config, callbacks, serializers, policy);
-        agent.initializeAgent();
-        return agent.getAgentServices().getCache();
+        return createAgentInstance().getAgentServices().getCache();
     }
     /** create instance of agent from current factory using properties and callbacks
      * This is just creating Agent itself
      * */
     public Agent createAgentInstance() {
         DistConfig config = new DistConfig(props, resolver);
-        AgentInstance agent = new AgentInstance(config, callbacks, serializers, policy);
+        AgentInstance agent = new AgentInstance(config, callbacks, serializers, policy, daos);
         agent.initializeAgent();
         return agent;
     }
@@ -241,7 +242,23 @@ public class DistFactory {
         resolver.addResolver(r);
         return this;
     }
-
+    public DistFactory withResolverFromMap(Map<String, String> map) {
+        resolver.addResolver(new MapResolver(map));
+        return this;
+    }
+    public DistFactory withResolverFromMethod(Function<String, Optional<String>> method) {
+        resolver.addResolver(new MethodResolver(method));
+        return this;
+    }
+    public DistFactory withResolverFromKeyValue(Map<String, String> map) {
+        resolver.addResolver(new MapResolver(map));
+        return withResolverFromMap(Map.of());
+    }
+    /** set tags to Agent for better identification */
+    public DistFactory withAgentTags(Set<String> tags) {
+        props.setProperty(DistConfig.AGENT_TAGS, String.join(";", tags));
+        return this;
+    }
 
     /** define port for Web Api */
     public DistFactory withWebApiPort(int port) {
@@ -277,12 +294,28 @@ public class DistFactory {
         serializers.put(className, ser);
         return this;
     }
-    /** add custom serializations for this system */
+    /** add custom serializations for this system
+     * @param className name of class to be serialized or deserialized
+     * @param serializeFunction function to serialize Object to String
+     * @param deserializeFunction function to deserialize Class name with String to Object  */
     public DistFactory withSerializerCustom(String className, Function<Object, String> serializeFunction, BiFunction<String, String, Object> deserializeFunction) {
         serializers.put(className, new CustomSerializer(serializeFunction, deserializeFunction));
         return this;
     }
 
+    /** add DAO for given name with JDBC url, driver, user and password */
+    public DistFactory withDaoJdbc(String name, String url, String driver, String user, String pass) {
+        daos.put(name, DaoParams.jdbcParams(url, driver, user, pass));
+        return this;
+    }
+    public DistFactory withDaoElastic(String name, String url, String user, String pass) {
+        daos.put(name, DaoParams.elasticsearchParams(url, user, pass));
+        return this;
+    }
+    public DistFactory withDaoKafka(String name, String brokers, int numPartitions, short replicationFactor, String clientId, String groupId) {
+        daos.put(name, DaoParams.kafkaParams(brokers, numPartitions, replicationFactor, clientId, groupId));
+        return this;
+    }
 
     /** add registration method as JDBC */
     public DistFactory withRegistrationJdbc(String url, String driver, String user, String pass) {
@@ -293,6 +326,14 @@ public class DistFactory {
         return this;
     }
 
+    /** add registration method as JDBC */
+    public DistFactory withRegistrationJdbcFromEnv() {
+        props.setProperty(DistConfig.AGENT_REGISTRATION_JDBC_URL, "${JDBC_URL}");
+        props.setProperty(DistConfig.AGENT_REGISTRATION_JDBC_DRIVER, "${JDBC_DRIVER}");
+        props.setProperty(DistConfig.AGENT_REGISTRATION_JDBC_USER, "${JDBC_USER}");
+        props.setProperty(DistConfig.AGENT_REGISTRATION_JDBC_PASS, "${JDBC_PASS}");
+        return this;
+    }
     /** add URL for Dist standalone application */
     public DistFactory withRegisterApplication(String cacheAppUrl) {
         props.setProperty(DistConfig.CACHE_APPLICATION_URL, cacheAppUrl);
@@ -308,6 +349,12 @@ public class DistFactory {
         props.setProperty(DistConfig.AGENT_REGISTRATION_ELASTICSEARCH_URL, url);
         props.setProperty(DistConfig.AGENT_REGISTRATION_ELASTICSEARCH_USER, user);
         props.setProperty(DistConfig.AGENT_REGISTRATION_ELASTICSEARCH_PASS, pass);
+        return this;
+    }
+    public DistFactory withRegistrationElasticsearchFromEnvironment() {
+        props.setProperty(DistConfig.AGENT_REGISTRATION_ELASTICSEARCH_URL, "${ELASTICSEARCH_URL}");
+        props.setProperty(DistConfig.AGENT_REGISTRATION_ELASTICSEARCH_USER, "${ELASTICSEARCH_USER}");
+        props.setProperty(DistConfig.AGENT_REGISTRATION_ELASTICSEARCH_PASS, "${ELASTICSEARCH_PASS}");
         return this;
     }
 
@@ -326,7 +373,10 @@ public class DistFactory {
         props.setProperty(DistConfig.AGENT_SERVER_SOCKET_PORT, ""+port);
         return this;
     }
-
+    public DistFactory withServerSocketPortConfig(String cfgName) {
+        props.setProperty(DistConfig.AGENT_SERVER_SOCKET_PORT, "${"+ cfgName + "}");
+        return this;
+    }
     /** define port to define value on which agent will be listening - this is Socket server */
     public DistFactory withServerSocketDefaultPort() {
         return withServerSocketPort(DistConfig.AGENT_SERVER_SOCKET_PORT_DEFAULT_VALUE);
@@ -371,6 +421,14 @@ public class DistFactory {
         props.setProperty(DistConfig.CACHE_STORAGE_ELASTICSEARCH_PASS, pass);
         return this;
     }
+
+    public DistFactory withCacheStorageElasticsearchFromEnv() {
+        props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_ELASTICSEARCH);
+        props.setProperty(DistConfig.CACHE_STORAGE_ELASTICSEARCH_URL, "${ELASTICSEARCH_URL}");
+        props.setProperty(DistConfig.CACHE_STORAGE_ELASTICSEARCH_USER, "${ELASTICSEARCH_USER}");
+        props.setProperty(DistConfig.CACHE_STORAGE_ELASTICSEARCH_PASS, "${ELASTICSEARCH_PASS}");
+        return this;
+    }
     /** add JDBC as external storage */
     public DistFactory withCacheStorageJdbc(String url, String driver, String user) {
         props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_JDBC);
@@ -390,6 +448,17 @@ public class DistFactory {
         props.setProperty(DistConfig.CACHE_STORAGE_JDBC_DIALECT, driver);
         return this;
     }
+    /** add JDBC as external storage */
+    public DistFactory withCacheStorageJdbcFromEnv() {
+        props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_JDBC);
+        props.setProperty(DistConfig.CACHE_STORAGE_JDBC_URL, "${JDBC_URL}");
+        props.setProperty(DistConfig.CACHE_STORAGE_JDBC_DRIVER, "${JDBC_DRIVER}");
+        props.setProperty(DistConfig.CACHE_STORAGE_JDBC_USER, "${JDBC_USER}");
+        props.setProperty(DistConfig.CACHE_STORAGE_JDBC_PASS, "${JDBC_PASS}");
+        props.setProperty(DistConfig.CACHE_STORAGE_JDBC_DIALECT, "${JDBC_DIALECT}");
+        return this;
+    }
+
     /** add LocalDisk with custom path as cache storage for large objects */
     public DistFactory withCacheStorageLocalDisk(String basePath) {
         props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_LOCAL_DISK);
@@ -400,14 +469,14 @@ public class DistFactory {
     public DistFactory withCacheStorageRedis(String url, int port) {
         props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_REDIS);
         props.setProperty(DistConfig.CACHE_STORAGE_REDIS_URL, url);
-        props.setProperty(DistConfig.REDIS_PORT, ""+port);
+        props.setProperty(DistConfig.CACHE_STORAGE_REDIS_PORT, ""+port);
         return this;
     }
     /** add cache storage as Mongodb */
-    public DistFactory withCacheStorageMongo(String url, int port) {
+    public DistFactory withCacheStorageMongo(String host, int port) {
         props.setProperty(DistConfig.CACHE_STORAGES, getExistingStorageList() + "," + DistConfig.CACHE_STORAGE_VALUE_MONGO);
-        props.setProperty(DistConfig.CACHE_STORAGE_MONGODB_HOST, url);
-        props.setProperty(DistConfig.REDIS_PORT, ""+port);
+        props.setProperty(DistConfig.CACHE_STORAGE_MONGODB_HOST, host);
+        props.setProperty(DistConfig.CACHE_STORAGE_MONGODB_PORT, ""+port);
         return this;
     }
     /** add cache storage as Kafka */

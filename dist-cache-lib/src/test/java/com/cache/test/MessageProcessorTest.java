@@ -20,11 +20,11 @@ public class MessageProcessorTest {
         SampleTestService srv = new SampleTestService();
         assertNotNull(srv, "Service should be not null");
         processor.addMethods(srv);
-        assertEquals(processor.getMethodsCount(), 4, "There should be 3 methods registered");
+        assertEquals(processor.getMethodsCount(), 4, "There should be 4 methods registered");
         processor.addMethod("sampleMethod", (mth, msg) -> {
             return msg.response("", DistMessageStatus.ok);
         });
-        assertEquals(processor.getMethodsCount(), 5, "There should be 4 methods registered");
+        assertEquals(processor.getMethodsCount(), 5, "There should be 5 methods registered");
         DistMessage msg = DistMessage.createEmpty();
         processor.process("sampleMethod", msg);
         processor.process("sampleMethod", msg);

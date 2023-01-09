@@ -45,6 +45,13 @@ public enum DialectQueries {
 
     createAgentIssue,
     insertAgentIssue,
-    selectAgentIssue
+    selectAgentIssue,
 
-}
+    createAgentService,
+    createAgentServiceIndex,
+    insertAgentService,
+    selectAgentService,
+    deleteAgentService
+
+
+    }

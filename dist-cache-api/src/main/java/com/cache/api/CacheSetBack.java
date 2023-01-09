@@ -1,8 +1,8 @@
 package com.cache.api;
 
+import com.cache.api.info.CacheSetBackInfo;
+
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /** object to get back after set new object in cache.

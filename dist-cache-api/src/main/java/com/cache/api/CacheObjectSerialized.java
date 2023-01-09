@@ -6,6 +6,7 @@ import com.cache.utils.AdvancedMap;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -144,27 +145,34 @@ public class CacheObjectSerialized implements Serializable {
     /** get map with current values */
     public Map<String, String> getSerializedMap(DistSerializer serializer) {
         HashMap<String, String> map = new HashMap<>();
-        map.put("objectSeq", ""+objectSeq);
-        map.put("createdTimeMs", ""+createdTimeMs);
-        map.put("lastUseTime", ""+lastUseTime);
+        map.put("type", "cache");
+        map.put("objectseq", ""+objectSeq);
+        map.put("createdtimems", ""+createdTimeMs);
+        //map.put("lastUseTime", ""+lastUseTime);
         map.put("lastRefreshTime", ""+lastRefreshTime);
-        map.put("key", key);
-        map.put("objectInCache", objectInCache);
-        map.put("objSize", ""+objSize);
-        map.put("acquireTimeMs", ""+acquireTimeMs);
-        map.put("usages", ""+usages);
-        map.put("refreshes", ""+refreshes);
-        map.put("mode", ""+mode);
-        map.put("timeToLiveMs", ""+timeToLiveMs);
-        map.put("priority", ""+priority);
-        map.put("addToInternal", ""+addToInternal);
-        map.put("addToExternal", ""+addToExternal);
+        map.put("objclassname", objectClassName);
+        map.put("cachekey", key);
+        map.put("cachevalue", objectInCache);
+        map.put("objsize", ""+objSize);
+        map.put("acquiretimems", ""+acquireTimeMs);
+        //map.put("usages", ""+usages);
+        //map.put("refreshes", ""+refreshes);
+        map.put("mode", mode.name());
+        map.put("timetolivems", ""+timeToLiveMs);
+        map.put("cachepriority", ""+priority);
         map.put("groups", groups.stream().reduce((x,y) -> x + ";;;" + y).orElse(""));
         return map;
     }
 
     /** create instance of class from row map */
-    public static CacheObjectSerialized fromMap(Map<String, Object> map) {
+    public static Optional<CacheObject> fromMapToCacheObject(Map<String, Object> map, DistSerializer distSerializer) {
+        return fromMap(map).stream().map(cos -> cos.toCacheObject(distSerializer)).findFirst();
+    }
+    /** create instance of class from row map */
+    public static Optional<CacheObjectSerialized> fromMap(Map<String, Object> map) {
+        if (map == null || !map.containsKey("cachekey") || !map.containsKey("cachevalue")) {
+            return Optional.empty();
+        }
         AdvancedMap amap = AdvancedMap.fromMap(map);
         CacheObjectSerialized cos = new CacheObjectSerialized(
                 amap.getLong("objectseq", 0L),
@@ -178,11 +186,11 @@ public class CacheObjectSerialized implements Serializable {
                 amap.getLong("acquiretimems", 0L),
                 amap.getLong("usages", 0L),
                 amap.getLong("refreshes", 0L),
-                CacheMode.Mode.TTL,
+                CacheMode.Mode.parseModeOfDefault(amap.getString("mode", "")),
                 amap.getLong("timetolivems", 0L),
                 amap.getInt("cachepriority", 0), true, false,
                 amap.getWithSplit("groupslist", ","));
-        return cos;
+        return Optional.of(cos);
     }
 
     public String toString() {

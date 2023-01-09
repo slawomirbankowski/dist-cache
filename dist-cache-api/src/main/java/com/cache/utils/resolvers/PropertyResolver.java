@@ -5,6 +5,7 @@ import com.cache.interfaces.Resolver;
 import java.util.Optional;
 import java.util.Properties;
 
+/** Key-Value resolver with Property object that contains keys with values */
 public class PropertyResolver implements Resolver {
     Properties pr;
     public PropertyResolver(Properties pr) {

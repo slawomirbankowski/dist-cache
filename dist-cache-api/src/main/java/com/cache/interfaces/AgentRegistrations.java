@@ -1,6 +1,6 @@
 package com.cache.interfaces;
 
-import com.cache.api.AgentRegistrationInfo;
+import com.cache.api.info.AgentRegistrationInfo;
 import com.cache.api.AgentSimplified;
 import com.cache.api.DistIssue;
 import com.cache.base.dtos.DistAgentServerRow;

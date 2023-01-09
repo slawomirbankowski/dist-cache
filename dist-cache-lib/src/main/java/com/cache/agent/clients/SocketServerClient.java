@@ -1,6 +1,9 @@
 package com.cache.agent.clients;
 
 import com.cache.api.*;
+import com.cache.api.enums.DistClientType;
+import com.cache.api.enums.DistMessageType;
+import com.cache.api.enums.DistServiceType;
 import com.cache.base.AgentClientBase;
 import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.interfaces.Agent;
@@ -90,7 +93,7 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
             working = true;
             receivingThread = new Thread(this);
             receivingThread.start();
-            parentAgent.getAgentThreads().registerThread(receivingThread);
+            parentAgent.getAgentThreads().registerThread(this, receivingThread, "socket-client-" + port);
             AgentWelcomeMessage welcome = new AgentWelcomeMessage(parentAgent.getAgentInfo(), getClientInfo());
             DistMessage welcomeMsg = DistMessage.createMessage(DistMessageType.system, parentAgent.getAgentGuid(), DistServiceType.agent, connectedAgentGuid, DistServiceType.agent, "welcome",  welcome);
             send(welcomeMsg);
