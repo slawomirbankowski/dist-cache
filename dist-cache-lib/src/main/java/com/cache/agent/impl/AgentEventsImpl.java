@@ -2,7 +2,9 @@ package com.cache.agent.impl;
 
 import com.cache.api.CacheEvent;
 import com.cache.api.DistConfig;
+import com.cache.api.enums.DistComponentType;
 import com.cache.interfaces.Agent;
+import com.cache.interfaces.AgentComponent;
 import com.cache.interfaces.AgentEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +15,7 @@ import java.util.Queue;
 import java.util.function.Function;
 
 /** implementation of issues manager */
-public class AgentEventsImpl extends Agentable implements AgentEvents {
+public class AgentEventsImpl extends Agentable implements AgentEvents, AgentComponent {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentEventsImpl.class);
@@ -22,17 +24,25 @@ public class AgentEventsImpl extends Agentable implements AgentEvents {
     protected java.util.concurrent.ConcurrentHashMap<String, Function<CacheEvent, String>> callbacks = new java.util.concurrent.ConcurrentHashMap<>();
     /** queue of events that would be added to callback methods */
     protected final Queue<CacheEvent> events = new LinkedList<>();
-
     /** creates new manager for events in agent */
     public AgentEventsImpl(Agent parentAgent) {
         super(parentAgent);
+        parentAgent.addComponent(this);
     }
 
+
+    /** get type of this component */
+    public DistComponentType getComponentType() {
+        return DistComponentType.events;
+    }
+    @Override
+    public String getGuid() {
+        return getParentAgentGuid();
+    }
     /** add callback method to call back when there is any event going on */
     public void addCallbackMethods(Map<String, Function<CacheEvent, String>> callbacksMethods) {
         callbacksMethods.entrySet().stream().forEach(cb -> callbacks.put(cb.getKey(), cb.getValue()));
     }
-
     /** add new event and distribute it to callback methods,
      * event could be useful information about change of cache status, new connection, refresh of cache, clean */
     public void addEvent(CacheEvent event) {
@@ -56,12 +66,10 @@ public class AgentEventsImpl extends Agentable implements AgentEvents {
         log.info("Set callback method for events" + eventType);
         callbacks.put(eventType, callback);
     }
-
     /** get all recent events added to cache */
     public Queue<CacheEvent> getEvents() {
         return events;
     }
-
     /** close */
     public void close() {
         synchronized (events) {

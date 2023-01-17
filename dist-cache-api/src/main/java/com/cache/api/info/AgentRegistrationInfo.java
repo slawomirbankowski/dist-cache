@@ -3,6 +3,7 @@ package com.cache.api.info;
 import com.cache.api.AgentConfirmation;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /** information about Registration class to register Agent */
 public class AgentRegistrationInfo {
@@ -15,7 +16,10 @@ public class AgentRegistrationInfo {
     private String url;
     private AgentConfirmation confirmation;
 
-    public AgentRegistrationInfo(String registerGuid, String registrationType, LocalDateTime createdDate, boolean initialized, boolean closed, boolean lastConnected, String url, AgentConfirmation confirmation) {
+    private Map<String, Object> parameters;
+
+    public AgentRegistrationInfo(String registerGuid, String registrationType, LocalDateTime createdDate, boolean initialized, boolean closed, boolean lastConnected, String url,
+                                 AgentConfirmation confirmation, Map<String, Object> parameters) {
         this.registerGuid = registerGuid;
         this.registrationType = registrationType;
         this.createdDate = createdDate;
@@ -24,6 +28,7 @@ public class AgentRegistrationInfo {
         this.lastConnected = lastConnected;
         this.url = url;
         this.confirmation = confirmation;
+        this.parameters = parameters;
     }
 
     public String getRegisterGuid() {
@@ -56,5 +61,9 @@ public class AgentRegistrationInfo {
 
     public AgentConfirmation getConfirmation() {
         return confirmation;
+    }
+
+    public Map<String, Object> getParameters() {
+        return parameters;
     }
 }

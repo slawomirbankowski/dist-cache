@@ -5,6 +5,7 @@ import com.cache.api.*;
 import com.cache.base.RegistrationBase;
 import com.cache.base.dtos.DistAgentRegisterRow;
 import com.cache.base.dtos.DistAgentServerRow;
+import com.cache.base.dtos.DistAgentServiceRow;
 import com.cache.interfaces.HttpCallable;
 import com.cache.utils.HttpConnectionHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +23,7 @@ public class RegistrationApplication extends RegistrationBase {
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(RegistrationApplication.class);
 
+    /** */
     private String urlString;
     /** HTTP connection helper */
     private HttpCallable applicationConn = null;
@@ -49,7 +51,7 @@ public class RegistrationApplication extends RegistrationBase {
     @Override
     protected AgentConfirmation onAgentRegister(AgentRegister register) {
         try {
-            log.info("Try to register agent as dist-cache application on URL: " + urlString + ", agent: " + register.agentGuid);
+            log.info("Try to register agent as dist-cache application on URL: " + urlString + ", agent: " + register.getAgentGuid());
             ObjectMapper mapper = JsonMapper.builder()
                     .findAndAddModules()
                     .build();
@@ -66,8 +68,9 @@ public class RegistrationApplication extends RegistrationBase {
             return null;
         }
     }
-    protected AgentConfirmation onAgentUnregister(String agentGuid) {
-        return new AgentConfirmation(agentGuid, true, false, 0, List.of());
+    protected AgentConfirmation onAgentUnregister(AgentRegister register) {
+
+        return new AgentConfirmation(register.getAgentGuid(), true, false, 0, List.of());
     }
     @Override
     protected AgentPingResponse onAgentPing(AgentPing ping) {
@@ -111,20 +114,14 @@ public class RegistrationApplication extends RegistrationBase {
         return false;
     }
 
-    /** get list of agents from connector */
-    @Override
-    protected List<AgentSimplified> onGetAgents() {
-        // applicationConn.callGet("");
+    /** register service */
+    public void registerService(DistAgentServiceRow service) {
 
-        return null;
     }
+
     /** get agents from registration services */
-    public List<DistAgentRegisterRow> getAgentsNow() {
+    public List<DistAgentRegisterRow> getAgents() {
         return new LinkedList<>();
-    }
-    /** get list of active agents */
-    public List<AgentSimplified> getAgentsActive() {
-        return null;
     }
 
     /** close current connector */

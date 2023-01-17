@@ -18,15 +18,15 @@ public class AgentKafkaClient extends AgentClientBase implements AgentClient {
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentKafkaClient.class);
 
-    int numPartitions = 1;
-    short replicationFactor = 1;
-    private DistAgentServerRow srv;
+    protected int numPartitions = 1;
+    protected short replicationFactor = 1;
+    /** DAO for Kafka connector to send messages from client */
     private DaoKafkaBase daoKafka;
 
     /** creates new Kafka client  */
     public AgentKafkaClient(Agent parentAgent, DistAgentServerRow srv) {
-        super(parentAgent);
-        this.srv = srv;
+        super(parentAgent, srv);
+        this.serverRow = srv;
         this.connectedAgentGuid = srv.agentguid;
         initialize();
     }
@@ -36,17 +36,15 @@ public class AgentKafkaClient extends AgentClientBase implements AgentClient {
     }
     /** get unified URL of this client */
     public String getUrl() {
-        return srv.serverurl;
+        return serverRow.serverurl;
     }
     /** initialize client - connecting or reconnecting */
     public boolean initialize() {
         try {
-            String clientId = getParentAgentGuid();
-            String groupId = getParentAgentGuid();
-            //new DaoKafkaParams(, parentAgent.getAgentIssues());
-            var params =  DaoParams.kafkaParams(srv.serverurl, numPartitions, replicationFactor, clientId, groupId);
-            daoKafka = parentAgent.getAgentDao().getOrCreateDao(DaoKafkaBase.class, params).get(); //.orElseGet(() -> throw new IllegalArgumentException("Cannot create or get DAO for Kafka"));
-            log.info("Created new KAFKA client for server: " + srv.servertype + ", url: " + srv.serverurl + ", host: " + srv.serverhost + ", port: " + srv.serverport);
+            var params =  DaoParams.kafkaParams(serverRow.serverurl, numPartitions, replicationFactor);
+            daoKafka = parentAgent.getAgentDao().getOrCreateDaoOrError(DaoKafkaBase.class, params);
+            daoKafka.usedByComponent(this);
+            log.info("Created new KAFKA client for server: " + serverRow.servertype + ", url: " + serverRow.serverurl + ", host: " + serverRow.serverhost + ", port: " + serverRow.serverport);
             AgentWelcomeMessage welcome = new AgentWelcomeMessage(parentAgent.getAgentInfo(), getClientInfo());
             DistMessage welcomeMsg = DistMessage.createMessage(DistMessageType.system, parentAgent.getAgentGuid(), DistServiceType.agent, connectedAgentGuid, DistServiceType.agent, "welcome",  welcome);
             send(welcomeMsg);
@@ -60,12 +58,9 @@ public class AgentKafkaClient extends AgentClientBase implements AgentClient {
     /** send message to this client */
     public boolean send(DistMessage msg) {
         try {
-            byte[] sendBuf  = parentAgent.getSerializer().serialize(msg);
-            log.info("Writing line to be sent using DATAGRAM client: " + clientGuid + ", SIZE=" + sendBuf.length + ", serializer: " + parentAgent.getSerializer().getClass().getName() + ", message: " + msg.toString());
-
-
-
-
+            String msgSerialized  = parentAgent.getSerializer().serializeToString(msg);
+            log.info("Writing line to be sent using Kafka client: " + clientGuid + ", SIZE=" + msgSerialized.length() + ", serializer: " + parentAgent.getSerializer().getClass().getName() + ", message: " + msg.toString());
+            daoKafka.send(msg.getToAgent(), msg.getMessageUid(), msgSerialized);
             return true;
         } catch (Exception ex) {
             log.warn("Error while sending Datagram packet for client: " + clientGuid + ", reason: " + ex.getMessage(), ex);
@@ -81,8 +76,6 @@ public class AgentKafkaClient extends AgentClientBase implements AgentClient {
             AgentWelcomeMessage welcome = new AgentWelcomeMessage(parentAgent.getAgentInfo(), getClientInfo());
             DistMessage closeMsg = DistMessage.createMessage(DistMessageType.system, parentAgent.getAgentGuid(), DistServiceType.agent, connectedAgentGuid, DistServiceType.agent, "close",  welcome);
             send(closeMsg);
-
-
             working = false;
         } catch (Exception ex) {
             log.info(" Error while closing HTTP client connection, reason: "+ex.getMessage());

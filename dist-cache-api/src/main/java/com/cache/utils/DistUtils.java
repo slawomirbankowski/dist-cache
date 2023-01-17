@@ -70,6 +70,12 @@ public class DistUtils {
     public static String generateCacheGuid() {
         return "CACHE_" + hostName + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
+    public static String generateCustomGuid(String prefix) {
+        return prefix + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+    public static String generateCustomTimeGuid(String prefix) {
+        return prefix + getDateTimeYYYYMMDDHHmmss() + "_" + UUID.randomUUID().toString().substring(0, 8);
+    }
     private static final AtomicLong messageGuidSeq = new AtomicLong();
     public static String generateMessageGuid() {
         return "MSG_" + hostName + "_DT" + getDateTimeYYYYMMDDHHmmss() + "_X" + messageGuidSeq.incrementAndGet() + "_" + UUID.randomUUID().toString().substring(0, 8);
@@ -249,16 +255,11 @@ public class DistUtils {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] messageDigest = md.digest(str.getBytes());
-
-
-            return "";
+            return bytesToHex(messageDigest);
         } catch (NoSuchAlgorithmException ex) {
             return "" + str.hashCode();
         }
-
-
     }
-
     public static String getBasicAuthValue(String user, String pass) {
         return "Basic " + DistUtils.stringToBase64(user + ":" + pass);
     }

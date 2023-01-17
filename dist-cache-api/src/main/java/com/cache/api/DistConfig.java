@@ -1,5 +1,6 @@
 package com.cache.api;
 
+import com.cache.interfaces.ConfigListener;
 import com.cache.utils.DistUtils;
 import com.cache.utils.JsonUtils;
 import com.cache.utils.ResolverManager;
@@ -10,13 +11,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
-/** configuration for distributed system - this is keeping parameters in Properties format */
+/** Configuration for distributed system - this is keeping parameters in Properties format and Value resolver to resolve values of properties.
+ * Configuration has also value change listeners - so each module can subscribe to changes of values for given properties.
+ *  */
 public class DistConfig {
 
     /** build empty DistConfig with no values */
@@ -26,12 +28,16 @@ public class DistConfig {
     public static DistConfig buildConfig(Properties initialProperties) {
         return new DistConfig(initialProperties);
     }
-    /** GUID for configuration */
+    /** global unique ID of this configuration */
     private final String configGuid = DistUtils.generateConfigGuid();
     /** all properties to be used for DistCache initialization */
-    private Properties props = null;
+    private final Properties props;
+    /** list of listeners for config change */
+    private final List<DistConfigChangeListener> cfgChangeListeners = new LinkedList<>();
+    /** SEQ ID of change for configuration parameters */
+    private final AtomicLong changeSeq = new AtomicLong();
     /** resolver for String values in properties */
-    private ResolverManager resolver;
+    private final ResolverManager resolver;
 
     public DistConfig(Properties p) {
         this.props = p;
@@ -47,11 +53,14 @@ public class DistConfig {
     public Map getProperties() {
         return Collections.unmodifiableMap(props);
     }
+
     /** get HashMap with properties for cache */
-    public HashMap<String, String> getHashMap() {
+    public HashMap<String, String> getHashMap(boolean includePassword) {
         HashMap<String, String> hm = new HashMap<>();
         for (Map.Entry<Object, Object> e: props.entrySet()) {
-            hm.put(e.getKey().toString(), e.getValue().toString());
+            if (includePassword || !e.getKey().toString().contains("PASS")) {
+                hm.put(e.getKey().toString(), e.getValue().toString());
+            }
         }
         return hm;
     }
@@ -73,6 +82,7 @@ public class DistConfig {
         return props.containsKey(name);
     }
 
+    /** get property */
     public String getProperty(String name, String defaultValue) {
         String value = getProperty(name);
         if (value != null) {
@@ -81,6 +91,28 @@ public class DistConfig {
             return defaultValue;
         }
     }
+    /** set property and notify listeners */
+    public void setProperty(String name, String newValue) {
+        long seq = changeSeq.incrementAndGet();
+        Object oldValue = props.setProperty(name, newValue);
+        if (oldValue != null && !newValue.equals(oldValue)) {
+            cfgChangeListeners.stream().forEach(chl -> chl.changeConfiguration(seq, name, oldValue, newValue));
+        }
+    }
+    /** set property and notify listeners */
+    public void setProperties(Properties newProps) {
+        long seq = changeSeq.incrementAndGet();
+        //props.getProperty("");
+        //newProps.entrySet().stream().anyMatch(e -> e.getKey());
+        //Object oldValue = props.setProperty(name, newValue);
+        cfgChangeListeners.stream().forEach(chl -> chl.changeConfiguration(seq, newProps, newProps));
+    }
+    /** add listener to configuration changes */
+    public DistConfig addListener(String nameContains, ConfigListener listener) {
+        cfgChangeListeners.add(new DistConfigChangeListener(this, nameContains, listener));
+        return this;
+    }
+    /** */
     public long getPropertyAsLong(String name, long defaultValue) {
         return DistUtils.parseLong(getProperty(name), defaultValue);
     }
@@ -131,6 +163,9 @@ public class DistConfig {
     public static String DIST_NAME = "DIST_NAME";
     public static String DIST_NAME_VALUE_DEFAULT = "DistSystem";
 
+    /** type and name of the environment */
+    public static String DIST_ENVIRONMENT_TYPE = "DIST_ENVIRONMENT_TYPE";
+    public static String DIST_ENVIRONMENT_NAME = "DIST_ENVIRONMENT_NAME";
 
     /** port for HTTP REST Web API to contact directly to Agent */
     public static String AGENT_API_PORT = "AGENT_API_PORT";
@@ -156,6 +191,18 @@ public class DistConfig {
     /** */
     public static String AGENT_REGISTRATION_REDIS_HOST = "AGENT_REGISTRATION_REDIS_HOST";
     public static String AGENT_REGISTRATION_REDIS_PORT = "AGENT_REGISTRATION_REDIS_PORT";
+
+    /** */
+    public static String AGENT_REGISTRATION_KAFKA_BROKERS = "AGENT_REGISTRATION_KAFKA_BROKERS";
+    public static String AGENT_REGISTRATION_KAFKA_TOPIC = "AGENT__REGISTRATION_KAFKA_TOPIC";
+    public static String AGENT_REGISTRATION_KAFKA_TOPIC_DEFAULT_VALUE = "dist-agent-registration";
+    public static String AGENT_REGISTRATION_KAFKA_PARTITIONS = "AGENT_REGISTRATION_KAFKA_PARTITIONS";
+    public static int AGENT_REGISTRATION_KAFKA_PARTITIONS_DEFAULT_VALUE = 3;
+    public static String AGENT_REGISTRATION_KAFKA_REPLICATION = "AGENT_REGISTRATION_KAFKA_REPLICATION";
+    public static short AGENT_REGISTRATION_KAFKA_REPLICATION_DEFAULT_VALUE = 3;
+
+    public static String AGENT_REGISTRATION_MONGODB_HOST = "AGENT_REGISTRATION_MONGODB_HOST";
+    public static String AGENT_REGISTRATION_MONGODB_PORT = "AGENT_REGISTRATION_MONGODB_PORT";
 
 
     /**port of SockerServer to exchange messages between Agents */

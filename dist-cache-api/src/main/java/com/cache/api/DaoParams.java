@@ -6,7 +6,8 @@ import com.cache.utils.DistUtils;
 
 import java.util.Map;
 
-/** parameters for any DAO */
+/** parameters for any DAO in Dist Agent system
+ * Parameters could be connection string, URL, user, password, Kafka brokers - depends on type of DAO */
 public class DaoParams {
 
     /** type of DAO */
@@ -58,21 +59,14 @@ public class DaoParams {
     public short getReplicationFactor() {
         return (short)params.getInt(REPL_FACTOR, 1);
     }
-    public String getClientId() {
-        return params.getString(CLIENT_ID, "");
-    }
-    public String getGroupId() {
-        return params.getString(GROUP_ID, "");
-    }
+
     /** create DAO parameters for Kafka */
-    public static DaoParams kafkaParams(String brokers, int numPartitions, short replicationFactor, String clientId, String groupId) {
-        String key = DistDaoType.kafka.name() + ":" + DistUtils.fingerprint( brokers + ":" + clientId);
+    public static DaoParams kafkaParams(String brokers, int numPartitions, short replicationFactor) {
+        String key = DistDaoType.kafka.name() + ":" + DistUtils.fingerprint( brokers);
         return new DaoParams(DistDaoType.kafka, key, Map.of(
                 BROKERS, brokers,
                 NUM_PARTITIONS, numPartitions,
-                REPL_FACTOR, replicationFactor,
-                CLIENT_ID, clientId,
-                GROUP_ID, groupId
+                REPL_FACTOR, replicationFactor
         ));
     }
 
@@ -126,8 +120,7 @@ public class DaoParams {
     public static final String BROKERS = "BROKERS";
     public static final String NUM_PARTITIONS = "NUM_PARTITIONS";
     public static final String REPL_FACTOR = "REPL_FACTOR";
-    public static final String CLIENT_ID = "CLIENT_ID";
-    public static final String GROUP_ID = "GROUP_ID";
+
     public static final String HOST = "HOST";
     public static final String PORT = "PORT";
 

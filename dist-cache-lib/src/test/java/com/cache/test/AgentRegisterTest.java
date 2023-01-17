@@ -17,7 +17,7 @@ public class AgentRegisterTest {
 
     @Test
     public void agentRegisterTest() {
-        log.info("START ------ agent register test test");
+        log.info("START ------ agent register test");
 
         Agent agent1 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
@@ -67,7 +67,7 @@ public class AgentRegisterTest {
             log.info("RESPONSE GET for message: " + x.getMessageUid());
             return true;
         }));
-        DistUtils.sleep(2000);
+        DistUtils.sleep(120000);
 
 
         log.info("==================================================================================================//////////////////////////////////////////////////////////////////////////////////////////////////////////////========================");

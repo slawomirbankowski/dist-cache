@@ -34,10 +34,7 @@ public class AgentServerSocket extends ServerBase implements AgentServer, Runnab
     /** creates new server for communication based on socket */
     public AgentServerSocket(Agent parentAgent) {
         super(parentAgent);
-        this.parentAgent = parentAgent;
-        this.workingPort = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SERVER_SOCKET_PORT, DistConfig.AGENT_SOCKET_PORT_VALUE_SEQ.incrementAndGet());;
-        log.info("SERVER SOCKET opening for agent: " + parentAgent.getAgentGuid() + " at port: " + workingPort);
-        initializeServer();
+        initialize();
     }
 
     /** get type of clients to be connected to this server */
@@ -52,10 +49,11 @@ public class AgentServerSocket extends ServerBase implements AgentServer, Runnab
     public String getUrl() {
         return "socket://" + DistUtils.getCurrentHostName() + ":" + workingPort + "/";
     }
-    public void initializeServer() {
+    public void initialize() {
         try {
+            workingPort = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SERVER_SOCKET_PORT, DistConfig.AGENT_SOCKET_PORT_VALUE_SEQ.incrementAndGet());;
             // open socket port
-            log.info("Starting socket for incoming connections from other clients on port " + workingPort + ", server UID: " + serverGuid);
+            log.info("Starting socket for incoming connections from other clients on port " + workingPort + ", server UID: " + serverGuid + ", agent: " + parentAgent.getAgentGuid());
             // create SocketServer and thread for accepting sockets
             serverSocket = new java.net.ServerSocket(workingPort);
             serverSocket.setSoTimeout(2000);

@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /** base class for any JDBC based DAO */
@@ -49,6 +50,11 @@ public class DaoElasticsearchBase extends DaoBase implements AgentComponent {
     public boolean isConnected() {
         return getClusterInfo().size() == 1;
     }
+    /** get URL of this DAO */
+    public String getUrl() {
+        return elasticUrl;
+    }
+
     public String getElasticUrl() {
         return elasticUrl;
     }
@@ -90,7 +96,8 @@ public class DaoElasticsearchBase extends DaoBase implements AgentComponent {
     }
     public List<ElasticIndexCreateInfo> createIndicesWithCheck(Set<String> indicesNamesToCreate) {
         var existingIndices = getIndicesNames();
-        var indxs = new HashSet<String>(indicesNamesToCreate);
+        var indxs = new HashSet<String>();
+        indicesNamesToCreate.stream().forEach(i -> indxs.add(i));
         indxs.removeAll(existingIndices);
         return indxs.stream().flatMap(name -> createIndex(name).stream()).collect(Collectors.toList());
     }
@@ -133,8 +140,25 @@ public class DaoElasticsearchBase extends DaoBase implements AgentComponent {
     public Optional<ElasticSearchInfo> searchComplex(String indexName, String key, String value) {
         return searchComplex(indexName, "match", key, value);
     }
+
     public Optional<ElasticSearchInfo> searchComplex(String indexName, String matchType, String key, String value) {
         return searchComplex(indexName, matchType, Map.of(key, value));
+    }
+    /** get search complex results as list of T objects */
+    public <T> List<T> searchComplexToMapsOptional(String indexName, String matchType, String key, String value, Function<Map<String, Object>, Optional<T>> mappingFun) {
+        return searchComplex(indexName, matchType, key, value)
+                .stream()
+                .flatMap(x -> x.getMaps().stream())
+                .flatMap(m -> mappingFun.apply(m).stream())
+                .collect(Collectors.toList());
+    }
+    /** get search complex results as list of T objects */
+    public <T> List<T> searchComplexToMaps(String indexName, String matchType, String key, String value, Function<Map<String, Object>, T> mappingFun) {
+        return searchComplex(indexName, matchType, key, value)
+                .stream()
+                .flatMap(x -> x.getMaps().stream())
+                .map(m -> mappingFun.apply(m))
+                .collect(Collectors.toList());
     }
     public Optional<ElasticSearchInfo> searchComplex(String indexName, String matchType, Map<String, String> matchMap) {
         var searchStructure = Map.of("query", Map.of("bool", Map.of(matchType, matchMap)));

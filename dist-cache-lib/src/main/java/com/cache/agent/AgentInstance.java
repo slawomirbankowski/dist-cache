@@ -2,9 +2,12 @@ package com.cache.agent;
 
 import com.cache.agent.impl.*;
 import com.cache.api.*;
+import com.cache.api.enums.DistComponentType;
 import com.cache.api.enums.DistMessageType;
 import com.cache.api.enums.DistServiceType;
 import com.cache.api.info.AgentInfo;
+import com.cache.base.ServiceBase;
+import com.cache.base.dtos.DistAgentServiceRow;
 import com.cache.interfaces.*;
 import com.cache.serializers.ComplexSerializer;
 import com.cache.utils.JsonUtils;
@@ -22,7 +25,7 @@ import java.util.stream.Collectors;
 
 /** agent class to be connected to dist-cache applications, Kafka, Elasticsearch or other global agent repository
  * Agent is also connecting directly to other agents */
-public class AgentInstance implements Agent, DistService {
+public class AgentInstance extends ServiceBase implements Agent, DistService, AgentComponent {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentInstance.class);
@@ -35,9 +38,7 @@ public class AgentInstance implements Agent, DistService {
     /** generate secret of this agent to be able to put commands */
     private final String agentSecret = UUID.randomUUID().toString();
     /** short GUID of agent  */
-    private final String agentShortGuid = DistUtils.generateShortGuid();
-    /** GUID of agent */
-    private final String agentGuid = DistUtils.generateAgentGuid(agentShortGuid);
+    private String agentShortGuid;
 
     /** manager for threads in Agent system */
     private final AgentThreads agentThreads = new AgentThreadsImpl(this);
@@ -75,7 +76,7 @@ public class AgentInstance implements Agent, DistService {
             .addHandlerGet("ping", createTextHandler(param -> "pong"))
             .addHandlerGet("createdDate", (m, req) -> req.responseOkText( getCreateDate().toString()))
             .addHandlerGet("info", createJsonHandler(param -> getAgentInfo()))
-            .addHandlerGet("config", createJsonHandler(param -> getConfig().getHashMap()))
+            .addHandlerGet("config", createJsonHandler(param -> getConfig().getHashMap(false)))
             .addHandlerGet("threads", createJsonHandler(param -> agentThreads.getThreadsInfo()))
             .addHandlerGet("timers", createJsonHandler(param -> agentTimers.getInfo()))
 
@@ -103,13 +104,17 @@ public class AgentInstance implements Agent, DistService {
     /** create new agent */
     public AgentInstance(DistConfig config, Map<String, Function<CacheEvent, String>> callbacksMethods, HashMap<String, DistSerializer> serializers,
                          CachePolicy policy, Map<String, DaoParams> daos) {
-        log.info("CREATING NEW AGENT with guid: " + agentGuid + ", configuration: " + config.getConfigGuid() + ", host: " + DistUtils.getCurrentHostName());
+
+        super(null);
+        this.parentAgent = this;
+        log.info("CREATING NEW AGENT with guid: " + getAgentGuid() + ", configuration: " + config.getConfigGuid() + ", host: " + DistUtils.getCurrentHostName());
         this.config = config;
-        agentTags.addAll(Arrays.stream(config.getProperty(DistConfig.AGENT_TAGS, "").split(";")).collect(Collectors.toList()));
+        agentTags.addAll(Arrays.stream(config.getProperty(DistConfig.AGENT_TAGS, "").split(";")).filter(tag -> !tag.isEmpty()).collect(Collectors.toList()));
         agentServices.setPolicy(policy);
         // self register of agent as service
         agentServices.registerService(this);
         agentEvents.addCallbackMethods(callbacksMethods);
+        agentApi.getApisCount();
         serializer = ComplexSerializer.createSerializer(serializers);
         agentDao.createDaos(daos);
     }
@@ -118,14 +123,28 @@ public class AgentInstance implements Agent, DistService {
     public DistServiceType getServiceType() {
         return DistServiceType.agent;
     }
+    /** create new service UID for this service */
+    protected String createServiceUid() {
+        agentShortGuid = DistUtils.generateShortGuid();
+        return DistUtils.generateAgentGuid(agentShortGuid);
+    }
+    /** get type of this component */
+    public DistComponentType getComponentType() {
+        return DistComponentType.agent;
+    }
     /** get unique ID of this service */
     public String getServiceUid() {
-        return agentGuid;
+        return guid;
     }
     /** get basic information about service */
     public DistServiceInfo getServiceInfo() {
         // DistServiceType serviceType, String getServiceClass, String serviceGuid, LocalDateTime createdDateTime, boolean closed, Map<String, String> customAttributes
+
         return new DistServiceInfo(getServiceType(), getClass().getName(), getServiceUid(), createDate, closed, getServiceInfoCustomMap());
+    }
+    /** get row for registration services */
+    public DistAgentServiceRow getServiceRow() {
+        return new DistAgentServiceRow(getAgentGuid(), "", getServiceType().name(), createDate, (closed)?0:1, LocalDateTime.now());
     }
     /** get custom map of info about service */
     public Map<String, String> getServiceInfoCustomMap() {
@@ -137,7 +156,7 @@ public class AgentInstance implements Agent, DistService {
     }
     /** initialize agent - server, application, jdbc, kafka */
     public void initializeAgent() {
-        log.info("Initializing agent for guid: " + agentGuid);
+        log.info("Initializing agent for guid: " + guid);
         agentRegistrations.createRegistrations();
         agentConnectors.openServers();
         agentApi.openApis();
@@ -154,7 +173,7 @@ public class AgentInstance implements Agent, DistService {
     /** get configuration for this agent */
     public DistConfig getConfig() { return config; }
     /** get unique ID of this agent */
-    public String getAgentGuid() { return agentGuid; }
+    public String getAgentGuid() { return guid; }
     /** get short version ID of this agent GUID */
     public String getAgentShortGuid() { return agentShortGuid; }
 
@@ -162,6 +181,12 @@ public class AgentInstance implements Agent, DistService {
     public LocalDateTime getCreateDate() {
         return createDate;
     }
+
+    @Override
+    public String getGuid() {
+        return guid;
+    }
+
     /** get secret generated or set for this agent */
     public String getAgentSecret() {
         return agentSecret;
@@ -173,13 +198,16 @@ public class AgentInstance implements Agent, DistService {
     }
     /** get high-level information about this agent */
     public AgentInfo getAgentInfo() {
-        return new AgentInfo(agentGuid, createDate, closed, getAgentTags(),
+        return new AgentInfo(guid, createDate, closed,
+                getAgentTags(),
+                messageProcessor.getInfo(),
+                agentApi.getInfo(),
                 agentConnectors.getInfo(),
                 agentServices.getServiceInfos(),
-                agentRegistrations.getRegistrationInfos(),
+                agentRegistrations.getInfo(),
                 agentTimers.getInfo(),
                 agentThreads.getThreadsInfo(),
-
+                agentDao.getInfo(),
                 getAgentEvents().getEvents().size(),
                 getAgentIssues().getIssues().size());
     }
@@ -192,7 +220,6 @@ public class AgentInstance implements Agent, DistService {
     public AgentTimers getAgentTimers() {
         return agentTimers;
     }
-
     /** get agent service manager */
     public AgentServices getAgentServices() {
         return agentServices;
@@ -217,25 +244,28 @@ public class AgentInstance implements Agent, DistService {
     public AgentDao getAgentDao() {
         return agentDao;
     }
-
+    /** get WebAPI for this Agent */
+    public AgentApi getAgentApi() {
+        return agentApi;
+    }
     /** returns true if agent has been already closed */
     public boolean isClosed() {
         return closed;
     }
 
     /** close all items in this agent */
-    public void close() {
-        log.info("Closing agent: " + agentGuid);
+    public void onClose() {
+        log.info("Closing agent: " + guid);
         closed = true;
         agentApi.close();
         agentThreads.close();
-        agentDao.close();
         agentTimers.close();
         agentServices.close();
         agentConnectors.close();
         agentRegistrations.close();
         agentEvents.close();
         agentIssues.close();
+        agentDao.close();
         messageProcessor.close();
         webApiProcessor.close();
     }
@@ -268,32 +298,32 @@ public class AgentInstance implements Agent, DistService {
     public DistMessageFull sendMessageBroadcast(DistMessageType messageType, DistServiceType fromService,
                                                 DistServiceType toService, String requestMethod, Object message, String tags, LocalDateTime validTill, DistCallbacks callbacks) {
         // DistMessageType messageType, String fromAgent, DistServiceType fromService, String toAgent, DistServiceType toService, String method, Object message,  String tags, LocalDateTime validTill
-        DistMessage msg = DistMessage.createMessage(messageType, agentGuid, fromService, "*", toService, requestMethod, message, tags, validTill);
+        DistMessage msg = DistMessage.createMessage(messageType, guid, fromService, "*", toService, requestMethod, message, tags, validTill);
         return sendMessage(msg.withCallbacks(callbacks));
     }
     public DistMessageFull sendMessageBroadcast(DistMessageType messageType, DistServiceType fromService,
                                                 DistServiceType toService, String requestMethod, Object message, String tags, DistCallbacks callbacks) {
-        DistMessage msg = DistMessage.createMessage(messageType, agentGuid, fromService, "*", toService, requestMethod, message, tags, LocalDateTime.MAX);
+        DistMessage msg = DistMessage.createMessage(messageType, guid, fromService, "*", toService, requestMethod, message, tags, LocalDateTime.MAX);
         return sendMessage(msg.withCallbacks(callbacks));
     }
     public DistMessageFull sendMessageBroadcast(DistMessageType messageType, DistServiceType fromService,
                                                 DistServiceType toService, String requestMethod, Object message, DistCallbacks callbacks) {
-        DistMessage msg = DistMessage.createMessage(messageType, agentGuid, fromService, "*", toService, requestMethod, message, "", LocalDateTime.MAX);
+        DistMessage msg = DistMessage.createMessage(messageType, guid, fromService, "*", toService, requestMethod, message, "", LocalDateTime.MAX);
         return sendMessage(msg.withCallbacks(callbacks));
     }
     public DistMessageFull sendMessageBroadcast(DistServiceType fromService, DistServiceType toService, String requestMethod, Object message, DistCallbacks callbacks) {
-        DistMessage msg = DistMessage.createMessage(DistMessageType.request, agentGuid, fromService, "*", toService, requestMethod, message, "", LocalDateTime.MAX);
+        DistMessage msg = DistMessage.createMessage(DistMessageType.request, guid, fromService, "*", toService, requestMethod, message, "", LocalDateTime.MAX);
         DistMessageFull full = msg.withCallbacks(callbacks);
         return sendMessage(full);
     }
     public DistMessageFull sendMessage(DistService fromService, String toAgent, DistServiceType toService, String method, Object message,
                                    DistCallbacks callbacks) {
-        DistMessage msg = DistMessage.createMessage(DistMessageType.request, agentGuid, fromService.getServiceType(), toAgent, toService, method, message, "", LocalDateTime.MAX);
+        DistMessage msg = DistMessage.createMessage(DistMessageType.request, guid, fromService.getServiceType(), toAgent, toService, method, message, "", LocalDateTime.MAX);
         return sendMessage(msg.withCallbacks(callbacks));
     }
     public DistMessageFull sendMessageAny(DistService fromService, DistServiceType toService, String method, Object message,
                                       DistCallbacks callbacks) {
-        DistMessage msg = DistMessage.createMessage(DistMessageType.request, agentGuid, fromService.getServiceType(), "?", toService, method, message, "", LocalDateTime.MAX);
+        DistMessage msg = DistMessage.createMessage(DistMessageType.request, guid, fromService.getServiceType(), "?", toService, method, message, "", LocalDateTime.MAX);
         return sendMessage(msg.withCallbacks(callbacks));
     }
 

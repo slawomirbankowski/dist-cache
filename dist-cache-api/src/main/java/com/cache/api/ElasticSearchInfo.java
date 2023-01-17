@@ -3,6 +3,8 @@ package com.cache.api;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ElasticSearchInfo {
@@ -41,5 +43,8 @@ public class ElasticSearchInfo {
             return List.of();
         }
         return hits.getHits();
+    }
+    public List<Map<String, Object>> getMaps() {
+        return hits.getHits().stream().flatMap(x -> x.getMap().stream()).collect(Collectors.toList());
     }
 }

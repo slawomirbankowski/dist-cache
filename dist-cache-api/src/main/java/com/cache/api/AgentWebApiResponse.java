@@ -5,8 +5,11 @@ import java.util.Map;
 
 /** Response for Agent Web API */
 public class AgentWebApiResponse {
+    /** HTTP code */
     private final int code;
+    /** response headers */
     private final Map<String, List<String>> headers;
+    /** response content as text */
     private final String content;
 
     public AgentWebApiResponse(int code, Map<String, List<String>> headers, String content) {

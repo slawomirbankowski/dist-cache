@@ -1,7 +1,9 @@
 package com.cache.base;
 
 import com.cache.agent.impl.Agentable;
+import com.cache.api.enums.DistComponentType;
 import com.cache.api.info.ClientInfo;
+import com.cache.base.dtos.DistAgentServerRow;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.AgentClient;
 import com.cache.interfaces.AgentComponent;
@@ -17,8 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * */
 public abstract class AgentClientBase extends Agentable implements AgentClient, AgentComponent {
 
-    /** connected Agent GUID or empty if there is not just one agent on the other side
-     * */
+    /** connected Agent GUID or empty if there is not just one agent on the other side */
     protected String connectedAgentGuid = "";
     /** unique ID of this client */
     protected final String clientGuid = DistUtils.generateClientGuid(this.getClass().getSimpleName());
@@ -30,10 +31,14 @@ public abstract class AgentClientBase extends Agentable implements AgentClient, 
     protected AtomicLong receivedMessages = new AtomicLong();
     /** sequence for number of received messages */
     protected AtomicLong sentMessages = new AtomicLong();
+    /** server row */
+    protected DistAgentServerRow serverRow;
 
     /** creates new client */
-    public AgentClientBase(Agent parentAgent) {
+    public AgentClientBase(Agent parentAgent, DistAgentServerRow srv) {
         super(parentAgent);
+        parentAgent.addComponent(this);
+        this.serverRow = srv;
     }
 
     /** get GUID for this client */
@@ -42,6 +47,10 @@ public abstract class AgentClientBase extends Agentable implements AgentClient, 
     }
     public String getGuid() {
         return clientGuid;
+    }
+    /** get type of this component */
+    public DistComponentType getComponentType() {
+        return DistComponentType.client;
     }
     /** get information about this client */
     public ClientInfo getClientInfo() {

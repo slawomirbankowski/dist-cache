@@ -2,6 +2,8 @@ package com.cache.base.dtos;
 
 import com.cache.utils.AdvancedMap;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 /** row for JDBC table distagentregister
@@ -16,15 +18,16 @@ public class DistAgentServerRow {
     public String serverip;
     public int serverport;
     public String serverurl;
-    public java.util.Date createddate;
+    public LocalDateTime createddate;
     public int isactive;
-    public java.util.Date lastpingdate;
+    public LocalDateTime lastpingdate;
     public String serverparams;
 
     /** */
     public DistAgentServerRow() {
     }
-    public DistAgentServerRow(String agentguid, String serverguid, String servertype, String serverhost, String serverip, int serverport, String serverurl, java.util.Date createddate, int isactive, java.util.Date lastpingdate, String serverparams) {
+    public DistAgentServerRow(String agentguid, String serverguid, String servertype, String serverhost, String serverip, int serverport, String serverurl,
+                              LocalDateTime createddate, int isactive, LocalDateTime lastpingdate, String serverparams) {
         this.agentguid = agentguid;
         this.serverguid = serverguid;
         this.servertype = servertype;
@@ -37,11 +40,28 @@ public class DistAgentServerRow {
         this.lastpingdate = lastpingdate;
         this.serverparams = serverparams;
     }
+    public DistAgentServerRow(String agentguid) {
+        this.agentguid = agentguid;
+        this.serverguid = "";
+        this.servertype = "";
+        this.serverhost = "";
+        this.serverip = "";
+        this.serverport = 0;
+        this.serverurl = "";
+        this.createddate = LocalDateTime.now();
+        this.isactive = 1;
+        this.lastpingdate = LocalDateTime.now();
+        this.serverparams = "";
+    }
+    public void deactivate() {
+        this.isactive = 0;
+    }
     public DistAgentServerRow copyNoPassword() {
         return new DistAgentServerRow(agentguid, serverguid, servertype, serverhost, serverip, serverport, serverurl, createddate, isactive, lastpingdate, serverparams);
     }
     public Map<String, String> toMap() {
-        return Map.of("type", "server",
+        HashMap<String, String> map = new HashMap<>();
+        map.putAll(Map.of("type", "server",
                 "agentguid", agentguid,
                 "serverguid", serverguid,
                 "servertype", servertype,
@@ -49,12 +69,14 @@ public class DistAgentServerRow {
                 "serverip", serverip,
                 "serverport", "" + serverport,
                 "serverurl", serverurl,
-               // "serverparams", serverparams,
                 "createddate", createddate.toString(),
-                "lastpingdate", lastpingdate.toString());
+                "lastpingdate", lastpingdate.toString()));
+        map.putAll(Map.of("isactive", ""+isactive,
+                "serverparams", serverparams));
+        return map;
     }
     public static DistAgentServerRow fromMap(Map<String, Object> map) {
-        AdvancedMap m = new AdvancedMap(map);
+        AdvancedMap m = new AdvancedMap(map, true);
         return new DistAgentServerRow(
                 m.getString("agentguid", ""),
                 m.getString("serverguid", ""),
@@ -63,9 +85,9 @@ public class DistAgentServerRow {
                 m.getString("serverip", ""),
                 m.getInt("serverport", 8085),
                 m.getString("serverurl", ""),
-                m.getDateOrNow("lastpingdate"),
+                m.getLocalDateOrNow("lastpingdate"),
                 m.getInt("isactive", 0),
-                m.getDateOrNow("lastpingdate"),
+                m.getLocalDateOrNow("lastpingdate"),
                 m.getString("serverparams", "")
         );
     }

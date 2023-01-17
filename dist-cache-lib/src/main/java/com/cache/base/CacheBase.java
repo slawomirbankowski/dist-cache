@@ -1,10 +1,12 @@
 package com.cache.base;
 
 import com.cache.api.*;
+import com.cache.api.enums.DistComponentType;
 import com.cache.api.enums.DistServiceType;
 import com.cache.api.info.CacheInfo;
 import com.cache.encoders.KeyEncoderNone;
 import com.cache.interfaces.Agent;
+import com.cache.interfaces.AgentComponent;
 import com.cache.interfaces.Cache;
 import com.cache.interfaces.CacheKeyEncoder;
 import com.cache.utils.CacheStats;
@@ -12,7 +14,6 @@ import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -21,7 +22,7 @@ import java.util.function.Supplier;
  * to perform clean based on time
  * replace all cache with fresh objects
  * */
-public abstract class CacheBase extends ServiceBase implements Cache {
+public abstract class CacheBase extends ServiceBase implements Cache, AgentComponent {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(CacheBase.class);
@@ -57,6 +58,11 @@ public abstract class CacheBase extends ServiceBase implements Cache {
     protected String createServiceUid() {
         return DistUtils.generateCacheGuid();
     }
+
+    @Override
+    public String getGuid() {
+        return guid;
+    }
     /** create new message builder starting this agent */
     public DistMessageBuilder createMessageBuilder() {
         return DistMessageBuilder.empty().fromService(this);
@@ -67,6 +73,10 @@ public abstract class CacheBase extends ServiceBase implements Cache {
         return DistServiceType.cache;
     }
 
+    /** get type of this component */
+    public DistComponentType getComponentType() {
+        return DistComponentType.cache;
+    }
     /** get key encoder - this is a class to encode key to protect passwords, secrets of a key */
     public CacheKeyEncoder getKeyEncoder() {
         return keyEncoder;
@@ -90,7 +100,7 @@ public abstract class CacheBase extends ServiceBase implements Cache {
     /** get info about cache */
     public CacheInfo getCacheInfo() {
         return new CacheInfo(guid, createDate, cacheStats.checksCount(),
-                cacheStats.addedItemsCount(), isClosed,
+                cacheStats.addedItemsCount(), closed,
             getAgent().getAgentIssues().getIssues().size(), getAgent().getAgentEvents().getEvents().size(),
             getItemsCount(), getObjectsCount(), getStoragesInfo());
     }
@@ -168,6 +178,6 @@ public abstract class CacheBase extends ServiceBase implements Cache {
     }
 
     /** check if cache has been already closed and deinitialized */
-    public boolean getClosed() { return isClosed; }
+    public boolean getClosed() { return closed; }
 
 }

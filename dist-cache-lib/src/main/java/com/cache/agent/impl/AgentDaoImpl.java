@@ -1,9 +1,11 @@
 package com.cache.agent.impl;
 
 import com.cache.api.DaoParams;
+import com.cache.api.enums.DistComponentType;
 import com.cache.api.enums.DistDaoType;
 import com.cache.api.info.AgentDaosInfo;
 import com.cache.interfaces.Agent;
+import com.cache.interfaces.AgentComponent;
 import com.cache.interfaces.Dao;
 import com.cache.dao.DaoElasticsearchBase;
 import com.cache.dao.DaoJdbcBase;
@@ -21,7 +23,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /** manager for DAOs - all external data access objects to JDBC, Kafka, Redis, Elasticsearch */
-public class AgentDaoImpl extends Agentable implements AgentDao {
+public class AgentDaoImpl extends Agentable implements AgentDao, AgentComponent {
 
     /** local logger for this class */
     protected static final Logger log = LoggerFactory.getLogger(AgentDaoImpl.class);
@@ -40,8 +42,18 @@ public class AgentDaoImpl extends Agentable implements AgentDao {
     /** create new DAO manager */
     public AgentDaoImpl(Agent parentAgent) {
         super(parentAgent);
+        parentAgent.addComponent(this);
     }
 
+
+    /** get type of this component */
+    public DistComponentType getComponentType() {
+        return DistComponentType.daos;
+    }
+    @Override
+    public String getGuid() {
+        return getParentAgentGuid();
+    }
     /** get DAO for key and class */
     public <T extends Dao> Optional<T> getOrCreateDao(Class<T> daoClass, DaoParams params) {
         try {

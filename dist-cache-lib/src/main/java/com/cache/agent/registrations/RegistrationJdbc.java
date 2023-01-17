@@ -4,6 +4,7 @@ import com.cache.agent.AgentInstance;
 import com.cache.api.*;
 import com.cache.base.dtos.DistAgentRegisterRow;
 import com.cache.base.dtos.DistAgentServerRow;
+import com.cache.base.dtos.DistAgentServiceRow;
 import com.cache.dao.DaoElasticsearchBase;
 import com.cache.dao.DaoJdbcBase;
 import com.cache.base.RegistrationBase;
@@ -39,11 +40,12 @@ public class RegistrationJdbc extends RegistrationBase {
         var jdbcPass = parentAgent.getConfig().getProperty(DistConfig.AGENT_REGISTRATION_JDBC_PASS, "");
         var jdbcDialect = parentAgent.getConfig().getProperty(DistConfig.AGENT_REGISTRATION_JDBC_DIALECT, "");
         dialect = JdbcDialect.getDialect(jdbcDriver, jdbcDialect);
+        log.info("Initializing of JDBC registration with URL: " + jdbcUrl + ", agent: " + parentAgent.getAgentGuid() + ", dialect: " + dialect.dialectName);
         var initConnections = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_REGISTRATION_JDBC_INIT_CONNECTIONS, 2);
         var maxActiveConnections = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_REGISTRATION_JDBC_MAX_ACTIVE_CONNECTIONS, 10);
         DaoParams params = DaoParams.jdbcParams(jdbcUrl, jdbcDriver, jdbcUser, jdbcPass, initConnections, maxActiveConnections);
         dao = parentAgent.getAgentDao().getOrCreateDaoOrError(DaoJdbcBase.class, params);
-        log.info("Initialize JDBC registration with URL: " + jdbcUrl + ", dialect: " + dialect.dialectName);
+        dao.usedByComponent(this);
         tryCreateAgentTable();
     }
 
@@ -79,6 +81,11 @@ public class RegistrationJdbc extends RegistrationBase {
             dao.executeAnyQuery(dialect.createAgentIssue());
         }
     }
+    /** get normalized URL for this registration */
+    public String getUrl() {
+        return jdbcUrl;
+    }
+
     @Override
     protected boolean onIsConnected() {
         // return true if there is connection to JDBC database, otherwise falsedao
@@ -88,26 +95,27 @@ public class RegistrationJdbc extends RegistrationBase {
     protected AgentConfirmation onAgentRegister(AgentRegister register) {
         // register this agent in JDBC
         log.info("Registering new agent in JDBC, GUID: " + this.parentAgent.getAgentGuid() + ", dialect: " + dialect.dialectName);
-        var createdDate = new java.util.Date();
-        dao.executeAnyQuery(dialect.insertAgentRegister(), new Object[] {register.agentGuid, register.hostName, register.hostIp, register.port, createdDate, createdDate, 0, 1});
-        parentAgent.getConfig().getHashMap().entrySet().stream().forEach(cfg -> {
-            // agentguid,configname,configvalue,createddate,lastupdateddat
-            var createDate = new java.util.Date();
-            dao.executeUpdateQuery(dialect.insertAgentConfig(), new Object[] { register.agentGuid, cfg.getKey(), cfg.getValue(), createDate, createDate });
+        dao.executeAnyQuery(dialect.insertAgentRegister(), new Object[] {register.getAgentGuid(), register.getHostName(), register.getHostIp(), register.getPort(), register.getCreateDate(), register.getLastPingDate(), 0, 1});
+        parentAgent.getConfig().getHashMap(false).entrySet().stream().forEach(cfg -> {
+            dao.executeUpdateQuery(dialect.insertAgentConfig(), new Object[] { register.getAgentGuid(), cfg.getKey(), cfg.getValue(), register.getCreateDate(), register.getCreateDate() });
         });
-        return new AgentConfirmation(register.agentGuid, true, false, 0, List.of());
+        return new AgentConfirmation(register.getAgentGuid(), true, false, 0, List.of());
     }
 
-    protected AgentConfirmation onAgentUnregister(String agentGuid) {
-        log.info("Unregistering agent in JDBC: " + agentGuid);
-        dao.executeAnyQuery(dialect.removeAgentRegister(), new Object[] {new java.util.Date(), agentGuid});
-        return new AgentConfirmation(agentGuid, true, false, 0, List.of());
+    /** unregistering Agent from JDBC */
+    protected AgentConfirmation onAgentUnregister(AgentRegister register) {
+        log.info("Unregistering agent in JDBC: " + register.getAgentGuid());
+        dao.executeAnyQuery(dialect.removeAgentRegister(), new Object[] {new java.util.Date(), register.getAgentGuid()});
+        return new AgentConfirmation(register.getAgentGuid(), true, false, 0, List.of());
     }
 
+    /** */
     @Override
     protected AgentPingResponse onAgentPing(AgentPing ping) {
-        log.info("====> PINGing agent in JDBC, guid: " + ping.agentGuid);
-        dao.executeUpdateQuery(dialect.pingAgentRegister(), new Object[] {new java.util.Date(), ping.agentGuid});
+        log.info("====> PINGing agent in JDBC, guid: " + ping.getAgentGuid());
+        dao.executeUpdateQuery(dialect.pingAgentRegister(),
+                new Object[] {new java.util.Date(), ping.getAgentsConnected(), ping.getThreadsCount(), ping.getServicesCount(),
+                        ping.getServersCount(), ping.getClientsCount(), ping.getAgentGuid()});
         dao.executeUpdateQuery(dialect.checkAgentRegisters(), new Object[0]);
         return new AgentPingResponse();
     }
@@ -121,7 +129,6 @@ public class RegistrationJdbc extends RegistrationBase {
             return false;
         }
     }
-
     /** remove inactive agents with last ping date for more than X minutes */
     public boolean deleteInactiveAgents(LocalDateTime beforeDate) {
         try {
@@ -131,10 +138,6 @@ public class RegistrationJdbc extends RegistrationBase {
             log.warn("Cannot remove inactive agents at JDBC, reason: " + ex.getMessage());
             return false;
         }
-    }
-    /** get normalized URL for this registration */
-    public String getUrl() {
-        return jdbcUrl;
     }
 
     /** add issue for registration */
@@ -152,7 +155,7 @@ public class RegistrationJdbc extends RegistrationBase {
             // distagentserver(agentguid text, servertype text, serverhost text, serverip text, serverport int, serverurl text, createddate timestamp, isactive int, lastpingdate timestamp)
             dao.executeUpdateQuery(dialect.insertAgentServer(),
                     new Object[] { serv.agentguid, serv.serverguid, serv.servertype, serv.serverhost, serv.serverip,
-                    serv.serverport, serv.serverurl, serv.createddate, serv.isactive, serv.lastpingdate });
+                    serv.serverport, serv.serverurl, serv.createddate, serv.isactive, serv.lastpingdate, serv.serverparams });
         } catch (Exception ex) {
             log.warn("Cannot register server at JDBC, reason: " + ex.getMessage(), ex);
             parentAgent.getAgentIssues().addIssue("RegistrationJdbc.addServer", ex);
@@ -188,20 +191,19 @@ public class RegistrationJdbc extends RegistrationBase {
     }
 
     /** get agents from registration services */
-    public  List<DistAgentRegisterRow> getAgentsNow() {
+    public  List<DistAgentRegisterRow> getAgents() {
         return dao.executeSelectQuery(dialect.selectAgentServersActive(), new Object[0], x -> DistAgentRegisterRow.fromMap(x));
     }
 
-    /** get list of agents from JDBC table */
-    @Override
-    protected List<AgentSimplified> onGetAgents() {
-        return dao.executeSelectQuery(dialect.selectAgentRegisters(), new Object[0], x -> DistAgentRegisterRow.fromMap(x).toSimplified());
-    }
     /** get list of active agents from JDBC table */
-    public List<AgentSimplified> getAgentsActive() {
-        return dao.executeSelectQuery(dialect.selectActiveAgentRegisters(), new Object[0], x -> DistAgentRegisterRow.fromMap(x).toSimplified());
+    public List<DistAgentRegisterRow> getAgentsActive() {
+        return dao.executeSelectQuery(dialect.selectActiveAgentRegisters(), new Object[0], x -> DistAgentRegisterRow.fromMap(x));
     }
-
+    /** register service */
+    public void registerService(DistAgentServiceRow service) {
+        log.info("Registering service in JDBC registration, service: " + service.serviceguid + ", agent: " + service.agentguid + ", JDBC: " + jdbcUrl);
+        //dao.executeAnyQuery(dialect.insertAgentService(), new Object[] {service.agentguid});
+    }
     /** close current connector */
     @Override
     protected void onClose() {

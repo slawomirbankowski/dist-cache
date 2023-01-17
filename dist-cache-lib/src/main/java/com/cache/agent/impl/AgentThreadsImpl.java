@@ -1,6 +1,7 @@
 package com.cache.agent.impl;
 
 import com.cache.api.AgentThreadObject;
+import com.cache.api.enums.DistComponentType;
 import com.cache.api.info.DistThreadsInfo;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.AgentComponent;
@@ -10,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.stream.Collectors;
 
-public class AgentThreadsImpl extends Agentable implements AgentThreads {
+public class AgentThreadsImpl extends Agentable implements AgentThreads, AgentComponent {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentThreadsImpl.class);
@@ -20,8 +21,17 @@ public class AgentThreadsImpl extends Agentable implements AgentThreads {
     /** creates service manager for agent with parent agent assigned */
     public AgentThreadsImpl(Agent parentAgent) {
         super(parentAgent);
+        parentAgent.addComponent(this);
     }
 
+    /** get type of this component */
+    public DistComponentType getComponentType() {
+        return DistComponentType.threads;
+    }
+    @Override
+    public String getGuid() {
+        return getParentAgentGuid();
+    }
     /** get number of threads */
     public int getThreadsCount() {
         return registeredThreads.size();

@@ -1,6 +1,7 @@
 package com.cache.interfaces;
 
 import com.cache.api.*;
+import com.cache.base.dtos.DistAgentServiceRow;
 
 import java.util.List;
 import java.util.Set;
@@ -9,6 +10,7 @@ import java.util.Set;
  * there are many services that would be working with Dist system, example:
  * cache, reports, flow, measures, space, scheduler, security, config
  * Full list of services are in DistServiceType.
+ * Each service might be having many components.
  * */
 public interface AgentServices {
 
@@ -20,6 +22,8 @@ public interface AgentServices {
     Cache getCache();
     /** get or create service for reports to create, update, remove or execute reports */
     Reports getReports();
+    /** get or create receiver service */
+    Receiver getReceiver();
     /** get number of services */
     int getServicesCount();
     /** get keys of registered services */
@@ -30,6 +34,8 @@ public interface AgentServices {
     DistServiceInfo getServiceInfo(String serviceUid);
     /** get basic information about all services */
     List<DistServiceInfo> getServiceInfos();
+    /** get all rows of services to registrations */
+    List<DistAgentServiceRow> getServiceRows();
     /** register service to this agent */
     void registerService(DistService service) ;
     /** receive message from connector or server, need to find service and process that message on service */

@@ -2,12 +2,10 @@ package com.cache.base;
 
 import com.cache.api.*;
 import com.cache.api.enums.CacheStorageType;
+import com.cache.api.enums.DistComponentType;
 import com.cache.api.info.CacheObjectInfo;
 import com.cache.api.info.StorageInfo;
-import com.cache.interfaces.Cache;
-import com.cache.interfaces.CacheKeyEncoder;
-import com.cache.interfaces.CacheStorage;
-import com.cache.interfaces.DistSerializer;
+import com.cache.interfaces.*;
 import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +18,8 @@ import java.util.*;
  * internal (HashMap, WeakHashMap) - kept in local JVM memory
  * external (Elasticsearch, Redis, DB, LocalDisk) - kept somewhere outside JVM memory
  * */
-public abstract class CacheStorageBase implements CacheStorage {
+public abstract class CacheStorageBase implements CacheStorage, AgentComponent {
+
     protected static final Logger log = LoggerFactory.getLogger(CacheStorageBase.class);
     /** unique identifier of this storage */
     private final String storageUid;
@@ -44,6 +43,23 @@ public abstract class CacheStorageBase implements CacheStorage {
         this.distSerializer = cache.getAgent().getSerializer();
         this.maxObjects = cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_OBJECTS, 1000);
         this.maxItems = cache.getConfig().getPropertyAsLong(DistConfig.CACHE_MAX_LOCAL_ITEMS, 1000);
+    }
+
+    /** get type of this component */
+    public DistComponentType getComponentType() {
+        return DistComponentType.registration;
+    }
+    @Override
+    public String getGuid() {
+        return cache.getCacheGuid();
+    }
+    /** get agent */
+    public Agent getAgent() {
+        return cache.getAgent();
+    }
+    /** get date and time of creation of this component */
+    public LocalDateTime getCreateDate() {
+        return storageCreatedDate;
     }
 
     /** get unique storage ID */

@@ -17,7 +17,7 @@ import java.net.*;
 public class AgentDatagramServer extends ServerBase implements AgentServer, Runnable {
 
     /** local logger for this class*/
-    protected static final Logger log = LoggerFactory.getLogger(AgentServerSocket.class);
+    protected static final Logger log = LoggerFactory.getLogger(AgentDatagramServer.class);
 
     /** Datagram server - UDP to receive packets/ datagram */
     private DatagramSocket datagramSocket;
@@ -27,6 +27,10 @@ public class AgentDatagramServer extends ServerBase implements AgentServer, Runn
 
     public AgentDatagramServer(Agent parentAgent) {
         super(parentAgent);
+        initialize();
+    }
+    /** initialize this server */
+    public void initialize() {
         try {
             workingPort = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SERVER_DATAGRAM_PORT, DistConfig.AGENT_SERVER_DATAGRAM_PORT_DEFAULT_VALUE);
             int soTimeout = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SERVER_DATAGRAM_TIMEOUT,1000);
@@ -40,7 +44,7 @@ public class AgentDatagramServer extends ServerBase implements AgentServer, Runn
             log.info("Started new DATAGRAM server at port:" + workingPort + ", timeout: " + soTimeout + ", agent: " + parentAgent.getAgentGuid());
         } catch (Exception ex) {
             log.info("Cannot start DATAGRAM server, reason: " + ex.getMessage());
-            parentAgent.getAgentIssues().addIssue("AgentDatagramServer", ex);
+            parentAgent.getAgentIssues().addIssue("AgentDatagramServer.initialize", ex);
         }
     }
     /** get type of clients to be connected to this server */
@@ -69,10 +73,12 @@ public class AgentDatagramServer extends ServerBase implements AgentServer, Runn
                     DistMessage receivedMsg = (DistMessage)parentAgent.getSerializer().deserialize(DistMessage.class.getName(), received);
                     log.info("......... Got message from from UDP:  " + receivedMsg.toString());
                 }
+            } catch (SocketTimeoutException ex) {
             } catch (IOException ex) {
-
+                log.error("!!!!! IOException on Datagram server working on port " + workingPort + ", reason: " + ex.getMessage(), ex);
             } catch (Exception ex) {
-                log.error("!!!!! Unknown exception on Datagram server working on port " + workingPort);
+                log.error("!!!!! Unknown exception on Datagram server working on port " + workingPort + ", reason: " + ex.getMessage(), ex);
+                parentAgent.getAgentIssues().addIssue("AgentDatagramServer.run", ex);
             }
             DistUtils.sleep(2000);
         }
@@ -85,9 +91,8 @@ public class AgentDatagramServer extends ServerBase implements AgentServer, Runn
             datagramSocket.close();
             mainThread.join(2000);
         } catch (Exception ex) {
-            log.warn("");
+            log.warn("Exception while closing Datagram server for agent: " + parentAgent.getAgentGuid() +", reason: " + ex.getMessage());
             parentAgent.getAgentIssues().addIssue("AgentDatagramServer.close", ex);
-
         }
     }
 

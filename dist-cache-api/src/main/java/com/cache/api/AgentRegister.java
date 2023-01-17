@@ -1,5 +1,8 @@
 package com.cache.api;
 
+import com.cache.base.dtos.DistAgentRegisterRow;
+import com.cache.utils.DistUtils;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -8,25 +11,26 @@ import java.util.Map;
  * Registration service is keeping list of Agents, Servers, Services in given storage like DB, Elasticsearch, Redis, Kafka, ... */
 public class AgentRegister {
     /** unique ID of this agent */
-    public String agentGuid;
+    private String agentGuid;
     /** secret of this agent */
-    public String agentSecret;
+    private String agentSecret;
     /** host for socket/direct connections */
-    public String hostName;
-    public String hostIp;
+    private String hostName;
+    private String hostIp;
     /** port for socket/direct connections */
-    public int port;
+    private int port;
     /** create date of this agent */
-    public LocalDateTime createDate;
-
+    private LocalDateTime createDate;
+    private LocalDateTime lastPingDate = LocalDateTime.now();
     /** other agents that this agent is already connected to */
-    public List<AgentSimplified> agents;
+    private List<DistAgentRegisterRow> agents;
+    private boolean active;
 
     public AgentRegister() {
     }
 
     public AgentRegister(String agentGuid, String agentSecret, String hostName, String hostIp, int port,
-                         LocalDateTime createDate, List<AgentSimplified> agents) {
+                         LocalDateTime createDate, List<DistAgentRegisterRow> agents, boolean active) {
         this.agentGuid = agentGuid;
         this.agentSecret = agentSecret;
         this.hostName = hostName;
@@ -34,13 +38,25 @@ public class AgentRegister {
         this.port = port;
         this.createDate = createDate;
         this.agents = agents;
+        this.active = active;
+    }
+    public AgentRegister(String agentGuid, boolean active) {
+        this.agentGuid = agentGuid;
+        this.agentSecret = "";
+        this.hostName = "";
+        this.hostIp = "";
+        this.port = -1;
+        this.createDate = LocalDateTime.now();
+        this.agents = List.of();
+        this.active = active;
+    }
+    public DistAgentRegisterRow toAgentRegisterRow() {
+        return new DistAgentRegisterRow(createDate, agentGuid, hostName, hostIp, port, lastPingDate, (active)?1:0);
     }
 
-    public AgentSimplified toSimplified() {
-        // TODO: get simplified object of agent with only the most important items
-        return new AgentSimplified(agentGuid, hostName, hostIp, port, createDate);
+    public void updatePingDate() {
+        lastPingDate = LocalDateTime.now();
     }
-
     public String getAgentGuid() {
         return agentGuid;
     }
@@ -53,24 +69,24 @@ public class AgentRegister {
     public String getHostIp() {
         return hostIp;
     }
-
+    public LocalDateTime getLastPingDate() {
+        return lastPingDate;
+    }
+    public boolean isActive() {
+        return active;
+    }
+    /** */
+    public void deactivate() {
+        active = false;
+    }
     public int getPort() {
         return port;
     }
     public LocalDateTime getCreateDate() {
         return createDate;
     }
-    public List<AgentSimplified> getAgents() {
+    public List<DistAgentRegisterRow> getAgents() {
         return agents;
     }
-    public Map<String, String> toMap() {
-        return Map.of("type", "agent",
-                "active", "true",
-                "agentGuid", agentGuid,
-                "hostName", hostName,
-                "hostIp", hostIp,
-                "port", "" + port,
-                "lastPingDate", LocalDateTime.now().toString(),
-                "createDate", createDate.toString());
-    }
+
 }

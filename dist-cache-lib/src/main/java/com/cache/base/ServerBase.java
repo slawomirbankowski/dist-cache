@@ -1,6 +1,7 @@
 package com.cache.base;
 
 import com.cache.agent.impl.Agentable;
+import com.cache.api.enums.DistComponentType;
 import com.cache.api.info.AgentServerInfo;
 import com.cache.api.enums.DistClientType;
 import com.cache.api.DistConfig;
@@ -10,6 +11,7 @@ import com.cache.interfaces.AgentComponent;
 import com.cache.interfaces.AgentServer;
 import com.cache.utils.DistUtils;
 
+import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** base class for any server in Agent to accept connections */
@@ -25,9 +27,17 @@ public abstract class ServerBase extends Agentable implements AgentServer, Agent
     /** creates new base server with set agent */
     public ServerBase(Agent parentAgent) {
         super(parentAgent);
+        parentAgent.addComponent(this);
     }
+
+    /** initialize this server */
+    public abstract void initialize();
     /** get type of clients to be connected to this server */
     public abstract DistClientType getClientType();
+    /** get type of this component */
+    public DistComponentType getComponentType() {
+        return DistComponentType.server;
+    }
     @Override
     public String getServerGuid() {
         return serverGuid;
@@ -62,7 +72,7 @@ public abstract class ServerBase extends Agentable implements AgentServer, Agent
 
     /** create server row for this server */
     public DistAgentServerRow createServerRow() {
-        var createdDate = new java.util.Date();
+        var createdDate = LocalDateTime.now();
         var hostName = DistUtils.getCurrentHostName();
         var hostIp = DistUtils.getCurrentHostAddress();
         return new DistAgentServerRow(parentAgent.getAgentGuid(), getServerGuid(), getClientType().name(), hostName, hostIp, getPort(),

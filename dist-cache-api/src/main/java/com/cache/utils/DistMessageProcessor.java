@@ -1,6 +1,7 @@
 package com.cache.utils;
 
 import com.cache.api.DistMessage;
+import com.cache.api.info.AgentMessageProcessorInfo;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -20,13 +21,21 @@ public class DistMessageProcessor {
     /** default processor for messages  */
     private BiFunction<String, DistMessage, DistMessage> defaultProcessor = this::defaultMethodReturnsNotSupported;
 
-    /** creates new empty processor for incomming messages */
+    /** creates new empty processor for incoming messages */
     public DistMessageProcessor() {
     }
 
+    /** get information about message processor */
+    public AgentMessageProcessorInfo getInfo() {
+        return new AgentMessageProcessorInfo(methodProcessors.size(), receivedMessages.get(), exceptionMessages.get());
+    }
     /** get number of received messages */
     public long getReceivedMessagesCount() {
         return receivedMessages.get();
+    }
+    /** get number of error messages */
+    public long getErrorMessagesCount() {
+        return exceptionMessages.get();
     }
     /** get number of registered methods to process messages */
     public int getMethodsCount() {

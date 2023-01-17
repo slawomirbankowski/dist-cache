@@ -72,4 +72,5 @@ public class DistMessageFull {
     public Boolean applyCallback(DistCallbackType ct, DistMessage responseMsg) {
         return callbacks.applyCallback(ct, responseMsg);
     }
+
 }

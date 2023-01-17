@@ -1,8 +1,10 @@
 package com.cache.agent.impl;
 
 import com.cache.agent.AgentInstance;
+import com.cache.api.enums.DistComponentType;
 import com.cache.api.info.AgentTimerInfo;
 import com.cache.api.info.AgentTimerTaskInfo;
+import com.cache.interfaces.AgentComponent;
 import com.cache.interfaces.AgentTimers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +16,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /** implementation of timer manager with scheduled tasks */
-public class AgentTimersImpl extends Agentable implements AgentTimers {
+public class AgentTimersImpl extends Agentable implements AgentTimers, AgentComponent {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentTimersImpl.class);
@@ -28,8 +30,17 @@ public class AgentTimersImpl extends Agentable implements AgentTimers {
     /** creates service manager for agent with parent agent assigned */
     public AgentTimersImpl(AgentInstance parentAgent) {
         super(parentAgent);
+        parentAgent.addComponent(this);
     }
 
+    /** get type of this component */
+    public DistComponentType getComponentType() {
+        return DistComponentType.timers;
+    }
+    @Override
+    public String getGuid() {
+        return getParentAgentGuid();
+    }
     /** get number of timer tasks */
     public int getTimerTasksCount() {
         return timerTasks.size();

@@ -37,7 +37,7 @@ public class CacheDistributeClearTest {
         Cache cache2 = DistFactory.buildDefaultFactory()
                 .withName("GlobalCacheTest")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
-                        "cache_user", "cache_password123")
+                        "cache_user", "${JDBC_PASS}")
                 .withCacheStorageHashMap()
                 .withServerSocketPort(9992)
                 .withWebApiPort(9998)

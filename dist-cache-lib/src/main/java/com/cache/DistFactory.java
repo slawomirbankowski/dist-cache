@@ -2,6 +2,7 @@ package com.cache;
 
 import com.cache.agent.AgentInstance;
 import com.cache.api.*;
+import com.cache.api.enums.DistEnvironmentType;
 import com.cache.api.enums.DistSerializerTypes;
 import com.cache.interfaces.Agent;
 import com.cache.interfaces.Cache;
@@ -57,6 +58,7 @@ public class DistFactory {
                 .withCallbacks(callbacks)
                 .createCacheInstance();
     }
+    /** */
     public static Cache createCacheInstance(DistConfig cacheCfg) {
         return DistFactory
                 .buildConfigFactory(cacheCfg)
@@ -142,6 +144,16 @@ public class DistFactory {
         agent.initializeAgent();
         return agent;
     }
+    /** set type and name of the environment */
+    public DistFactory withEnvironment(DistEnvironmentType envType, String envName) {
+        props.setProperty(DistConfig.DIST_ENVIRONMENT_TYPE, envType.name());
+        props.setProperty(DistConfig.DIST_ENVIRONMENT_NAME, envName);
+        return this;
+    }
+    /** set type of the environment */
+    public DistFactory withEnvironment(DistEnvironmentType envType) {
+        return withEnvironment(envType, envType.name());
+    }
 
     /** add all ENV variables to cache configuration */
     public DistFactory withEnvironmentVariables() {
@@ -177,6 +189,7 @@ public class DistFactory {
     }
     /** add common properties for this cache/machine/agent/address/path */
     public DistFactory withCommonProperties() {
+
         props.setProperty("CACHE_GUID", DistUtils.getCacheGuid());
         props.setProperty("CACHE_HOST_NAME", DistUtils.getCurrentHostName());
         props.setProperty("CACHE_HOST_ADDRESS", DistUtils.getCurrentHostAddress());
@@ -312,8 +325,8 @@ public class DistFactory {
         daos.put(name, DaoParams.elasticsearchParams(url, user, pass));
         return this;
     }
-    public DistFactory withDaoKafka(String name, String brokers, int numPartitions, short replicationFactor, String clientId, String groupId) {
-        daos.put(name, DaoParams.kafkaParams(brokers, numPartitions, replicationFactor, clientId, groupId));
+    public DistFactory withDaoKafka(String name, String brokers, int numPartitions, short replicationFactor) {
+        daos.put(name, DaoParams.kafkaParams(brokers, numPartitions, replicationFactor));
         return this;
     }
 
@@ -357,7 +370,27 @@ public class DistFactory {
         props.setProperty(DistConfig.AGENT_REGISTRATION_ELASTICSEARCH_PASS, "${ELASTICSEARCH_PASS}");
         return this;
     }
-
+    /** add registration through Kafka topic */
+    public DistFactory withRegistrationKafka(String brokers, String topicName, int numPartitions, short replicationFactor) {
+        props.setProperty(DistConfig.AGENT_REGISTRATION_KAFKA_BROKERS, brokers);
+        props.setProperty(DistConfig.AGENT_REGISTRATION_KAFKA_TOPIC, topicName);
+        props.setProperty(DistConfig.AGENT_REGISTRATION_KAFKA_PARTITIONS, ""+numPartitions);
+        props.setProperty(DistConfig.AGENT_REGISTRATION_KAFKA_REPLICATION, ""+replicationFactor);
+        return this;
+    }
+    public DistFactory withRegistrationKafka(String brokers, String topicName) {
+        return withRegistrationKafka(brokers, topicName,
+                DistConfig.AGENT_REGISTRATION_KAFKA_PARTITIONS_DEFAULT_VALUE,
+                DistConfig.AGENT_REGISTRATION_KAFKA_REPLICATION_DEFAULT_VALUE);
+    }
+    public DistFactory withRegistrationKafka(String brokers) {
+        return withRegistrationKafka(brokers, DistConfig.AGENT_REGISTRATION_KAFKA_TOPIC_DEFAULT_VALUE);
+    }
+    public DistFactory withRegistrationMongodb(String host, int port) {
+        props.setProperty(DistConfig.AGENT_REGISTRATION_MONGODB_HOST, host);
+        props.setProperty(DistConfig.AGENT_REGISTRATION_MONGODB_PORT, ""+port);
+        return this;
+    }
     /** add times to inactivate other agents that have no ping for more than time declared,
      * remove all agents without ping for more than time declared
      * */
@@ -391,7 +424,12 @@ public class DistFactory {
         props.setProperty(DistConfig.AGENT_SERVER_DATAGRAM_PORT, ""+port);
         return this;
     }
-
+    /** define port for Kafka communication */
+    public DistFactory withServerKafka(String brokers, String topicName) {
+        props.setProperty(DistConfig.AGENT_SERVER_KAFKA_BROKERS, brokers);
+        props.setProperty(DistConfig.AGENT_SERVER_KAFKA_TOPIC, topicName);
+        return this;
+    }
     /** get comma-separated list of defined cache storages */
     private String getExistingStorageList() {
         String existingStorages = props.getProperty(DistConfig.CACHE_STORAGES);

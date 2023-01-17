@@ -7,4 +7,5 @@ public enum DistClientType {
     kafka, // Kafka in the middle
     datagram, // Datagram - UDP packets, short, not reliable but very fast
     jdbc; // JDBC based with table in the middle with messages
+
 }

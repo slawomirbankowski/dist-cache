@@ -54,11 +54,11 @@ public class DaoTest {
         log.info("Elasticsearch indices: " + elasticDao.getIndicesNames());
 
         log.info("Get DAO for Kafka");
-        DaoParams kafkaParams = DaoParams.kafkaParams("localhost:9092", 1, (short)1, "client", "group");
+        DaoParams kafkaParams = DaoParams.kafkaParams("localhost:9092", 1, (short)1);
         DaoKafkaBase kafkaDao = agent.getAgentDao().getOrCreateDaoOrError(DaoKafkaBase.class, kafkaParams);
         log.info("Kafka topics: " + kafkaDao.getTopics());
 
-        kafkaDao.createKafkaConsumer("dist-agent-issue", record -> {
+        kafkaDao.createKafkaConsumer("dist-agent-issue", "dao-test", (topic, record) -> {
             log.info("Receive message");
             return true;
         });

@@ -20,7 +20,7 @@ import java.util.Set;
  * - Issue management - to add issues from all local services
  *
  * */
-public interface Agent extends IssueHandler {
+public interface Agent extends DistService, IssueHandler {
     /** get unique ID of this agent */
     String getAgentGuid();
     /** get short version ID of this agent GUID */
@@ -41,12 +41,10 @@ public interface Agent extends IssueHandler {
     LocalDateTime getCreateDate();
     /** get secret generated or set for this agent */
     String getAgentSecret();
-
     /** get agent threads manager */
     AgentThreads getAgentThreads();
     /** get agent timers manager */
     AgentTimers getAgentTimers();
-
     /** get agent service manager */
     AgentServices getAgentServices();
     /** get agent connector manager to manage direct connections to other agents, including sending and receiving messages */
@@ -59,11 +57,13 @@ public interface Agent extends IssueHandler {
     AgentIssues getAgentIssues();
     /** get agent DAOs manager for external connections to JDBC, Elasticsearch, Kafka, Redis */
     AgentDao getAgentDao();
+    /** get WebAPI for this Agent */
+    AgentApi getAgentApi();
 
     /** create new message builder starting this agent */
     DistMessageBuilder createMessageBuilder();
     /** message send to agent(s) */
-    DistMessageFull sendMessage(DistMessageFull msgCallbacks);
+    DistMessageFull sendMessage(DistMessageFull msg);
     /** send message to agents */
     DistMessageFull sendMessage(DistMessage msg, DistCallbacks callbacks);
     /** create message send to all clients */

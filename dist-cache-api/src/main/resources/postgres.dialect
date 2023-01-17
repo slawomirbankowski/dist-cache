@@ -1,4 +1,4 @@
-name=default
+name=postgres
 selectAllTables=select * from information_schema.tables
 selectTable=select * from information_schema.tables where table_name=?
 
@@ -10,14 +10,14 @@ ddlSelectCacheItemByKey=select * from distcacheitem tables where cachekey=? limi
 insertUpdateCacheItem=insert into distcacheitem(cachekey, cachevalue, objectclassname, inserteddate, cacheguid, lastusedate, enddate, createdtimems, objectseq, objsize, acquiretimems, cachemode, cachepriority, groupslist) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) on conflict (cachekey) do update set cachevalue = EXCLUDED.cachevalue, lastUseDate=EXCLUDED.lastUseDate
 deleteOldCacheItemsTemplate=delete from distcacheitem where cachekey in (?)
 
+createAgentRegister=create table distagentregister(agentguid varchar(300), hostname varchar(300), hostip varchar(300), portnumber int, createddate timestamp, lastpingdate timestamp, pingscount int, isactive int, closedate timestamp, agentsconnected int, threadscount int, servicescount int, serverscount int, clientscount int)
+createAgentRegisterIndex=create unique index idx_distagentregister_pk on distagentregister(agentguid)
 selectAgentRegisterTable=select * from information_schema.tables where table_name = 'distagentregister'
-createAgentRegister=create table distagentregister(agentguid varchar(300), hostname varchar(300), hostip varchar(300), portnumber int, createddate timestamp, lastpingdate timestamp, pingscount int, isactive int, closedate timestamp, agentsconnected int)
-createAgentRegisterIndex=create unique index idx_distagentregister_keys on distagentregister(agentguid)
 selectAgentRegisters=select * from distagentregister
 selectActiveAgentRegisters=select * from distagentregister where isactive=1
 updateAgentRegister=update distagentregister set lastpingdate=? where agentguid=?
-pingAgentRegister=update distagentregister set lastpingdate=?, pingscount=pingscount+1 where agentguid=?
-insertAgentRegister=insert into distagentregister(agentguid, hostname, hostip, portnumber, createddate, lastpingdate, pingscount, isactive) values (?,?,?,?,?,?,?,?)
+pingAgentRegister=update distagentregister set lastpingdate=?, pingscount=pingscount+1, agentsconnected=?, threadscount=?, servicescount=?, serverscount=?, clientscount=? where agentguid=?
+insertAgentRegister=insert into distagentregister(agentguid, hostname, hostip, portnumber, createddate, lastpingdate, pingscount, isactive, agentsconnected, threadscount, servicescount) values (?,?,?,?,?,?,?,?, 0,0,0)
 removeAgentRegister=update distagentregister set isactive=0, closedate=? where agentguid=?
 checkAgentRegisters=update distagentregister set isactive=0 where isactive = 1 and lastpingdate < now() - interval '10 minutes'
 updateInactiveAgentRegisters=update distagentregister set isactive=0 where isactive = 1 and lastpingdate < ?
@@ -30,13 +30,14 @@ deleteAgentConfig=delete from distagentconfig where agentguid=?
 insertAgentConfig=insert into distagentconfig(agentguid,configname,configvalue,createddate,lastupdateddate) values (?,?,?,?,?) on conflict (agentguid,configname) do update set configvalue = EXCLUDED.configvalue, lastupdateddate=EXCLUDED.lastupdateddate
 
 createAgentServer=create table distagentserver(agentguid text, serverguid text, servertype text, serverhost text, serverip text, serverport int, serverurl text, createddate timestamp, isactive int, lastpingdate timestamp, serverparams text)
-createAgentServerIndex=create index idx_distagentserver_agentguid on distagentserver(agentguid)
+createAgentServerIndex=create index idx_distagentserver_agentguid on distagentserver(agentguid);create unique index idx_distagentserver_keys on distagentserver(agentguid,serverguid)
 selectAgentServersForAgent=select * from distagentserver where agentguid=?
+selectAgentServers=select * from distagentserver
 selectAgentServersActive=select * from distagentserver where isactive=1
-insertAgentServer=insert into distagentserver(agentguid,serverguid,servertype,serverhost,serverip,serverport,serverurl,createddate,isactive,lastpingdate, serverparams) values (?,?,?,?,?,?,?,?,?,?,?)
+insertAgentServer=insert into distagentserver(agentguid,serverguid,servertype,serverhost,serverip,serverport,serverurl,createddate,isactive,lastpingdate,serverparams) values (?,?,?,?,?,?,?,?,?,?,?)
 deleteAgentServer=update distagentserver set isActive=0, lastpingdate=now() where agentguid=? and serverguid=?
 pingAgentServer=update distagentserver set lastpingdate=now() where agentguid=? and serverguid=?
-checkAgentServer=update distagentserver set isactive=0, closedate=now() where isActive=1 and lastpingdate < ?
+checkAgentServer=update distagentserver set isactive=0 where isActive=1 and lastpingdate < ?
 deleteAgentServers=delete from distagentserver where lastpingdate < ?
 
 createAgentService=create table distagentservice(agentguid text, serviceguid text, servicetype text, createddate timestamp, isactive int, lastpingdate timestamp)
@@ -47,4 +48,7 @@ deleteAgentService=delete from distagentservice where serviceguid=?
 
 createAgentIssue=create table distagentissue(agentguid text, methodname text, exceptionmessage text, exceptiontext text, parameterslist text, createddate timestamp)
 insertAgentIssue=insert into distagentissue(agentguid, methodname, exceptionmessage, exceptiontext, parameterslist, createddate) values (?,?,?,?,?,?)
+
+
+
 

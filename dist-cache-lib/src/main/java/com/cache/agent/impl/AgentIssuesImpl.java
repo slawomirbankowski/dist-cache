@@ -2,7 +2,9 @@ package com.cache.agent.impl;
 
 import com.cache.api.DistConfig;
 import com.cache.api.DistIssue;
+import com.cache.api.enums.DistComponentType;
 import com.cache.interfaces.Agent;
+import com.cache.interfaces.AgentComponent;
 import com.cache.interfaces.AgentIssues;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,18 +16,22 @@ import java.util.Queue;
  * Issues could be added in case of incorrect data, Exception, any error or unsupported thing in service
  * Issues could be stored and analyzed.
  * */
-public class AgentIssuesImpl extends Agentable implements AgentIssues {
+public class AgentIssuesImpl extends Agentable implements AgentIssues, AgentComponent {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentIssuesImpl.class);
     /** queue of issues reported when using cache */
     protected final Queue<DistIssue> issues = new LinkedList<>();
-
     /** */
     public AgentIssuesImpl(Agent parentAgent) {
         super(parentAgent);
+        parentAgent.addComponent(this);
     }
 
+    /** get type of this component */
+    public DistComponentType getComponentType() {
+        return DistComponentType.api;
+    }
     /** add issue to be revoked by parent
      * issue could be Exception, Error, problem with connecting to storage,
      * internal error, not consistent state that is unknown and could be used by parent manager */
@@ -58,4 +64,8 @@ public class AgentIssuesImpl extends Agentable implements AgentIssues {
         }
     }
 
+    @Override
+    public String getGuid() {
+        return getParentAgentGuid();
+    }
 }

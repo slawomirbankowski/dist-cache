@@ -43,6 +43,7 @@ public class ElasticsearchCacheStorage extends CacheStorageBase {
         }
         log.debug("Connection to Elasticsearch storage URL: " + elasticsearchUrl + ", index with cache objects: " + elasticIndex);
         dao = cache.getAgent().getAgentDao().getOrCreateDaoOrError(DaoElasticsearchBase.class, DaoParams.elasticsearchParams(elasticsearchUrl, elasticUser, elasticPass));
+        dao.usedByComponent(this);
         dao.createIndicesWithCheck(Set.of(elasticIndex));
     }
     /** Elasticsearch is external storage */

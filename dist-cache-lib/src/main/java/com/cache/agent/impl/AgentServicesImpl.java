@@ -1,6 +1,9 @@
 package com.cache.agent.impl;
 
+import com.cache.agent.services.AgentReceiverService;
 import com.cache.api.*;
+import com.cache.api.enums.DistComponentType;
+import com.cache.base.dtos.DistAgentServiceRow;
 import com.cache.interfaces.*;
 import com.cache.managers.CacheManager;
 import com.cache.report.ReportsImpl;
@@ -15,7 +18,7 @@ import java.util.stream.Collectors;
 /** Implementation of manager for services. Kept services, initiate them in case of the need.
  *
  *  */
-public class AgentServicesImpl extends Agentable implements AgentServices {
+public class AgentServicesImpl extends Agentable implements AgentServices, AgentComponent {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentServicesImpl.class);
@@ -23,6 +26,8 @@ public class AgentServicesImpl extends Agentable implements AgentServices {
     private final HashMap<String, DistService> services = new HashMap<>();
     /** policy to add cache Objects to storages and changing mode, ttl, priority, tags */
     protected CachePolicy policy;
+    /** service to provide message receiver and sender */
+    private Receiver receiver;
     /** cache service */
     private Cache cache;
     /** service for reports */
@@ -37,6 +42,16 @@ public class AgentServicesImpl extends Agentable implements AgentServices {
     /** creates service manager for agent with parent agent assigned */
     public AgentServicesImpl(Agent parentAgent) {
         super(parentAgent);
+        parentAgent.addComponent(this);
+    }
+
+    /** get type of this component */
+    public DistComponentType getComponentType() {
+        return DistComponentType.services;
+    }
+    @Override
+    public String getGuid() {
+        return getParentAgentGuid();
     }
     /** set new policy for services */
     public void setPolicy(CachePolicy policy) {
@@ -57,6 +72,19 @@ public class AgentServicesImpl extends Agentable implements AgentServices {
                 registerService(cache);
             }
             return cache;
+        }
+    }
+    /** get or create receiver service */
+    public Receiver getReceiver() {
+        if (receiver != null) {
+            return receiver;
+        }
+        synchronized (this) {
+            if (receiver == null) {
+                receiver = new AgentReceiverService(getParentAgent());
+                registerService(receiver);
+            }
+            return receiver;
         }
     }
     /** get or create service for reports to create, update, remove or execute reports */
@@ -95,6 +123,10 @@ public class AgentServicesImpl extends Agentable implements AgentServices {
     /** get basic information about all services */
     public List<DistServiceInfo> getServiceInfos() {
         return services.values().stream().map(DistService::getServiceInfo).collect(Collectors.toList());
+    }
+    /** get all rows of services to registrations */
+    public List<DistAgentServiceRow> getServiceRows() {
+        return services.values().stream().map(DistService::getServiceRow).collect(Collectors.toList());
     }
     /** register service to this agent */
     public void registerService(DistService service) {

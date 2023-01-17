@@ -1,9 +1,8 @@
 package com.cache.agent.impl;
 
-import com.cache.api.enums.DistCallbackType;
-import com.cache.api.enums.DistClientType;
-import com.cache.api.enums.DistMessageType;
-import com.cache.api.enums.DistServiceType;
+import com.cache.agent.clients.AgentKafkaClient;
+import com.cache.agent.servers.AgentKafkaServer;
+import com.cache.api.enums.*;
 import com.cache.api.info.AgentConnectorsInfo;
 import com.cache.agent.clients.DatagramClient;
 import com.cache.agent.clients.HttpClient;
@@ -15,11 +14,9 @@ import com.cache.api.*;
 import com.cache.api.info.AgentServerInfo;
 import com.cache.api.info.ClientInfo;
 import com.cache.base.ServerBase;
+import com.cache.base.dtos.DistAgentRegisterRow;
 import com.cache.base.dtos.DistAgentServerRow;
-import com.cache.interfaces.Agent;
-import com.cache.interfaces.AgentClient;
-import com.cache.interfaces.AgentConnectors;
-import com.cache.interfaces.AgentServer;
+import com.cache.interfaces.*;
 import com.cache.utils.DistUtils;
 import com.cache.utils.DistMapTimeStorage;
 import com.cache.utils.HashMapMap;
@@ -33,7 +30,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 /** manager for connections inside agent - servers and clients */
-public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
+public class AgentConnectorsImpl extends Agentable implements AgentConnectors, AgentComponent {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentConnectorsImpl.class);
@@ -61,6 +58,17 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     /** create new connectors */
     public AgentConnectorsImpl(Agent parentAgent) {
         super(parentAgent);
+        parentAgent.addComponent(this);
+    }
+
+
+    /** get type of this component */
+    public DistComponentType getComponentType() {
+        return DistComponentType.connectors;
+    }
+    @Override
+    public String getGuid() {
+        return getParentAgentGuid();
     }
     /** open servers for communication  */
     public void openServers() {
@@ -73,10 +81,12 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
         if (parentAgent.getConfig().hasProperty(DistConfig.AGENT_SERVER_DATAGRAM_PORT)) {
             addNewServer(new AgentDatagramServer(parentAgent));
         }
+        if (parentAgent.getConfig().hasProperty(DistConfig.AGENT_SERVER_KAFKA_BROKERS)) {
+            addNewServer(new AgentKafkaServer(parentAgent));
+        }
         log.info("Set up timer to check servers and clients for agent: " + getParentAgentGuid() +", servers count: " + servers.size());
         parentAgent.getAgentTimers().setUpTimer("TIMER_SERVER_CLIENT", DistConfig.TIMER_SERVER_CLIENT_PERIOD, DistConfig.TIMER_SERVER_CLIENT_PERIOD_DELAY_VALUE, x -> onTimeServersCheck());
     }
-
     /** get full information about connectors - servers, clients */
     public AgentConnectorsInfo getInfo() {
         List<AgentServerInfo> createdServers = servers.values().stream().map(s -> s.getInfo()).collect(Collectors.toList());
@@ -89,12 +99,11 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
         servers.put(serv.getServerGuid(), serv);
         parentAgent.getAgentRegistrations().registerServer(serv.createServerRow());
     }
-
     /** run by agent every X seconds to check servers and clients */
     public boolean onTimeServersCheck() {
         try {
             List<DistAgentServerRow> servers = getParentAgent().getAgentRegistrations().getServers();
-            List<AgentSimplified> connectedAgents = getParentAgent().getAgentRegistrations().getAgents();
+            List<DistAgentRegisterRow> connectedAgents = getParentAgent().getAgentRegistrations().getAgents();
             log.info("Check servers for agent: " + parentAgent.getAgentGuid() + ", connectedAgents: " + connectedAgents.size() + ", servers from registrations: " + servers.size());
             parentAgent.getAgentConnectors().checkActiveServers(servers);
             // TODO: connect to all nearby agents, check statuses
@@ -166,7 +175,7 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
     }
     /** message send to agents, directed to services, selected method, add callbacks to be called when response would be back */
     public void sendMessage(DistMessageFull msg) {
-        log.debug("Sending some message from agent: " + parentAgent.getAgentGuid() + ", message: " + msg.getMessage().toString());
+        log.debug("Sending some message from agent: " + parentAgent.getAgentGuid() + ", message: " + msg.getMessage().toString() + ", clients: " + clients.size());
         if (msg.getMessage().isTypeRequest()) {
             sentMessages.addItem(msg.getMessage().getMessageUid(), msg, msg.getMessage().getValidTill());
         }
@@ -286,6 +295,11 @@ public class AgentConnectorsImpl extends Agentable implements AgentConnectors {
         } else if (srv.servertype.equals(DistClientType.datagram.name())) {
             log.info("Creating new datagram client that would be connected to agent: " + srv.agentguid + ", type: " + srv.servertype + ", host: " + srv.serverhost);
             var client = new DatagramClient(parentAgent, srv);
+            client.send(welcomeMsg);
+            return Optional.of(client);
+        } else if (srv.servertype.equals(DistClientType.kafka.name())) {
+            log.info("Creating new Kafka client that would be connected to agent: " + srv.agentguid + ", type: " + srv.servertype + ", host: " + srv.serverhost);
+            var client = new AgentKafkaClient(parentAgent, srv);
             client.send(welcomeMsg);
             return Optional.of(client);
         }

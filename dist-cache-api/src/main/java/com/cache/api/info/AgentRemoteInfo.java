@@ -1,10 +1,9 @@
 package com.cache.api.info;
 
-import com.cache.api.AgentSimplified;
+import com.cache.base.dtos.DistAgentRegisterRow;
 
 import java.time.LocalDateTime;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 /** Information class about remote agent maintained by other system */
 public class AgentRemoteInfo {
@@ -13,13 +12,13 @@ public class AgentRemoteInfo {
     private LocalDateTime lastUpdated;
     private long updatesCount;
     private Set<String> registrationKeys;
-    private AgentSimplified simplified;
+    private DistAgentRegisterRow simplified;
 
     public AgentRemoteInfo() {
 
     }
 
-    public AgentRemoteInfo(LocalDateTime createDate, LocalDateTime lastUpdated, long updatesCount, Set<String> registrationKeys, AgentSimplified simplified) {
+    public AgentRemoteInfo(LocalDateTime createDate, LocalDateTime lastUpdated, long updatesCount, Set<String> registrationKeys, DistAgentRegisterRow simplified) {
         this.createDate = createDate;
         this.lastUpdated = lastUpdated;
         this.updatesCount = updatesCount;
@@ -43,7 +42,7 @@ public class AgentRemoteInfo {
         return registrationKeys;
     }
 
-    public AgentSimplified getSimplified() {
+    public DistAgentRegisterRow getSimplified() {
         return simplified;
     }
 }

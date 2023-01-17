@@ -3,6 +3,7 @@ package com.cache.api;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.Map;
+import java.util.Optional;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ElasticDocumentInfo {
@@ -55,10 +56,17 @@ public class ElasticDocumentInfo {
     }
 
     public Map<String, Object> get_source() {
-        return _source;
+        return  _source;
     }
-
     public void set_source(Map<String, Object> _source) {
         this._source = _source;
+    }
+    /** get map of results or Empty */
+    public Optional<Map<String, Object>> getMap() {
+        if (_source != null) {
+            return Optional.of(_source);
+        } else {
+            return Optional.empty();
+        }
     }
 }

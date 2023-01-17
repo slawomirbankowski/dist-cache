@@ -14,8 +14,8 @@ public class AgentServerSocketTest {
     private static final Logger log = LoggerFactory.getLogger(AgentServerSocketTest.class);
 
     @Test
-    public void agentRegisterSimpleTest() {
-        log.info("START ------ agent register test test");
+    public void agentServerSocketTest() {
+        log.info("START ------ agent server socket test");
         Agent agent1 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",

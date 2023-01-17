@@ -2,6 +2,7 @@ package com.cache.interfaces;
 
 import com.cache.api.*;
 import com.cache.api.enums.DistServiceType;
+import com.cache.base.dtos.DistAgentServiceRow;
 
 import java.time.LocalDateTime;
 
@@ -14,6 +15,8 @@ public interface DistService {
     public LocalDateTime getCreateDate();
     /** get type of service: cache, measure, report, flow, space, ... */
     DistServiceType getServiceType();
+    /** add component to this service */
+    void addComponent(AgentComponent component);
     /** get parent Agent */
     Agent getAgent();
     /** process message, returns message with status */
@@ -24,6 +27,8 @@ public interface DistService {
     String getServiceUid();
     /** get basic information about service */
     DistServiceInfo getServiceInfo();
+    /** get row for registration services */
+    DistAgentServiceRow getServiceRow();
     /** get configuration for cache */
     DistConfig getConfig();
     /** close and deinitialize service */

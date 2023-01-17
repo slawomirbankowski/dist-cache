@@ -63,7 +63,10 @@ public class DaoJdbcBase extends DaoBase implements AgentComponent {
         testDriver();
         onInitialize();
     }
-
+    /** get URL of this DAO */
+    public String getUrl() {
+        return jdbcUrl;
+    }
     /** get number of active connections */
     public int getActiveConnections() {
         return connPool.getNumActive();

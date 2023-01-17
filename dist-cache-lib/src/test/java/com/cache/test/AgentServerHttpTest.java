@@ -17,7 +17,7 @@ public class AgentServerHttpTest {
 
     @Test
     public void agentServerHttpTest() {
-        log.info("START ------ agent register test test");
+        log.info("START ------ agent server HTTP test");
         Agent agent1 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",

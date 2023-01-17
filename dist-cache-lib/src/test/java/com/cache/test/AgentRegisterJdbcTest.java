@@ -16,11 +16,12 @@ public class AgentRegisterJdbcTest {
     private static final Logger log = LoggerFactory.getLogger(AgentRegisterJdbcTest.class);
 
     @Test
-    public void agentRegisterTest() {
-        log.info("START ------ agent register test test");
+    public void agentRegisterJdbcTest() {
+        log.info("START ------ agent register JDBC test");
 
         Agent agent1 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
+                .withWebApiPort(9999)
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "${JDBC_PASS}")
                 .withServerSocketPort(9901)
@@ -29,9 +30,9 @@ public class AgentRegisterJdbcTest {
                 .withTimerServerPeriod(1000)
                 .createAgentInstance();
 
-
         Agent agent2 = DistFactory.buildEmptyFactory()
                 .withName("GlobalAgent")
+                .withWebApiPort(9998)
                 .withRegistrationJdbc("jdbc:postgresql://localhost:5432/cache01", "org.postgresql.Driver",
                         "cache_user", "${JDBC_PASS}")
                 .withServerSocketPort(9902)
@@ -42,9 +43,6 @@ public class AgentRegisterJdbcTest {
 
         assertNotNull(agent1, "Created agent1 should not be null");
         assertNotNull(agent2, "Created agent2 should not be null");
-
-        assertEquals(0, agent1.getAgentRegistrations().getAgents().size(), "There should be 0 agents known by agent1");
-        assertEquals(0, agent2.getAgentRegistrations().getAgents().size(), "There should be 0 agents known by agent2");
 
         DistUtils.sleep(3000);
 
@@ -68,8 +66,12 @@ public class AgentRegisterJdbcTest {
             log.info("RESPONSE GET for message: " + x.getMessageUid());
             return true;
         }));
-        DistUtils.sleep(2000);
 
+        int maxTime = 3;
+        for (int t=0; t<maxTime; t++) {
+            log.info("TIME IS RUNNING................................ minutes: " + t + " of " + maxTime);
+            DistUtils.sleep(60000);
+        }
 
         log.info("==================================================================================================//////////////////////////////////////////////////////////////////////////////////////////////////////////////========================");
         log.info("========--------> CLOSING TEST");

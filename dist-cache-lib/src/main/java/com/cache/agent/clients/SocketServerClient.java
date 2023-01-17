@@ -35,7 +35,7 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
 
     /** creates new socket client */
     public SocketServerClient(Agent parentAgent, Socket socket) {
-        super(parentAgent);
+        super(parentAgent, new DistAgentServerRow(""));
         log.info("Open new socket client on agent: " + parentAgent.getAgentGuid() + ", local host: " + socket.getLocalAddress().getHostName() + ":" + socket.getLocalPort() + ", remote: " + socket.getRemoteSocketAddress().toString() + ", uid: " + clientGuid);
         this.socket = socket;
         connectedAgentGuid = "UNKNOWN";
@@ -44,7 +44,7 @@ public class SocketServerClient extends AgentClientBase implements AgentClient, 
     }
     /** creates new socket  */
     public SocketServerClient(Agent parentAgent, DistAgentServerRow srv) {
-        super(parentAgent);
+        super(parentAgent, srv);
         try {
             connectedAgentGuid = srv.agentguid;
             log.info("Creates new socket client for server: " + srv.servertype + ", host: " + srv.serverhost + ", port: " + srv.serverport);

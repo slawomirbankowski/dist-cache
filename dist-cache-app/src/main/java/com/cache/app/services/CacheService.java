@@ -37,7 +37,7 @@ public class CacheService {
                 .withCommonProperties()
                 .withCommandLineArguments(DistCacheApp.getCommandLineArguments())
                 .extractCacheConfig();
-        initializeCache(new CacheRegister("default", cfg.getHashMap()));
+        initializeCache(new CacheRegister("default", cfg.getHashMap(true)));
     }
     /** initialize cache for given name */
     public CacheInfo initializeCache(CacheRegister register) {

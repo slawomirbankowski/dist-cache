@@ -22,7 +22,7 @@ import java.net.InetSocketAddress;
 public class AgentHttpServer extends ServerBase implements AgentServer {
 
     /** local logger for this class*/
-    protected static final Logger log = LoggerFactory.getLogger(AgentServerSocket.class);
+    protected static final Logger log = LoggerFactory.getLogger(AgentHttpServer.class);
     private com.sun.net.httpserver.HttpServer httpServer;
     private AgentHttpHandler httpHandler;
     private int httpPort;
@@ -30,6 +30,9 @@ public class AgentHttpServer extends ServerBase implements AgentServer {
 
     public AgentHttpServer(Agent parentAgent) {
         super(parentAgent);
+        initialize();
+    }
+    public void initialize() {
         try {
             httpPort = parentAgent.getConfig().getPropertyAsInt(DistConfig.AGENT_SERVER_HTTP_PORT, DistConfig.AGENT_SOCKET_PORT_VALUE_SEQ.incrementAndGet());
             httpUrl = "http://" + DistUtils.getCurrentHostName() + ":" + httpPort + "/";

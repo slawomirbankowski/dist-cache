@@ -1,5 +1,6 @@
 package com.cache.utils.resolvers;
 
+import com.cache.interfaces.Agent;
 import com.cache.interfaces.Resolver;
 
 import java.util.Optional;
@@ -18,5 +19,9 @@ public class PropertyResolver implements Resolver {
             return Optional.empty();
         }
         return Optional.of(value);
+    }
+
+    /** connect */
+    public void connectAgent(Agent agent) {
     }
 }

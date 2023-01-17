@@ -1,6 +1,7 @@
 package com.cache.app.services;
 
 import com.cache.api.*;
+import com.cache.base.dtos.DistAgentRegisterRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -23,18 +24,18 @@ public class AgentService {
     public AgentConfirmation registerAgent(AgentRegister register) {
         AgentConfirmation confirmation;
         synchronized (agents) {
-            log.info("Registering new agent for guid: " + register.agentGuid + " on host: " + register.hostName);
-            List<AgentSimplified> agentsSimplified = getAgents();
-            AgentObject currentAgent = agents.get(register.agentGuid);
-            confirmation = new AgentConfirmation(register.agentGuid, currentAgent==null, false, agents.size(), agentsSimplified);
+            log.info("Registering new agent for guid: " + register.getAgentGuid() + " on host: " + register.getHostName());
+            List<DistAgentRegisterRow> agentsSimplified = getAgents();
+            AgentObject currentAgent = agents.get(register.getAgentGuid());
+            confirmation = new AgentConfirmation(register.getAgentGuid(), currentAgent==null, false, agents.size(), agentsSimplified);
             if (currentAgent == null) {
-                log.info("No agent for guid: " + register.agentGuid + ", registering new one, host: " + register.hostName + ", port: " + register.port);
+                log.info("No agent for guid: " + register.getAgentGuid() + ", registering new one, host: " + register.getHostName() + ", port: " + register.getPort());
                 // agent is new - need to register
                 AgentObject agentObj = new AgentObject(register);
-                agents.put(register.agentGuid, agentObj);
+                agents.put(register.getAgentGuid(), agentObj);
             } else {
                 // agent is already registered, need to update information about storages and other connected agents
-                log.info("Agent for guid: " + register.agentGuid + " already registered, updating existing new, created date: " + currentAgent.getCreateDate());
+                log.info("Agent for guid: " + register.getAgentGuid() + " already registered, updating existing new, created date: " + currentAgent.getCreateDate());
                 //currentAgent.update(register);
             }
         }
@@ -44,14 +45,14 @@ public class AgentService {
     /** ping agent with status information - this could be done every 1 minute */
     public AgentPingResponse pingAgent(AgentPing pingObject) {
 
-        return new AgentPingResponse(pingObject.agentGuid);
+        return new AgentPingResponse(pingObject.getAgentGuid());
     }
     /** get list of all registered agents */
-    public List<AgentSimplified> getAgents() {
+    public List<DistAgentRegisterRow> getAgents() {
         return agents.values().stream().map(x -> x.toSimplified()).collect(Collectors.toList());
     }
     /** get agent by ID */
-    public List<AgentSimplified> getAgentById(String id) {
+    public List<DistAgentRegisterRow> getAgentById(String id) {
         var agent = agents.get(id);
         if (agent == null) {
 

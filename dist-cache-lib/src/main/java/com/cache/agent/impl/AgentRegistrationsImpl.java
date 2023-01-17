@@ -6,11 +6,15 @@ import com.cache.agent.registrations.RegistrationElasticsearch;
 import com.cache.agent.registrations.RegistrationJdbc;
 import com.cache.agent.registrations.RegistrationKafka;
 import com.cache.api.*;
+import com.cache.api.enums.DistComponentType;
 import com.cache.api.info.AgentRegistrationInfo;
+import com.cache.api.info.AgentRegistrationsInfo;
 import com.cache.base.RegistrationBase;
 import com.cache.base.dtos.DistAgentRegisterRow;
 import com.cache.base.dtos.DistAgentServerRow;
+import com.cache.base.dtos.DistAgentServiceRow;
 import com.cache.interfaces.Agent;
+import com.cache.interfaces.AgentComponent;
 import com.cache.interfaces.AgentRegistrations;
 import com.cache.utils.DistUtils;
 import org.slf4j.Logger;
@@ -18,12 +22,13 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /** Implementation of manager to register this agent, servers and services in global repository using JDBC, Kafka, Elasticsearch or any other central storage.
  * Central registration could be used to gather information about other agents.
  *  */
-public class AgentRegistrationsImpl extends Agentable implements AgentRegistrations {
+public class AgentRegistrationsImpl extends Agentable implements AgentRegistrations, AgentComponent {
 
     /** local logger for this class*/
     protected static final Logger log = LoggerFactory.getLogger(AgentRegistrationsImpl.class);
@@ -34,11 +39,24 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
     private final java.util.concurrent.ConcurrentHashMap<String, AgentObject> agents = new java.util.concurrent.ConcurrentHashMap<>();
     /** all rows of registered and known servers from other agents that this agent should be able to connect */
     private final LinkedList<DistAgentServerRow> registeredServers = new LinkedList<>();
+    /** register object that was used for registration of this object */
+    private AgentRegister register;
+    /** check counter of active agents */
+    private final AtomicLong checkCount = new AtomicLong();
 
     public AgentRegistrationsImpl(Agent parentAgent) {
         super(parentAgent);
+        parentAgent.addComponent(this);
     }
 
+    /** get type of this component */
+    public DistComponentType getComponentType() {
+        return DistComponentType.registrations;
+    }
+    @Override
+    public String getGuid() {
+        return getParentAgentGuid();
+    }
     /** create initial registration services
      * there are services to register agent, servers, issues, configurations */
     public void createRegistrations() {
@@ -48,7 +66,7 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
         if (parentAgent.getConfig().hasProperty(DistConfig.AGENT_REGISTRATION_JDBC_URL)) {
             createAndAddRegistrations(RegistrationJdbc.class.getName());
         }
-        if (parentAgent.getConfig().hasProperty(DistConfig.CACHE_STORAGE_KAFKA_BROKERS)) {
+        if (parentAgent.getConfig().hasProperty(DistConfig.AGENT_REGISTRATION_KAFKA_BROKERS)) {
             createAndAddRegistrations(RegistrationKafka.class.getName());
         }
         if (parentAgent.getConfig().hasProperty(DistConfig.AGENT_REGISTRATION_ELASTICSEARCH_URL)) {
@@ -56,6 +74,8 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
         }
         log.info("Registered agent " + parentAgent.getAgentGuid() + " to all registration services, count: " + registrations.size());
         registerToAll();
+        removeInactiveAgents();
+        checkActiveAgents();
         log.info("Set up timer to refresh registration items like agents, servers, agent: " + getParentAgentGuid());
         parentAgent.getAgentTimers().setUpTimer("TIMER_REGISTRATION", DistConfig.TIMER_REGISTRATION_PERIOD, DistConfig.TIMER_REGISTRATION_PERIOD_DELAY_VALUE, x -> onTimeRegisterRefresh());
     }
@@ -69,6 +89,16 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
                 .map(RegistrationBase::getRegisterGuid)
                 .collect(Collectors.toList());
     }
+    /** get information object about all registration */
+    public AgentRegistrationsInfo getInfo() {
+        return new AgentRegistrationsInfo(
+                getRegistrationInfos(),
+                checkCount.get(),
+                agents.values().stream()
+                        .filter(AgentObject::isActive)
+                        .map(AgentObject::getRegisteredInfo)
+                        .collect(Collectors.toList()));
+    }
     /** get information infos about registration objects */
     public List<AgentRegistrationInfo> getRegistrationInfos() {
         return registrations.values().stream()
@@ -78,7 +108,7 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
     /** get list of connected agents */
     public List<DistAgentRegisterRow> getAgentsNow() {
         return registrations.values().stream()
-                .flatMap(x -> x.getAgentsNow().stream())
+                .flatMap(x -> x.getAgents().stream())
                 .collect(Collectors.toList());
     }
     /** get number of known agents */
@@ -98,7 +128,7 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
     }
 
     /** get list of agents possible to connect */
-    public List<AgentSimplified> getAgents() {
+    public List<DistAgentRegisterRow> getAgents() {
         return agents.values().stream().map(AgentObject::getSimplified).collect(Collectors.toList());
     }
 
@@ -149,36 +179,36 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
         unregisterFromAll();
     }
 
-
     /** ping all registrations to notify that this agent is still working */
     private void pingAllRegistrations() {
         log.info("Agent - Ping registration objects, registrations: " + registrations.size());
+        AgentPing pingObj = new AgentPing(register, agents.size(), parentAgent.getAgentThreads().getThreadsCount(),
+                parentAgent.getAgentServices().getServicesCount(), parentAgent.getAgentConnectors().getClientsCount(), parentAgent.getAgentConnectors().getServersCount());
+        AgentObject currAgent = agents.get(parentAgent.getAgentGuid()); // update ping of current agent
+        if (currAgent != null) {
+            currAgent.ping(pingObj);
+        }
         registrations.entrySet().stream().forEach(e -> {
-            e.getValue().agentPing(new AgentPing(parentAgent.getAgentGuid()));
-
-            agents.get(parentAgent.getAgentGuid()); // TODO: update ping of current agent
+            e.getValue().agentPing(pingObj);
         });
     }
     /** check all active agents from all registrations */
     private void checkActiveAgents() {
         log.info("Check connected agents for agent: " + parentAgent.getAgentGuid() + ", current count: " + agents.size() + ", registrations: " + registrations.size() + ", registeredServers: " + registeredServers.size());
-        registrations.entrySet().stream().forEach(e -> {
-            List<AgentSimplified> allAgentsInRegistration = e.getValue().getAgents();
-            log.info("Get agents for register, agent: " + parentAgent.getAgentGuid() + ", registration: " + e.getKey() +", allAgents: " + allAgentsInRegistration.size());
+        registrations.entrySet().stream().forEach(regObj -> {
+            List<DistAgentRegisterRow> allAgentsInRegistration = regObj.getValue().getAgents();
+            log.info("Get other agents from registrations, agent: " + parentAgent.getAgentGuid() + ", registration: " + regObj.getKey() +", allAgents: " + allAgentsInRegistration.size());
             allAgentsInRegistration.stream().forEach(agentFromRegistration -> {
-                AgentObject someAgent = agents.get(agentFromRegistration.getAgentGuid());
+                AgentObject someAgent = agents.get(agentFromRegistration.getAgentguid());
                 if (someAgent == null) {
                     someAgent = new AgentObject(agentFromRegistration);
-                    log.info("Adding NEW agent from registration TO current Agent: " + parentAgent.getAgentGuid() + ", connected Agent: " + agentFromRegistration.getAgentGuid() + ", Agents count: " + agents.size());
-                    agents.put(agentFromRegistration.getAgentGuid(), someAgent);
+                    log.info("Adding NEW agent from registration TO current Agent: " + parentAgent.getAgentGuid() + ", connected Agent: " + agentFromRegistration.getAgentguid() + ", active: " + agentFromRegistration.getIsactive() + ", Agents count: " + agents.size());
+                    agents.put(agentFromRegistration.getAgentguid(), someAgent);
                 }
-                someAgent.update(agentFromRegistration, e.getKey());
-            });
-            List<DistAgentServerRow> allServers = getServers();
-            allServers.stream().forEach(serv -> {
-
+                someAgent.update(agentFromRegistration, regObj.getKey());
             });
         });
+        checkCount.incrementAndGet();
         log.info("AFTER check connected agents for agent: " + parentAgent.getAgentGuid() + ", current count: " + agents.size() + ", registrations: " + registrations.size() + ", registeredServers: " + registeredServers.size());
     }
     public void removeInactiveAgents() {
@@ -201,16 +231,19 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
     /** register this agent to all available connectors
      * this is registering agent itself,  */
     private void registerToAll() {
-        log.info("Registering agent to all registration objects, GUID: " + parentAgent.getAgentGuid() + ", registrations: " + registrations.size());
         var agents = getAgents();
-        AgentRegister register = new AgentRegister(parentAgent.getAgentGuid(), parentAgent.getAgentSecret(),
+        register = new AgentRegister(parentAgent.getAgentGuid(), parentAgent.getAgentSecret(),
                 DistUtils.getCurrentHostName(), DistUtils.getCurrentHostAddress(),
-                9900, parentAgent.getCreateDate(), agents);
+                parentAgent.getAgentApi().getPort(), parentAgent.getCreateDate(), agents, true);
+        List<DistAgentServiceRow> serviceRows = parentAgent.getAgentServices().getServiceRows();
         try {
             synchronized (registrations) {
-                log.info("Registering this agent " + parentAgent.getAgentGuid() + " on host " + register.hostName + " to all registrations: " + registrations.size());
-                registrations.values().stream().forEach(c -> {
-                    c.agentRegister(register);
+                log.info("Registering this agent to all registration objects, GUID: " + parentAgent.getAgentGuid() + " on host " + register.getHostName() + ", services: " + serviceRows.size() + " to all registrations: " + registrations.size());
+                registrations.values().stream().forEach(regSrv -> {
+                    regSrv.agentRegister(register);
+                    serviceRows.forEach(serviceRow -> {
+                        regSrv.registerService(serviceRow);
+                    });
                 });
             }
         } catch (Exception ex) {
@@ -225,7 +258,10 @@ public class AgentRegistrationsImpl extends Agentable implements AgentRegistrati
             synchronized (registrations) {
                 log.info("Unregistering this agent: " +  parentAgent.getAgentGuid() + " from all registrations: " + registrations.size());
                 registrations.values().stream().forEach(reg -> {
-                    reg.agentUnregister();
+                    if (register != null) {
+                        register.deactivate();
+                        reg.agentUnregister(register);
+                    }
                     registeredServers.stream().forEach(srv -> {
                         reg.unregisterServer(srv);
                     });

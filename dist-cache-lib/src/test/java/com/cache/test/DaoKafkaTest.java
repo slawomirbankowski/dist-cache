@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Set;
+
 public class DaoKafkaTest {
     private static final Logger log = LoggerFactory.getLogger(DaoKafkaTest.class);
 
@@ -20,7 +22,9 @@ public class DaoKafkaTest {
         Agent agent = DistFactory.buildEmptyFactory()
                 .createAgentInstance();
 
-        DaoKafkaBase dao = new DaoKafkaBase(DaoParams.kafkaParams("localhost:9092", 1, (short) 0x1, "agent-1", "agent-1"), agent);
+        DaoKafkaBase dao = new DaoKafkaBase(DaoParams.kafkaParams("localhost:9092", 1, (short) 0x1), agent);
+        dao.deleteTopics(Set.of("dist-agent-register-tmp", "dist-agent-register", "dist-agent-ping", "dist-agent-server", "dist-agent-service", "dist-agent-issue"));
+
         String testTopicName = "dist-agent-register-tmp";
         var topics = dao.getTopics();
         log.info("Got topics: " + topics.size());
@@ -33,7 +37,8 @@ public class DaoKafkaTest {
         log.info("Got topics after: " + topicsAfter.size());
         topicsAfter.stream().forEach(t -> log.info("---> TOPIC:" + t));
 
-        dao.createKafkaConsumer(testTopicName, msg -> {
+        String consumerGroup = "kafka-test-dao";
+        dao.createKafkaConsumer(testTopicName, consumerGroup, (topic , msg) -> {
             log.info("=======> RECEIVE MESSAGE: " + msg.key() + ", topic: " + msg.topic() + ", value: " + msg.value() + ", offset: " + msg.offset());
             return true;
         });
@@ -44,7 +49,7 @@ public class DaoKafkaTest {
             dao.send(testTopicName, key, "agent" + i + "value");
             DistUtils.sleep(10);
         }
-        DistUtils.sleep(1000);
+        DistUtils.sleep(2000);
 
         dao.close();
 

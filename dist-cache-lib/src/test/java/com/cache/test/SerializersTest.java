@@ -44,8 +44,12 @@ public class SerializersTest {
         AgentTimerInfo timers = new AgentTimerInfo("ClassName", 1L, 2, new ArrayList<>());
         DistThreadsInfo threads = new DistThreadsInfo(11, new ArrayList<>());
 
-        var agentInfo = new AgentInfo(agentGuid, LocalDateTime.now(), false, Set.of(),
-                connectors, services, registrations, timers, threads,
+        var agentInfo = new AgentInfo(agentGuid, LocalDateTime.now(), false,
+                Set.of(),
+                new AgentMessageProcessorInfo(0, 0, 0),
+                new AgentApisInfo(false, List.of()),
+                connectors, services, new AgentRegistrationsInfo(List.of(), 0, List.of()), timers, threads,
+                new AgentDaosInfo(List.of(), Set.of()),
                 2, 44);
         // DistClientType clientType, String clientClassName, String url, boolean working, String clientGuid, Set<String> tags, long receivedMessages, long sentMessages
         var clientInfo = new ClientInfo(DistClientType.http, "ClientClassName", "serverUrl", true, "client_guid", Set.of("tag1"), 1, 1);

@@ -37,7 +37,7 @@ public class CacheManager extends CacheBase {
     private final Map<String, CacheStorageBase> storages = new HashMap<>();
     /** processor that is connecting message method with current class method to be executed */
     private final DistMessageProcessor messageProcessor = new DistMessageProcessor()
-            .addMethod( ServiceMethods.agentCacheClear.getMethodName(), this::messageClearCache)
+            .addMethod(ServiceMethods.agentCacheClear.getMethodName(), this::messageClearCache)
             .addMethod(ServiceMethods.agentGetStorages.getMethodName(), this::messageGetStorages)
             .addMethod(ServiceMethods.agentGetCacheInfo.getMethodName(), this::messageGetCacheInfo)
             .addMethod(ServiceMethods.agentGetStats.getMethodName(), this::messageGetCacheStats)
@@ -119,7 +119,6 @@ public class CacheManager extends CacheBase {
                 .filter(x -> !x.isEmpty())
                 .forEach(storageClass -> initializeSingleStorage(storageClass));
     }
-
     /** initialize single storage */
     private boolean initializeSingleStorage(String className) {
         try {
@@ -366,6 +365,7 @@ public class CacheManager extends CacheBase {
         lastCleanTime = System.currentTimeMillis();
         return true;
     }
+    /** */
     public boolean onTimeStatsRefresh() {
         addEvent(new CacheEvent(this, "onTimeStatsRefresh", CacheEvent.EVENT_INITIALIZE_TIMER_RATIO));
         cacheStats.refresh();
@@ -452,4 +452,5 @@ public class CacheManager extends CacheBase {
         String key = msg.getMessage().toString();
         return msg.response(getCacheObject(key), DistMessageStatus.ok);
     }
+
 }

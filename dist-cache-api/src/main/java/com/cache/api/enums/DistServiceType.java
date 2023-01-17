@@ -14,6 +14,7 @@ package com.cache.api.enums;
  * */
 public enum DistServiceType {
     agent, // agent service to bind all other services, providing communication, thread management, issues and events management
+    receiver,
     cache, // distributed cache
     measure, // measures in distributed environment
     space, // shared spaces with objects with owners but allowed to be modified by anyone

@@ -27,7 +27,7 @@ public class DatagramClient extends AgentClientBase implements AgentClient {
 
     /** creates new Datagram client  */
     public DatagramClient(Agent parentAgent, DistAgentServerRow srv) {
-        super(parentAgent);
+        super(parentAgent, srv);
         this.srv = srv;
         this.connectedAgentGuid = srv.agentguid;
         initialize();

@@ -20,7 +20,7 @@ public class AgentResolverTest {
 
     @Test
     public void agentResolverTest() {
-        log.info("START ------ resolver test");
+        log.info("START ------ agent resolver test");
 
         ResolverManager m1 = new ResolverManager();
         m1.addResolver(new MapResolver(Map.of("key1", "value1", "key2", "value2", "key3", "value3")));

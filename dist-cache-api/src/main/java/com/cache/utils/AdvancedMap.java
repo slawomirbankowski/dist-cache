@@ -1,6 +1,9 @@
 package com.cache.utils;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -12,7 +15,17 @@ public class AdvancedMap {
     /** map to advanced functions */
     private final Map<String, Object> map;
     public AdvancedMap(Map<String, Object> map) {
-        this.map = map;
+        this(map, false);
+    }
+    public AdvancedMap(Map<String, Object> map, boolean toLowercase) {
+        if (toLowercase) {
+            this.map = new HashMap<>();
+            map.entrySet().stream().forEach(e -> {
+                this.map.put(e.getKey().toLowerCase(), e.getValue());
+            });
+        } else {
+            this.map = map;
+        }
     }
     public String getString(String key, String defaultValue) {
         return map.getOrDefault(key, defaultValue).toString();
@@ -44,8 +57,13 @@ public class AdvancedMap {
     public java.util.Date getDate(String key, java.util.Date defaultValue) {
         return defaultValue;
     }
-    public java.util.Date getDateOrNow(String key) {
-        return new java.util.Date();
+
+    public LocalDateTime getLocalDateOrNow(String key) {
+        try {
+            return LocalDateTime.parse(getString(key, LocalDateTime.now().toString()));
+        } catch (DateTimeParseException ex) {
+            return LocalDateTime.now();
+        }
     }
     /** */
     public Set<String> getWithSplit(String key, String splitChar) {

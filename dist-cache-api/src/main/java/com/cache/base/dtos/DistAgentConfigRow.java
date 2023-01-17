@@ -2,6 +2,7 @@ package com.cache.base.dtos;
 
 import com.cache.utils.AdvancedMap;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 /** row for distagentconfig table
@@ -13,10 +14,10 @@ public class DistAgentConfigRow {
     public final String agentguid;
     public final String configname;
     public String configvalue;
-    public java.util.Date createddate;
-    public java.util.Date lastupdateddate;
+    public LocalDateTime createddate;
+    public LocalDateTime lastupdateddate;
 
-    public DistAgentConfigRow(String agentguid, String configname, String configvalue, java.util.Date createddate, java.util.Date lastupdateddate) {
+    public DistAgentConfigRow(String agentguid, String configname, String configvalue, LocalDateTime createddate, LocalDateTime lastupdateddate) {
         this.agentguid = agentguid;
         this.configname = configname;
         this.configvalue = configvalue;
@@ -25,13 +26,13 @@ public class DistAgentConfigRow {
     }
 
     public static DistAgentConfigRow fromMap(Map<String, Object> map) {
-        AdvancedMap m = new AdvancedMap(map);
+        AdvancedMap m = new AdvancedMap(map, true);
         return new DistAgentConfigRow(
-                m.getStringOrEmpty("agentguid").toString(),
-                m.getStringOrEmpty("configname").toString(),
-                m.getStringOrEmpty("configvalue").toString(),
-                m.getDateOrNow("createddate"),
-                m.getDateOrNow("lastupdateddate")
+                m.getStringOrEmpty("agentguid"),
+                m.getStringOrEmpty("configname"),
+                m.getStringOrEmpty("configvalue"),
+                m.getLocalDateOrNow("createddate"),
+                m.getLocalDateOrNow("lastupdateddate")
         );
     }
 }

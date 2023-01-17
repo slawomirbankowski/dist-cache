@@ -1,6 +1,7 @@
 package com.cache.api;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /** simple info about object in cache */
 public class CacheObjectRequest {
@@ -48,6 +49,6 @@ public class CacheObjectRequest {
 
     @Override
     public String toString() {
-        return "key="+ key+", value="+value+", mode="+mode+", groups="+groups;
+        return "key="+ key+", value="+value+", mode="+mode+", groups="+groups.stream().sorted().collect(Collectors.toList());
     }
 }

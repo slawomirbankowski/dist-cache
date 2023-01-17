@@ -23,11 +23,10 @@ public class HttpClient extends AgentClientBase implements AgentClient {
 
     /** creates new HTTP client  */
     public HttpClient(Agent parentAgent, DistAgentServerRow srv) {
-        super(parentAgent);
+        super(parentAgent, srv);
         this.url = srv.serverurl;
         connectedAgentGuid = srv.agentguid;
-        httpConnectionHelper = HttpConnectionHelper.createHttpClient(url);
-        log.info("Creates new HTTP client for server: " + srv.servertype + ", url: " + srv.serverurl);
+
         initialize();
     }
     /** get type of client - socket, http, datagram, ... */
@@ -41,6 +40,8 @@ public class HttpClient extends AgentClientBase implements AgentClient {
     /** initialize client - connecting or reconnecting */
     public boolean initialize() {
         try {
+            httpConnectionHelper = HttpConnectionHelper.createHttpClient(url);
+            log.info("Creates new HTTP client for server: " + serverRow.servertype + ", url: " + serverRow.serverurl);
             log.info("Initializing HTTP client for agent: " + parentAgent.getAgentGuid() + ", URL: " + url + ", client UID: " + clientGuid);
             AgentWelcomeMessage welcome = new AgentWelcomeMessage(parentAgent.getAgentInfo(), getClientInfo());
             DistMessage welcomeMsg = DistMessage.createMessage(DistMessageType.system, parentAgent.getAgentGuid(), DistServiceType.agent, connectedAgentGuid, DistServiceType.agent, "welcome",  welcome);

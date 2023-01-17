@@ -3,6 +3,7 @@ package com.cache.agent.apis;
 import com.cache.api.AgentWebApiRequest;
 import com.cache.api.AgentWebApiResponse;
 import com.cache.api.DistConfig;
+import com.cache.api.info.AgentApiInfo;
 import com.cache.base.AgentWebApi;
 import com.cache.interfaces.AgentApi;
 import com.sun.net.httpserver.HttpExchange;
@@ -16,6 +17,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** simple implementation of web api for agent
  * Web API is simple REST api to access direct agent services with methods
@@ -64,6 +66,17 @@ public class WebSimpleApi extends AgentWebApi {
     public String getApiType() {
         return "simple";
     }
+    /** get port of this WebAPI */
+    public int getPort() {
+        return webApiPort;
+    }
+    /** get information about this simple API */
+    public AgentApiInfo getInfo() {
+        return new AgentApiInfo(getApiType(), webApiPort,
+                httpHandler.getHandledRequestsCount(),
+                httpHandler.getHandledRequestsTime(),
+                httpHandler.getHandledRequestsErrors());
+    }
     /** close this Agent Web API */
     public void close() {
         try {
@@ -79,6 +92,13 @@ public class WebSimpleApi extends AgentWebApi {
         protected static final Logger log = LoggerFactory.getLogger(WebSimpleApiHandler.class);
         /** parent API for this web server */
         private AgentApi parentApi;
+        /** */
+        private AtomicLong handledRequestsCount = new AtomicLong();
+        /** */
+        private AtomicLong handledRequestsTime = new AtomicLong();
+        /** */
+        private AtomicLong handledRequestsErrors = new AtomicLong();
+
         public WebSimpleApiHandler(AgentApi parentApi) {
             this.parentApi = parentApi;
         }
@@ -88,12 +108,14 @@ public class WebSimpleApi extends AgentWebApi {
             long reqSeq = AgentWebApi.requestSeq.incrementAndGet();
             long startTime = System.currentTimeMillis();
             try {
+                handledRequestsCount.incrementAndGet();
                 AgentWebApiRequest req = new AgentWebApiRequest(reqSeq, startTime, t.getProtocol(), t.getRequestMethod(), t.getRequestURI(), t.getRequestHeaders(), t.getRequestBody().readAllBytes());
                 log.info(">>>>> HANDLE REQUEST [" + reqSeq + "], protocol: " + t.getProtocol() + ", method: " + t.getRequestMethod() + ", HEADERS.size: " + t.getRequestHeaders().size() + ", URI: " + t.getRequestURI().toString() + ", service: " + req.getServiceName());
                 AgentWebApiResponse response = parentApi.getAgent().getAgentServices().handleRequest(req);
                 var respBytes = response.getResponseContent();
                 t.getResponseHeaders().putAll(response.getHeaders());
                 long totalTime = System.currentTimeMillis() - startTime;
+                handledRequestsTime.addAndGet(totalTime);
                 t.getResponseHeaders().put("Request-Time", List.of(""+totalTime));
                 t.getResponseHeaders().put("Request-Seq", List.of(""+reqSeq));
                 t.getResponseHeaders().put("Request-User", List.of("ANONYMOUS")); // TODO: add Authorization to request-response
@@ -105,6 +127,7 @@ public class WebSimpleApi extends AgentWebApi {
                 log.info(">>>>> END OF HANDLE REQUEST[" + reqSeq + "], totalTime: " + totalTime + ", code: " + response.getResponseCode() + " content.len: " + response.getResponseContent().length + ", headers: " + t.getResponseHeaders().size());
                 os.close();
             } catch (Exception ex) {
+                handledRequestsErrors.incrementAndGet();
                 log.warn("Web API Exception: " + ex.getMessage());
                 parentApi.getAgent().getAgentIssues().addIssue("WebSimpleApiHandler.handle", ex);
                 String errorResponse = ">>>>> ERROR DURING REQUEST [" + reqSeq +  "] +, reason: " + ex.getMessage();
@@ -113,6 +136,15 @@ public class WebSimpleApi extends AgentWebApi {
                 os.write(errorResponse.getBytes());
                 os.flush();
             }
+        }
+        public long getHandledRequestsCount() {
+            return handledRequestsCount.get();
+        }
+        public long getHandledRequestsTime() {
+            return handledRequestsTime.get();
+        }
+        public long getHandledRequestsErrors() {
+            return handledRequestsErrors.get();
         }
     }
 }

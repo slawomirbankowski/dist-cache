@@ -3,6 +3,7 @@ package com.cache.app.controllers;
 import com.cache.api.*;
 import com.cache.app.services.AgentService;
 import com.cache.app.services.CacheService;
+import com.cache.base.dtos.DistAgentRegisterRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,13 +26,13 @@ public class AgentController {
 
     /** get list of agents - only simplified information about basic things */
     @GetMapping(value = "/agents", consumes = MediaType.ALL_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<AgentSimplified> getAgents() {
+    public List<DistAgentRegisterRow> getAgents() {
         return  agentService.getAgents();
     }
 
     /** get agent by id */
     @GetMapping(value = "/agent/{id}", consumes = MediaType.ALL_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<AgentSimplified> getAgentById(@PathVariable("id") final String id) {
+    public List<DistAgentRegisterRow> getAgentById(@PathVariable("id") final String id) {
         return agentService.getAgentById(id);
     }
 
@@ -39,7 +40,7 @@ public class AgentController {
     @PutMapping(value = "/agent", consumes = MediaType.APPLICATION_JSON_VALUE)
     public AgentConfirmation registerAgent(
             @RequestBody AgentRegister register) {
-        log.info("Register agent: " + register.agentGuid + " from host: " + register.hostName + "/" + register.hostIp + ":" + register.port);
+        log.info("Register agent: " + register.getAgentGuid() + " from host: " + register.getHostName() + "/" + register.getHostIp() + ":" + register.getPort());
         AgentConfirmation confirmation = agentService.registerAgent(register);
         return confirmation;
     }

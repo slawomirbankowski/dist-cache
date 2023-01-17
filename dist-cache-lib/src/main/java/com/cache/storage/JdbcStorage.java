@@ -38,6 +38,7 @@ public class JdbcStorage extends CacheStorageBase {
         var maxActiveConnections = cache.getConfig().getPropertyAsInt(DistConfig.AGENT_REGISTRATION_JDBC_MAX_ACTIVE_CONNECTIONS, 10);
         DaoParams params = DaoParams.jdbcParams(jdbcUrl, jdbcDriver, jdbcUser, jdbcPass, initConnections, maxActiveConnections);
         dao = cache.getAgent().getAgentDao().getOrCreateDaoOrError(DaoJdbcBase.class, params);
+        dao.usedByComponent(this);
         initializeConnectionAndCreateTables();
     }
     /** create table with cache items if not exists */

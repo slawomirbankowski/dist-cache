@@ -6,5 +6,6 @@ public enum DistMessageStatus {
     ok,
     exception,
     serviceNotFound,
+    methodNotFound,
     notSupported
 }

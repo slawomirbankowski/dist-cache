@@ -1,5 +1,8 @@
 package com.cache.api;
 
+import com.cache.api.info.AgentRegisteredInfo;
+import com.cache.base.dtos.DistAgentRegisterRow;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -14,56 +17,72 @@ public class AgentObject {
     private final LocalDateTime createDate = LocalDateTime.now();
     /** registering object for agent */
     private AgentRegister register;
-    private AgentSimplified simplified;
+    private DistAgentRegisterRow agentRegisterRow;
+
     /** last updated date and time of this Agent */
     private LocalDateTime lastUpdated = LocalDateTime.now();
     /** number of updates of this Agent */
     private final AtomicLong updatesCount = new AtomicLong();
     /** set of registration keys as sources for this Agent */
     private final Set<String> registrationKeys = new HashSet<>();
+    /** time of last ping from this agent */
+    private LocalDateTime lastPingDate = LocalDateTime.now();
 
     // TODO: add more useful info like last ping time, updated storages, connection network from this agent
 
-    public AgentObject(AgentRegister register)
-    {
+    public AgentObject(AgentRegister register) {
         this.register = register;
-        this.simplified = register.toSimplified();
+        //this.agentRegisterRow = register.toSimplified();
     }
-    public AgentObject(AgentSimplified simplified)
-    {
-        this.simplified = simplified;
+    public AgentObject(DistAgentRegisterRow agentRegisterRow) {
+        this.agentRegisterRow = agentRegisterRow;
     }
     /** get GUID for agent */
     public String getAgentGuid() {
-        return register.agentGuid;
+        return register.getAgentGuid();
     }
     /** unregister this agent */
     public void unregister() {
         // TODO: unregister this agent
     }
+    /** */
+    public void ping(AgentPing pingObj) {
+        lastPingDate = pingObj.getCreateDate();
+    }
     /** update existing agent with new information */
-    public void update(AgentSimplified updateInfo, String registrationKey) {
+    public void update(DistAgentRegisterRow updateInfo, String registrationKey) {
         // TODO: update existing agent
         lastUpdated = LocalDateTime.now();
+        agentRegisterRow = updateInfo;
         registrationKeys.add(registrationKey);
         updatesCount.incrementAndGet();
     }
 
+    /** get information about registered remove Agent */
+    public AgentRegisteredInfo getRegisteredInfo() {
+        return new AgentRegisteredInfo(
+                agentRegisterRow.getAgentguid(), agentRegisterRow.getHostname(), agentRegisterRow.getHostip(), agentRegisterRow.getPortnumber(),
+                lastUpdated, updatesCount.get(),  lastPingDate, createDate, agentRegisterRow.getIsactive()
+        );
+    }
 
     /** */
-    public AgentSimplified getSimplified() {
-        return simplified;
+    public DistAgentRegisterRow getSimplified() {
+        return agentRegisterRow;
     }
     /** get simplified version of agent in cache */
-    public AgentSimplified toSimplified() {
-        // TODO: get simplified object of agent with only the most important items - add current information of agent
-        return register.toSimplified();
+    public DistAgentRegisterRow toSimplified() {
+        return register.toAgentRegisterRow();
     }
 
+    public boolean isActive() {
+        return agentRegisterRow.getIsactive() == 1;
+    }
+    /** */
     public LocalDateTime getCreateDate() {
         return createDate;
     }
-
+    /** */
     public LocalDateTime getLastUpdated() {
         return lastUpdated;
     }

@@ -1,8 +1,9 @@
 package com.cache.interfaces;
 
 import com.cache.api.info.AgentRegistrationInfo;
-import com.cache.api.AgentSimplified;
 import com.cache.api.DistIssue;
+import com.cache.api.info.AgentRegistrationsInfo;
+import com.cache.base.dtos.DistAgentRegisterRow;
 import com.cache.base.dtos.DistAgentServerRow;
 
 import java.util.List;
@@ -23,6 +24,8 @@ public interface AgentRegistrations {
     int getRegistrationsCount();
     /** get UIDs for registration services */
     List<String> getRegistrationKeys();
+    /** get information object about all registration */
+    AgentRegistrationsInfo getInfo();
     /** get information infos about registration objects */
     List<AgentRegistrationInfo> getRegistrationInfos();
 
@@ -33,7 +36,7 @@ public interface AgentRegistrations {
     int getAgentsCount();
     /** get list of agents possible to connect from this agent
      * this is list of all known agents read from registration services of from other agents */
-    List<AgentSimplified> getAgents();
+    List<DistAgentRegisterRow> getAgents();
     /** add issue to registrations */
     void addIssue(DistIssue issue);
     /** close registrations */

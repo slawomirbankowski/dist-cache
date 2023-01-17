@@ -10,14 +10,14 @@ ddlSelectCacheItemByKey=select * from distcacheitem tables where cachekey=? limi
 insertUpdateCacheItem=insert into distcacheitem(cachekey, cachevalue, objectclassname, inserteddate, cacheguid, lastusedate, enddate, createdtimems, objectseq, objsize, acquiretimems, cachemode, cachepriority, groupslist) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) on conflict (cachekey) do update set cachevalue = EXCLUDED.cachevalue, lastUseDate=EXCLUDED.lastUseDate
 deleteOldCacheItemsTemplate=delete from distcacheitem where cachekey in (?)
 
+createAgentRegister=create table distagentregister(agentguid varchar(300), hostname varchar(300), hostip varchar(300), portnumber int, createddate timestamp, lastpingdate timestamp, pingscount int, isactive int, closedate timestamp, agentsconnected int, threadscount int, servicescount int, serverscount int, clientscount int)
+createAgentRegisterIndex=create unique index idx_distagentregister_pk on distagentregister(agentguid)
 selectAgentRegisterTable=select * from information_schema.tables where table_name = 'distagentregister'
-createAgentRegister=create table distagentregister(agentguid varchar(300), hostname varchar(300), hostip varchar(300), portnumber int, createddate timestamp, lastpingdate timestamp, pingscount int, isactive int, closedate timestamp, agentsconnected int)
-createAgentRegisterIndex=select * from information_Schema.tables where table_name = 'distagentregister'
 selectAgentRegisters=select * from distagentregister
 selectActiveAgentRegisters=select * from distagentregister where isactive=1
 updateAgentRegister=update distagentregister set lastpingdate=? where agentguid=?
-pingAgentRegister=update distagentregister set lastpingdate=?, pingscount=pingscount+1 where agentguid=?
-insertAgentRegister=insert into distagentregister(agentguid, hostname, hostip, portnumber, createddate, lastpingdate, pingscount, isactive) values (?,?,?,?,?,?,?,?)
+pingAgentRegister=update distagentregister set lastpingdate=?, pingscount=pingscount+1, agentsconnected=?, threadscount=?, servicescount=?, serverscount=?, clientscount=? where agentguid=?
+insertAgentRegister=insert into distagentregister(agentguid, hostname, hostip, portnumber, createddate, lastpingdate, pingscount, isactive, agentsconnected, threadscount, servicescount) values (?,?,?,?,?,?,?,?, 0,0,0)
 removeAgentRegister=update distagentregister set isactive=0, closedate=? where agentguid=?
 checkAgentRegisters=update distagentregister set isactive=0 where isactive = 1 and lastpingdate < now() - interval '10 minutes'
 updateInactiveAgentRegisters=update distagentregister set isactive=0 where isactive = 1 and lastpingdate < ?

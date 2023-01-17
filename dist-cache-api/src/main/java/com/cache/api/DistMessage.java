@@ -166,6 +166,9 @@ public class DistMessage implements Serializable {
     public DistMessage response(Object obj, DistMessageStatus st) {
         return new DistMessage(messageUid, createdDate, DistMessageType.response, toAgent, toService, fromAgent, fromService, requestMethod, responseMethod, obj, tags, validTill, DistMessageStatus.ok);
     }
+    public DistMessage responseOk(Object obj) {
+        return response(obj, DistMessageStatus.ok);
+    }
     /** create message that has status notSupported - it means that method is not supporting given object type or this type of request */
     public DistMessage notSupported() {
         return new DistMessage(messageUid, createdDate, DistMessageType.response, toAgent, toService, fromAgent, fromService, requestMethod, responseMethod, "NOT_SUPPORTED", tags, validTill, DistMessageStatus.notSupported);
@@ -173,6 +176,10 @@ public class DistMessage implements Serializable {
     /** response message from current message - service not found */
     public DistMessage serviceNotFound() {
         return new DistMessage(messageUid, createdDate, DistMessageType.response, toAgent, toService, fromAgent, fromService, requestMethod, responseMethod, "SERVICE_NOT_FOUND", tags, validTill, DistMessageStatus.serviceNotFound);
+    }
+    /** response message from current message - method not found */
+    public DistMessage methodNotFound() {
+        return new DistMessage(messageUid, createdDate, DistMessageType.response, toAgent, toService, fromAgent, fromService, requestMethod, responseMethod, "METHOD_NOT_FOUND", tags, validTill, DistMessageStatus.methodNotFound);
     }
     /** response message from current message - exception while executing this message */
     public DistMessage exception(Exception ex) {
